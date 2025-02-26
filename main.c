@@ -154,7 +154,7 @@ implicant prime_implicants(int num_bits, int num_trues, int *trues, int num_dont
         if (num_combined_implicants == 0) {
             free(combined);
             free(uncombined);
-            return primes; // TODO: return length of primes as well
+            return primes;
         }
 
         implicant tmp = uncombined;
