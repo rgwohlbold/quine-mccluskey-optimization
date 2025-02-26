@@ -133,7 +133,7 @@ implicant prime_implicants(int num_bits, int num_trues, int *trues, int num_dont
                 int differerence_index = -1;
                 if (check_implicants_merge(num_bits, implicant1, implicant2, &differerence_index)) {
                     // TODO: duplicate detection
-                    merge_implicants(num_bits, implicant1, implicant2, combined + (num_bits*num_combined_implicants), differerence_index);
+                    merge_implicants(num_bits, implicant1, implicant2, &combined[num_bits*num_combined_implicants], differerence_index);
                     num_combined_implicants++;
                     merged[i] = true;
                     merged[k] = true;
