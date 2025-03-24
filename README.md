@@ -7,3 +7,7 @@ This project uses `cmake` as its build system.
 - To generate the build files, run `cmake .`.
 - To build the executable run `make`.
 - To run the executable, run `./prime_implicants`.
+
+## Development
+
+Before pushing changes, format code with `clang-format`.
