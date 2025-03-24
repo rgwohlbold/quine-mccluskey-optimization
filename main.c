@@ -2,21 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG 1
-
-typedef enum {
-    FV_FALSE,
-    FV_TRUE,
-    FV_DONT_CARE,
-} function_value;
-
-typedef enum {
-    TV_FALSE,
-    TV_TRUE,
-    TV_DASH,
-} ternary_value;
-
-typedef ternary_value *implicant;
+#include "debug.h"
+#include "types.h"
 
 implicant allocate_minterm_array(int num_bits) {
     implicant minterms = (ternary_value *)calloc((1 << num_bits) * num_bits, sizeof(ternary_value));
@@ -77,17 +64,7 @@ void merge_implicants(int num_bits, implicant implicant1, implicant implicant2, 
 void print_implicants(int num_bits, int num_implicants, implicant arr, char *msg) {
     printf("%s\n", msg);
     for (int i = 0; i < num_implicants; i++) {
-        for (int k = 0; k < num_bits; k++) {
-            ternary_value val = arr[i * num_bits + k];
-            if (val == TV_TRUE) {
-                printf("1");
-            } else if (val == TV_FALSE) {
-                printf("0");
-            } else if (val == TV_DASH) {
-                printf("-");
-            }
-        }
-        printf("\n");
+        print_implicant(&arr[i * num_bits], num_bits);
     }
 }
 
@@ -117,9 +94,11 @@ implicant prime_implicants(int num_bits, int num_trues, int *trues, int num_dont
         minterm_number_to_implicant(num_bits, dont_cares[k], &uncombined[num_bits * num_uncombined_implicants]);
         num_uncombined_implicants++;
     }
-#if DEBUG
-    print_implicants(num_bits, num_uncombined_implicants, uncombined, "initial uncombined implicants");
-#endif
+
+    LOG_DEBUG("Initial uncombined implicants");
+    for (int impl_i = 0; impl_i < num_uncombined_implicants; impl_i++) {
+        LOG_DEBUG_IMP(&uncombined[impl_i * num_bits], num_bits);
+    }
 
     while (true) {
         int num_combined_implicants = 0;
@@ -213,6 +192,10 @@ int main(int argc, char **argv) {
     int num_prime_implicants = 0;
     implicant primes = prime_implicants(num_bits, sizeof(trues) / sizeof(trues[0]), trues,
                                         sizeof(dont_cares) / sizeof(dont_cares[0]), dont_cares, &num_prime_implicants);
-    print_implicants(num_bits, num_prime_implicants, primes, "prime implicants");
+
+    LOG_INFO("Prime implicants");
+    for (int pi = 0; pi < num_prime_implicants; pi++) {
+        LOG_INFO_IMP(&primes[pi * num_bits], num_bits);
+    }
     free(primes);
 }
