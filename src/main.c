@@ -68,6 +68,20 @@ void print_implicants(int num_bits, int num_implicants, implicant arr, char *msg
     }
 }
 
+bool check_elt_in_implicant_list(int num_bits, implicant needle, ternary_value *haystack, int num_implicants) {
+    for (int i = 0; i < num_implicants; i++) {
+        bool all_match = true;
+        for (int j = 0; j < num_bits; j++) {
+            if (haystack[i * num_bits + j] != needle[j]) {
+                all_match = false;
+                break;
+            }
+        }
+        if (all_match) return 1;
+    }
+    return 0;
+}
+
 /**
  * Compute prime implicants of the specified function
  *
@@ -125,6 +139,9 @@ implicant prime_implicants(int num_bits, int num_trues, int *trues, int num_dont
         for (int i = 0; i < num_uncombined_implicants; i++) {
             if (!merged[i]) {
                 // TODO: check that the implicant is not yet contained in primes
+                if (check_elt_in_implicant_list(num_bits, &uncombined[num_bits * i], primes, *num_prime_implicants)) {
+                    continue;
+                }
                 for (int k = 0; k < num_bits; k++) {
                     primes[num_bits * (*num_prime_implicants) + k] = uncombined[num_bits * i + k];
                 }
@@ -137,6 +154,8 @@ implicant prime_implicants(int num_bits, int num_trues, int *trues, int num_dont
             free(uncombined);
             return primes;
         }
+
+        print_implicants(num_bits, *num_prime_implicants, primes, "PRIME IMPLICANTS");
 
         implicant tmp = uncombined;
         uncombined = combined;
