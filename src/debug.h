@@ -1,7 +1,7 @@
 #pragma once
 #include <stdarg.h>
 
-#include "types.h"
+#include "implicant.h"
 
 /*
 LOG_LEVEL 0: No logging
