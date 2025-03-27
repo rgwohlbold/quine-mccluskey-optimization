@@ -1,5 +1,6 @@
-#include <stdio.h>
 #include "implicant.h"
+
+#include <stdio.h>
 
 void fprint_implicant(FILE *__restrict__ __stream, implicant arr, int num_bits) {
     for (int k = 0; k < num_bits; k++) {
@@ -20,3 +21,12 @@ void fprint_implicant(FILE *__restrict__ __stream, implicant arr, int num_bits) 
 }
 
 void print_implicant(implicant arr, int num_bits) { fprint_implicant(stdout, arr, num_bits); }
+int cmp_implicant(implicant a, implicant b, int num_bits) {
+    for (int i = 0; i < num_bits; i++) {
+        int delta = a[i] - b[i];
+        if (delta == 0) continue;
+        if (delta < 0) return -1;
+        if (delta > 0) return 1;
+    }
+    return 0;
+}
