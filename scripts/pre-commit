@@ -1,0 +1,12 @@
+#!/bin/bash
+
+deps=("clang-format-diff" "clang-format")
+# Check dependencies
+for dep in "${deps[@]}"; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    echo "$dep not found. Please install it." >&2
+    exit 1
+  fi
+done
+
+git diff --cached --name-only --diff-filter=ACM | grep '\.cpp\|\.h\|\.c\|\.hpp' | clang-format-diff -i -p1
