@@ -18,3 +18,4 @@ typedef ternary_value *implicant;
 
 void fprint_implicant(FILE *__restrict__ __stream, implicant arr, int num_bits);
 void print_implicant(implicant arr, int num_bits);
+

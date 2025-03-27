@@ -1,7 +1,8 @@
+#include "debug.h"
+
 #include <stdarg.h>
 
-#include "types.h"
-#include "debug.h"
+#include "implicant.h"
 
 int _log_fmt(const char *prefix, const char *file, int line, const char *format, ...) {
     va_list args;

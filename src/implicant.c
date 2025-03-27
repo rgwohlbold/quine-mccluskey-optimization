@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "types.h"
+#include "implicant.h"
 
 void fprint_implicant(FILE *__restrict__ __stream, implicant arr, int num_bits) {
     for (int k = 0; k < num_bits; k++) {

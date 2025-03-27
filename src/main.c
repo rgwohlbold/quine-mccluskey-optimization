@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
-#include "types.h"
+#include "implicant.h"
 
 implicant allocate_minterm_array(int num_bits) {
     implicant minterms = (ternary_value *)calloc((1 << num_bits) * num_bits, sizeof(ternary_value));
