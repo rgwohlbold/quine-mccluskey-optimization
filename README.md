@@ -13,3 +13,17 @@ This project uses `cmake` as its build system.
 ## Development
 
 Before pushing changes, format code with `clang-format`.
+
+### pre-commit hook
+
+If you want, you can install the pre-commit hook, that makes sure the source code is formatted before pushing.
+
+1. Make sure, you have installed the clang-format dependency.
+
+2. Put the `scripts/pre-commit` file in `.git/hooks/` and mark it as executable
+
+   ```bash
+   cp scripts/pre-commit .git/hooks/
+   chmod +x .git/hooks/pre-commit
+   ```
+
