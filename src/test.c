@@ -128,9 +128,9 @@ void test_implementations() {
     test_case test_cases[] = {
         wikipedia_test(), wikipedia_test_2(), no_minterms(), half_minterms(), all_minterms(),
     };
-    for (int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
+    for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
         test_case test = test_cases[i];
-        for (int k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
+        for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
 
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
@@ -159,7 +159,7 @@ void test_implementations() {
             }
         }
     }
-    for (int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
+    for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
         free_test(test_cases[i]);
     }
 }

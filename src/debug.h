@@ -32,7 +32,10 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
 int _log_imp(const char *prefix, const char *file, int line, implicant imp, int length);
 
 // Convenience macros to auto-insert file and line details
-#define LOG_INFO(format, ...) (_LL_INFO && _log_fmt(__INFO_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
-#define LOG_DEBUG(format, ...) (_LL_DEBUG && _log_fmt(__DEBUG_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
-#define LOG_INFO_IMP(imp, imp_len) (_LL_INFO && _log_imp(__INFO_PREFIX, __BASE_FILE__, __LINE__, imp, imp_len));
-#define LOG_DEBUG_IMP(imp, imp_len) (_LL_DEBUG && _log_imp(__DEBUG_PREFIX, __BASE_FILE__, __LINE__, imp, imp_len));
+#define LOG_INFO(format, ...) \
+    (void)(_LL_INFO && _log_fmt(__INFO_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
+#define LOG_DEBUG(format, ...) \
+    (void)(_LL_DEBUG && _log_fmt(__DEBUG_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
+#define LOG_INFO_IMP(imp, imp_len) (void)(_LL_INFO && _log_imp(__INFO_PREFIX, __BASE_FILE__, __LINE__, imp, imp_len));
+#define LOG_DEBUG_IMP(imp, imp_len) \
+    (void)(_LL_DEBUG && _log_imp(__DEBUG_PREFIX, __BASE_FILE__, __LINE__, imp, imp_len));

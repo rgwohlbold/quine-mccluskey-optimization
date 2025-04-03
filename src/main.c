@@ -1,3 +1,3 @@
 #include "test.h"
 
-int main(int argc, char **argv) { test_implementations(); }
+int main() { test_implementations(); }
