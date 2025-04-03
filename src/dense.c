@@ -1,0 +1,170 @@
+#include "dense.h"
+
+#include <stdbool.h>
+#include <stdlib.h>
+
+#include "util.h"
+
+void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
+    // check all minterms that differ in the ith bit
+    for (int i = 0; i < num_bits; i++) {
+        int block_len = 1 << i;
+        int num_blocks = 1 << (num_bits - i - 1);
+        for (int block = 0; block < num_blocks; block++) {
+            for (int k = 0; k < block_len; k++) {
+                int idx1 = 2 * block * block_len + k;
+                int idx2 = 2 * block * block_len + block_len + k;
+
+                merged[idx1] = merged[idx1] || (implicants[idx1] && implicants[idx2]);
+                merged[idx2] = merged[idx2] || (implicants[idx1] && implicants[idx2]);
+
+                // we don't want implicants in the output for which i < first_difference.
+                // however, we still need to set the merged flag as we otherwise might
+                // implicants prime that are implicitly considered in other calls.
+                if (i >= first_difference) {
+                    int o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
+                    output[o_idx] = implicants[idx1] && implicants[idx2];
+                }
+            }
+        }
+    }
+}
+
+// calculate 3**num_bits
+int calculate_num_implicants(int num_bits) {
+    int num_implicants = 1;
+    for (int i = 0; i < num_bits; i++) {
+        num_implicants *= 3;
+    }
+    return num_implicants;
+}
+
+// calculate all binomials for k=0...n. binomials is an array of size (n+1)
+void calculate_binomials(int n, int *binomials) {
+    for (int k = 0; k <= n; k++) {
+        if (k > n - k) {
+            break;
+        }
+        unsigned long long res = 1;
+        for (int i = 0; i < k; i++) {
+            res = res * (n - i) / (i + 1);
+        }
+        binomials[k] = res;
+        binomials[n - k] = res;
+    }
+}
+
+// inefficient implementation to convert dash position number to dashes in res
+void put_implicant_from_iteration(int num_bits, int num_dashes, int iteration, int value, implicant res) {
+    // put all dashes to the back at first
+    for (int k = 0; k < num_dashes; k++) {
+        res[num_bits - k - 1] = TV_DASH;
+    }
+    for (int k = 0; k < num_bits - num_dashes; k++) {
+        res[k] = TV_FALSE;
+    }
+    // move dashes around (iteration) times
+    for (int k = 0; k < iteration; k++) {
+        int leading_dashes = 0;
+        while (res[leading_dashes] == TV_DASH) {
+            res[leading_dashes] = TV_FALSE;
+            leading_dashes++;
+        }
+        for (int j = 0; j < num_bits; j++) {
+            if (res[j] != TV_DASH && res[j + 1] == TV_DASH) {
+                res[j] = TV_DASH;
+                res[j + 1] = TV_FALSE;
+                while (leading_dashes > 0) {
+                    j--;
+                    res[j] = TV_DASH;
+                    leading_dashes--;
+                }
+                break;
+            }
+        }
+    }
+    // put in value of implicant except for dashes
+    int bit = 0;
+    for (int k = 0; k < num_bits; k++) {
+        int bitmask = 1 << bit;
+        if (res[num_bits - k - 1] != TV_DASH) {
+            if ((value & bitmask) != 0) {
+                res[num_bits - k - 1] = TV_TRUE;
+            } else {
+                res[num_bits - k - 1] = TV_FALSE;
+            }
+            bit++;
+        }
+    }
+}
+
+implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares,
+                                 int *num_prime_implicants) {
+    implicant primes = allocate_minterm_array(num_bits);
+    *num_prime_implicants = 0;
+
+    int binomials[num_bits + 1];
+    calculate_binomials(num_bits, binomials);
+
+    int num_implicants = calculate_num_implicants(num_bits);
+    bool *implicants = allocate_boolean_array(num_implicants);
+    for (int i = 0; i < num_trues; i++) {
+        implicants[trues[i]] = true;
+    }
+    for (int i = 0; i < num_dont_cares; i++) {
+        implicants[dont_cares[i]] = true;
+    }
+
+    bool *merged_implicants = allocate_boolean_array(num_implicants);  // will initialize to false
+
+    // Step 1: Merge all implicants iteratively, setting merged flags
+    bool *input = &implicants[0];
+    bool *merged = &merged_implicants[0];
+    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
+        int remaining_bits = num_bits - num_dashes;
+        // for each combination of num_dashes in num_bits, we need to run the algorithm once
+        int iterations = binomials[num_dashes];
+        // each input table has 2**remaining_bits elements
+        int input_elements = 1 << remaining_bits;
+        // each output table has 2**(remaining_bits-1) elements
+        int output_elements = 1 << (remaining_bits - 1);
+
+        bool *output = &input[iterations * input_elements];
+
+        // since we don't want any duplicates, make subsequent calls start at higher and higher bits
+        // we need to adjust the number of output tables for this
+        int k = 0;
+        for (int i = 0; i < iterations; i++) {
+            merge_implicants_dense(&input[i * input_elements], &output[k * output_elements],
+                                   &merged[i * input_elements], remaining_bits, i);
+            k += iterations - i - 1;
+        }
+        input = output;
+        merged = &merged[iterations * input_elements];
+    }
+
+    // Step 2: Scan for unmerged implicants
+    input = &implicants[0];
+    merged = &merged_implicants[0];
+    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
+        int remaining_bits = num_bits - num_dashes;
+        // for each combination of num_dashes, we need to run the algorithm once
+        int iterations = binomials[num_dashes];
+        // each input table has 2**remaining_bits elements
+        int input_elements = 1 << remaining_bits;
+
+        for (int i = 0; i < iterations; i++) {
+            for (int k = 0; k < input_elements; k++) {
+                if (input[i * input_elements + k] && !merged[i * input_elements + k]) {
+                    put_implicant_from_iteration(num_bits, num_dashes, i, k, &primes[*num_prime_implicants * num_bits]);
+                    (*num_prime_implicants)++;
+                }
+            }
+        }
+        input = &input[iterations * input_elements];
+        merged = &merged[iterations * input_elements];
+    }
+    free(implicants);
+    free(merged_implicants);
+    return primes;
+}
