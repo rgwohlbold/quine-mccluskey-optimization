@@ -4,6 +4,8 @@ project(prime_implicants C)
 
 add_executable(prime_implicants src/main.c src/debug.c src/implicant.c)
 
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 -O3 -march=native)
+
 ### LOGGING OPTIONS BEGIN ###
 option(LOG_NOCOLOR "Disable colored logs" OFF)
 message(STATUS "Using LOG_LEVEL= ${LOG_LEVEL}, NOCOLOR=${LOG_NOCOLOR}")
