@@ -89,7 +89,7 @@ bool check_elt_in_implicant_list(int num_bits, implicant needle, ternary_value *
  * TODO: specify return value
  */
 implicant prime_implicants_sparse(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares,
-                           int *num_prime_implicants) {
+                                  int *num_prime_implicants) {
     // a minterm is an array of num_bits ternary_value
     // to have space for all minterms, we allocate 2**num_bits * num_bits * sizeof(ternary_value)
     implicant uncombined = allocate_minterm_array(num_bits);
@@ -310,7 +310,7 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
     // Step 1: Merge all implicants iteratively, setting merged flags
     bool *input = &implicants[0];
     bool *merged = &merged_implicants[0];
-    for (int num_dashes = 0; num_dashes < num_bits; num_dashes++) {
+    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
         int remaining_bits = num_bits - num_dashes;
         // for each combination of num_dashes in num_bits, we need to run the algorithm once
         int iterations = binomials[num_dashes];
@@ -336,7 +336,7 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
     // Step 2: Scan for unmerged implicants
     input = &implicants[0];
     merged = &merged_implicants[0];
-    for (int num_dashes = 0; num_dashes < num_bits; num_dashes++) {
+    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
         int remaining_bits = num_bits - num_dashes;
         // for each combination of num_dashes, we need to run the algorithm once
         int iterations = binomials[num_dashes];
@@ -483,7 +483,7 @@ void test_implementations() {
             prime_implicant_implementation impl = implementations[k];
 
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
-    int num_prime_implicants = 0;
+            int num_prime_implicants = 0;
             implicant result = impl.implementation(test.num_bits, test.num_trues, test.trues, test.num_dont_cares,
                                                    test.dont_cares, &num_prime_implicants);
             if (num_prime_implicants != test.num_prime_implicants) {
