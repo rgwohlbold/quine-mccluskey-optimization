@@ -15,6 +15,9 @@ void fprint_implicant(FILE *__restrict__ __stream, implicant arr, int num_bits) 
             case TV_DASH:
                 fprintf(__stream, "-");
                 break;
+            default:
+                fprintf(__stream, "?");
+                break;
         }
     }
     fprintf(__stream, "\n");
