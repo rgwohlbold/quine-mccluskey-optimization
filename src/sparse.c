@@ -19,16 +19,16 @@ bool check_implicants_merge(int num_bits, implicant implicant1, implicant implic
     // check that dashes align
     // TODO: can be optimized as implicants have the same number of dashes in our case
     for (int i = 0; i < num_bits; i++) {
-        if (implicant1[i] == TV_DASH && implicant2[i] != TV_DASH ||
-            implicant1[i] != TV_DASH && implicant2[i] == TV_DASH) {
+        if ((implicant1[i] == TV_DASH && implicant2[i] != TV_DASH) ||
+            (implicant1[i] != TV_DASH && implicant2[i] == TV_DASH)) {
             return false;
         }
     }
     // check minterm difference
     int difference = 0;
     for (int i = 0; i < num_bits; i++) {
-        if (implicant1[i] == TV_TRUE && implicant2[i] == TV_FALSE ||
-            implicant1[i] == TV_FALSE && implicant2[i] == TV_TRUE) {
+        if ((implicant1[i] == TV_TRUE && implicant2[i] == TV_FALSE) ||
+            (implicant1[i] == TV_FALSE && implicant2[i] == TV_TRUE)) {
             difference++;
             *difference_index = i;
         }
@@ -36,7 +36,7 @@ bool check_implicants_merge(int num_bits, implicant implicant1, implicant implic
     return difference == 1;
 }
 
-void merge_implicants(int num_bits, implicant implicant1, implicant implicant2, implicant dest, int difference_index) {
+void merge_implicants(int num_bits, implicant implicant1, implicant dest, int difference_index) {
     for (int i = 0; i < num_bits; i++) {
         dest[i] = implicant1[i];
     }
@@ -104,7 +104,7 @@ implicant prime_implicants_sparse(int num_bits, int num_trues, int *trues, int n
                 int differerence_index = -1;
                 if (check_implicants_merge(num_bits, implicant1, implicant2, &differerence_index)) {
                     // TODO: duplicate detection
-                    merge_implicants(num_bits, implicant1, implicant2, &combined[num_bits * num_combined_implicants],
+                    merge_implicants(num_bits, implicant1, &combined[num_bits * num_combined_implicants],
                                      differerence_index);
                     num_combined_implicants++;
                     merged[i] = true;
