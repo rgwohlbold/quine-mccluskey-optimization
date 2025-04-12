@@ -26,3 +26,7 @@ CMakeUserPresets.json
 prime_implicants
 # vscode stuff
 build
+
+measurements.csv
+.gdb_history
+.vscode
