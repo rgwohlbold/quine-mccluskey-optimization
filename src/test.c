@@ -8,14 +8,6 @@
 #include "implicant.h"
 #include "sparse.h"
 
-typedef implicant (*implementation_function)(int num_bits, int num_trues, int *trues, int num_dont_cares,
-                                             int *dont_cares, int *num_prime_implicants);
-
-typedef struct {
-    const char *name;
-    implementation_function implementation;
-} prime_implicant_implementation;
-
 const prime_implicant_implementation implementations[] = {
     {"prime_implicants_dense", prime_implicants_dense},
     {"prime_implicants_sparse", prime_implicants_sparse},
@@ -134,24 +126,26 @@ void test_implementations() {
             prime_implicant_implementation impl = implementations[k];
 
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
-            int num_prime_implicants = 0;
-            implicant result = impl.implementation(test.num_bits, test.num_trues, test.trues, test.num_dont_cares,
-                                                   test.dont_cares, &num_prime_implicants);
+
+            prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues, test.num_dont_cares, test.dont_cares);
+            int num_prime_implicants = result.num_implicants;
+            implicant primes = result.primes;
+
             if (num_prime_implicants != test.num_prime_implicants) {
                 LOG_INFO("wrong number of prime implicants: expected %d but got %d", test.num_prime_implicants,
                          num_prime_implicants);
             }
             for (int p = 0; p < num_prime_implicants; p++) {
-                bool expected = check_elt_in_implicant_list(test.num_bits, &result[p * test.num_bits],
+                bool expected = check_elt_in_implicant_list(test.num_bits, &primes[p * test.num_bits],
                                                             test.prime_implicants, test.num_prime_implicants);
                 if (!expected) {
                     LOG_INFO("implementation returned implicant that was not expected by test case:");
-                    LOG_INFO_IMP(&result[p * test.num_bits], test.num_bits);
+                    LOG_INFO_IMP(&primes[p * test.num_bits], test.num_bits);
                 }
             }
             for (int p = 0; p < test.num_prime_implicants; p++) {
                 bool expected = check_elt_in_implicant_list(test.num_bits, &test.prime_implicants[p * test.num_bits],
-                                                            result, num_prime_implicants);
+                                                            primes, num_prime_implicants);
                 if (!expected) {
                     LOG_INFO("test case expected implicant that was not returned by implementation:");
                     LOG_INFO_IMP(&test.prime_implicants[p * test.num_bits], test.num_bits);
@@ -162,4 +156,32 @@ void test_implementations() {
     for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
         free_test(test_cases[i]);
     }
+}
+
+// for now, call all implementations on empty input and see performance
+void measure_implementations() {
+    const int min_bits = 4;
+    const int max_bits = 14;
+    FILE *f = fopen("measurements.csv", "w");
+    fprintf(f, "implementation,bits,cycles,ops");
+    for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
+        prime_implicant_implementation impl = implementations[k];
+
+        int trues[] = {};
+        int dont_cares[] = {};
+
+        for (int num_bits = min_bits; num_bits <= max_bits; num_bits++) {
+            LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
+            prime_implicant_result result = impl.implementation(num_bits, 0, trues, 0, dont_cares);
+            uint64_t cycles = result.cycles;
+#ifdef COUNT_OPS
+            uint64_t ops = result.num_ops;
+#else
+            uint64_t ops = 0;
+#endif
+            fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
+            free(result.primes);
+        }
+    }
+    fclose(f);
 }

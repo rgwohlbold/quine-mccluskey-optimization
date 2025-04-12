@@ -4,6 +4,9 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "tsc_x86.h"
+
+static uint64_t num_ops = 0;
 
 void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit
@@ -25,6 +28,10 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
                     int o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
                     output[o_idx] = implicants[idx1] && implicants[idx2];
                 }
+
+#ifdef COUNT_OPS
+                num_ops += i >= first_difference ? 5 : 4;
+#endif
             }
         }
     }
@@ -98,10 +105,8 @@ void put_implicant_from_iteration(int num_bits, int num_dashes, int iteration, i
     }
 }
 
-implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares,
-                                 int *num_prime_implicants) {
+prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares) {
     implicant primes = allocate_minterm_array(num_bits);
-    *num_prime_implicants = 0;
 
     int binomials[num_bits + 1];
     calculate_binomials(num_bits, binomials);
@@ -116,6 +121,9 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
     }
 
     bool *merged_implicants = allocate_boolean_array(num_implicants);  // will initialize to false
+
+    init_tsc();
+    uint64_t counter_start = start_tsc();
 
     // Step 1: Merge all implicants iteratively, setting merged flags
     bool *input = &implicants[0];
@@ -143,6 +151,9 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
         merged = &merged[iterations * input_elements];
     }
 
+    int num_prime_implicants = 0;
+    uint64_t cycles = stop_tsc(counter_start);
+
     // Step 2: Scan for unmerged implicants
     input = &implicants[0];
     merged = &merged_implicants[0];
@@ -156,8 +167,8 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
         for (int i = 0; i < iterations; i++) {
             for (int k = 0; k < input_elements; k++) {
                 if (input[i * input_elements + k] && !merged[i * input_elements + k]) {
-                    put_implicant_from_iteration(num_bits, num_dashes, i, k, &primes[*num_prime_implicants * num_bits]);
-                    (*num_prime_implicants)++;
+                    put_implicant_from_iteration(num_bits, num_dashes, i, k, &primes[num_prime_implicants * num_bits]);
+                    num_prime_implicants++;
                 }
             }
         }
@@ -166,5 +177,15 @@ implicant prime_implicants_dense(int num_bits, int num_trues, int *trues, int nu
     }
     free(implicants);
     free(merged_implicants);
-    return primes;
+
+    prime_implicant_result result = {
+        .primes = primes,
+        .num_implicants = num_prime_implicants,
+        .cycles = cycles,
+#ifdef COUNT_OPS
+        .num_ops = num_ops,
+#endif
+    };
+    num_ops = 0;
+    return result;
 }

@@ -68,17 +68,16 @@ bool check_elt_in_implicant_list(int num_bits, implicant needle, ternary_value *
  * Compute prime implicants of the specified function
  *
  * values is a pointer to an array of 2**num_bits function values.
- * TODO: specify return value
+ * TODO: implement performance counters
  */
-implicant prime_implicants_sparse(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares,
-                                  int *num_prime_implicants) {
+prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares) {
+    int num_prime_implicants = 0;
     // a minterm is an array of num_bits ternary_value
     // to have space for all minterms, we allocate 2**num_bits * num_bits * sizeof(ternary_value)
     implicant uncombined = allocate_minterm_array(num_bits);
     implicant combined = allocate_minterm_array(num_bits);
     implicant primes = allocate_minterm_array(num_bits);
     bool *merged = allocate_boolean_array(1 << num_bits);
-    *num_prime_implicants = 0;
 
     int num_uncombined_implicants = 0;
     for (int k = 0; k < num_trues; k++) {
@@ -116,20 +115,25 @@ implicant prime_implicants_sparse(int num_bits, int num_trues, int *trues, int n
         for (int i = 0; i < num_uncombined_implicants; i++) {
             if (!merged[i]) {
                 // TODO: check that the implicant is not yet contained in primes
-                if (check_elt_in_implicant_list(num_bits, &uncombined[num_bits * i], primes, *num_prime_implicants)) {
+                if (check_elt_in_implicant_list(num_bits, &uncombined[num_bits * i], primes, num_prime_implicants)) {
                     continue;
                 }
                 for (int k = 0; k < num_bits; k++) {
-                    primes[num_bits * (*num_prime_implicants) + k] = uncombined[num_bits * i + k];
+                    primes[num_bits * num_prime_implicants + k] = uncombined[num_bits * i + k];
                 }
-                (*num_prime_implicants)++;
+                num_prime_implicants++;
             }
         }
 
         if (num_combined_implicants == 0) {
             free(combined);
             free(uncombined);
-            return primes;
+            prime_implicant_result result = {
+                .primes = primes,
+                .num_implicants = num_prime_implicants,
+                .cycles = 0,
+            };
+            return result;
         }
 
         implicant tmp = uncombined;
