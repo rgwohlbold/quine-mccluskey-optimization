@@ -6,6 +6,7 @@ This project uses `cmake` as its build system.
 
 - To generate the build files, run `cmake .`.
   Optionally, add `-D LOG_LEVEL={0,1,2}` to set the log level. Bigger number is more verbose.
+  Also, add `-D SANITIZE=ON` to enable address sanitizer and disable compiler optimizations to find memory-related errors
 
 - To build the executable run `make`.
 - To run the executable, run `./prime_implicants`.
