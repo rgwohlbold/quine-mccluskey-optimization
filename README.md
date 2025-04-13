@@ -31,4 +31,3 @@ If you want, you can install the pre-commit hook, that makes sure the source cod
 ## Known bugs
 
 - Test case `all_minterms` fails for `prime_implicants_sparse`
-- Heap buffer overflow in `merge_implicants_dense`
