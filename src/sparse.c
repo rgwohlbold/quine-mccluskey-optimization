@@ -128,6 +128,7 @@ prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int 
         if (num_combined_implicants == 0) {
             free(combined);
             free(uncombined);
+            free(merged);
             prime_implicant_result result = {
                 .primes = primes,
                 .num_implicants = num_prime_implicants,
