@@ -160,10 +160,10 @@ void test_implementations() {
 
 // for now, call all implementations on empty input and see performance
 void measure_implementations() {
-    const int min_bits = 4;
-    const int max_bits = 14;
+    const int min_bits = 1;
+    const int max_bits = 19;
     FILE *f = fopen("measurements.csv", "w");
-    fprintf(f, "implementation,bits,cycles,ops");
+    fprintf(f, "implementation,bits,cycles,ops\n");
     for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
         prime_implicant_implementation impl = implementations[k];
 
