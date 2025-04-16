@@ -1,10 +1,11 @@
 import pandas as pd
 
-df = pd.read_csv("measurements.csv")
-df = df[df['implementation'] == 'prime_implicants_dense']
+df = pd.read_csv("measurements_merge.csv")
+df = df[df['implementation'] == 'merge_implicants_dense']
 df = df.groupby(['implementation', 'bits']).median().reset_index()
-df['performance'] = df['ops'] / df['cycles']
-print(df)
+df['size'] = 2**df['bits']
+df['performance'] = df['size'] / df['cycles']
+#df['performance'] = df['ops'] / df['cycles']
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -14,7 +15,7 @@ sns.lineplot(data=df, x='bits', y='performance', marker='o')
 
 plt.xlabel('n')
 plt.ylabel('Performance [ops/cycle]')
-plt.title('Performance of prime_implicants_dense for different n')
+plt.title('Performance of merge_implicants_dense for different n')
 plt.grid(True)
 plt.autoscale(enable=True, axis='y', tight=False)
 plt.ylim(bottom=0)

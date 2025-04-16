@@ -15,6 +15,8 @@ typedef enum {
     TV_DASH,
 } ternary_value;
 
+#define COUNT_OPS 1
+
 typedef ternary_value *implicant;
 
 typedef struct {
