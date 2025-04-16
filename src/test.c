@@ -1,12 +1,15 @@
 #include "test.h"
 
 #include <stdbool.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "debug.h"
 #include "dense.h"
 #include "implicant.h"
 #include "sparse.h"
+#include "tsc_x86.h"
+#include "util.h"
 
 const prime_implicant_implementation implementations[] = {
     {"prime_implicants_dense", prime_implicants_dense},
@@ -159,29 +162,70 @@ void test_implementations() {
 }
 
 // for now, call all implementations on empty input and see performance
-void measure_implementations() {
-    const int min_bits = 1;
-    const int max_bits = 19;
-    FILE *f = fopen("measurements.csv", "w");
-    fprintf(f, "implementation,bits,cycles,ops\n");
+void measure_implementations(const char *implementation_name, int num_bits) {
+    prime_implicant_implementation impl;
+    bool implementation_found = false;
     for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
-        prime_implicant_implementation impl = implementations[k];
-
-        int trues[] = {};
-        int dont_cares[] = {};
-
-        for (int num_bits = min_bits; num_bits <= max_bits; num_bits++) {
-            LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
-            prime_implicant_result result = impl.implementation(num_bits, 0, trues, 0, dont_cares);
-            uint64_t cycles = result.cycles;
-#ifdef COUNT_OPS
-            uint64_t ops = result.num_ops;
-#else
-            uint64_t ops = 0;
-#endif
-            fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
-            free(result.primes);
+        impl = implementations[k];
+        if (strcmp(impl.name, implementation_name) == 0) {
+            implementation_found = true;
+            break;
         }
     }
+    if (!implementation_found) {
+        LOG_INFO("could not find implementation %s", implementation_name);
+        return;
+    }
+
+    int trues[] = {};
+    int dont_cares[] = {};
+
+    // warmup iteration
+    impl.implementation(num_bits, 0, trues, 0, dont_cares);
+
+    LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
+    prime_implicant_result result = impl.implementation(num_bits, 0, trues, 0, dont_cares);
+    uint64_t cycles = result.cycles;
+#ifdef COUNT_OPS
+    uint64_t ops = result.num_ops;
+#else
+    uint64_t ops = 0;
+#endif
+    FILE *f = fopen("measurements.csv", "a");
+    fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
     fclose(f);
+
+    free(result.primes);
+}
+
+void measure_merge(int num_bits) {
+    LOG_INFO("measuring merge_implicants_dense bits=%d", num_bits);
+
+    int input_elements = 1 << num_bits;
+    int output_elements = num_bits << (num_bits-1);
+    const int warmup_iterations = 100;
+    // TODO: check whether calloc() or malloc() makes a difference
+    bool *input_warmup = allocate_boolean_array(input_elements);
+    bool *merged_warmup = allocate_boolean_array(input_elements);
+    bool *output_warmup = allocate_boolean_array(output_elements);
+
+    for (int i = 0; i < warmup_iterations; i++) {
+        // use first difference 0 for now
+        merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
+    }
+
+    bool *input = allocate_boolean_array(input_elements);
+    bool *merged = allocate_boolean_array(input_elements);
+    bool *output = allocate_boolean_array(output_elements);
+
+    init_tsc();
+    uint64_t counter = start_tsc();
+    merge_implicants_dense(input, output, merged, num_bits, 0);
+    uint64_t cycles = stop_tsc(counter);
+
+    uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
+    FILE *f = fopen("measurements_merge.csv", "a");
+    fprintf(f, "%s,%d,%lu,%lu\n", "merge_implicants_dense", num_bits, cycles, num_ops);
+    fclose(f);
+
 }
