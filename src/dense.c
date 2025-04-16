@@ -8,6 +8,7 @@
 
 void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit
+    int o_idx = 0;
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
@@ -15,16 +16,23 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
             for (int k = 0; k < block_len; k++) {
                 int idx1 = 2 * block * block_len + k;
                 int idx2 = 2 * block * block_len + block_len + k;
+                bool impl1 = implicants[idx1];
+                bool impl2 = implicants[idx2];
+                bool merged1 = merged[idx1];
+                bool merged2 = merged[idx2];
+                bool res = impl1 && impl2;
+                bool merged1_ = merged1 || res;
+                bool merged2_ = merged2 || res;
 
-                merged[idx1] = merged[idx1] || (implicants[idx1] && implicants[idx2]);
-                merged[idx2] = merged[idx2] || (implicants[idx1] && implicants[idx2]);
+                merged[idx1] = merged1_;
+                merged[idx2] = merged2_;
 
                 // we don't want implicants in the output for which i < first_difference.
                 // however, we still need to set the merged flag as we otherwise might
                 // implicants prime that are implicitly considered in other calls.
                 if (i >= first_difference) {
-                    int o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
-                    output[o_idx] = implicants[idx1] && implicants[idx2];
+                    // o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
+                    output[o_idx++] = res;
                 }
             }
         }
