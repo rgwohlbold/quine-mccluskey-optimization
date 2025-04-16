@@ -6,8 +6,6 @@
 #include "util.h"
 #include "tsc_x86.h"
 
-static uint64_t num_ops = 0;
-
 void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit
     for (int i = 0; i < num_bits; i++) {
@@ -28,10 +26,6 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
                     int o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
                     output[o_idx] = implicants[idx1] && implicants[idx2];
                 }
-
-#ifdef COUNT_OPS
-                num_ops += i >= first_difference ? 5 : 4;
-#endif
             }
         }
     }
@@ -122,6 +116,7 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
 
     bool *merged_implicants = allocate_boolean_array(num_implicants);  // will initialize to false
 
+    uint64_t num_ops = 0;
     init_tsc();
     uint64_t counter_start = start_tsc();
 
@@ -147,6 +142,9 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
             input = &input[input_elements];
             merged = &merged[input_elements];
         }
+#ifdef COUNT_OPS
+        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
+#endif
     }
 
     int num_prime_implicants = 0;
@@ -184,6 +182,5 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
         .num_ops = num_ops,
 #endif
     };
-    num_ops = 0;
     return result;
 }
