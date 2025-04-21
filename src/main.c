@@ -14,6 +14,10 @@ void print_measure_usage(char *argv[]) {
 int parse_int(const char *s) {
     int x = 0;
     int res = sscanf(s, "%d", &x);
+    if (!res) {
+        LOG_INFO("could not parse integer \"%s\"", s);
+        exit(EXIT_FAILURE);
+    }
     return x;
 }
 
