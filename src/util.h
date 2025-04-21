@@ -6,3 +6,4 @@
 
 implicant allocate_minterm_array(int num_bits);
 bool *allocate_boolean_array(int num_elements);
+void flush_cache(bool *array, int num_elements);

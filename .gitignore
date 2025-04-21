@@ -30,3 +30,5 @@ build
 measurements.csv
 .gdb_history
 .vscode
+*.csv
+*.png
