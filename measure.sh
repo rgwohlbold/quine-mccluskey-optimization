@@ -14,4 +14,4 @@ for k in $(seq 1 "$num_measurements"); do
         ./prime_implicants measure "$implementation" "$i"
     done
 done
-python performance_plot.py
+python plot.py

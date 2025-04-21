@@ -14,4 +14,4 @@ for k in $(seq 1 "$num_measurements"); do
         ./prime_implicants measure_merge "$i"
     done
 done
-python performance_plot_merge.py
+python plot_merge.py
