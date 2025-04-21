@@ -73,11 +73,12 @@ bool check_elt_in_implicant_list(int num_bits, implicant needle, ternary_value *
 prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares) {
     int num_prime_implicants = 0;
     // a minterm is an array of num_bits ternary_value
-    // to have space for all minterms, we allocate 2**num_bits * num_bits * sizeof(ternary_value)
-    implicant uncombined = allocate_minterm_array(num_bits);
-    implicant combined = allocate_minterm_array(num_bits);
-    implicant primes = allocate_minterm_array(num_bits);
-    bool *merged = allocate_boolean_array(1 << num_bits);
+    // to have space for all minterms, we allocate 3**num_bits * num_bits * sizeof(ternary_value)
+    int num_implicants = calculate_num_implicants(num_bits);
+    implicant uncombined = allocate_minterm_array(num_bits, num_implicants);
+    implicant combined = allocate_minterm_array(num_bits, num_implicants);
+    implicant primes = allocate_minterm_array(num_bits, num_trues+num_dont_cares);
+    bool *merged = allocate_boolean_array(num_implicants);
 
     int num_uncombined_implicants = 0;
     for (int k = 0; k < num_trues; k++) {
@@ -102,19 +103,25 @@ prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int 
                 implicant implicant2 = &uncombined[num_bits * k];
                 int differerence_index = -1;
                 if (check_implicants_merge(num_bits, implicant1, implicant2, &differerence_index)) {
-                    // TODO: duplicate detection
+                    merged[i] = true;
+                    merged[k] = true;
+
+                    ternary_value previous_value1 = implicant1[differerence_index];
+                    implicant1[differerence_index] = TV_DASH;
+                    bool in_list = check_elt_in_implicant_list(num_bits, implicant1, combined, num_combined_implicants);
+                    implicant1[differerence_index] = previous_value1;
+                    if (in_list) {
+                        continue;
+                    }
                     merge_implicants(num_bits, implicant1, &combined[num_bits * num_combined_implicants],
                                      differerence_index);
                     num_combined_implicants++;
-                    merged[i] = true;
-                    merged[k] = true;
                 }
             }
         }
 
         for (int i = 0; i < num_uncombined_implicants; i++) {
             if (!merged[i]) {
-                // TODO: check that the implicant is not yet contained in primes
                 if (check_elt_in_implicant_list(num_bits, &uncombined[num_bits * i], primes, num_prime_implicants)) {
                     continue;
                 }

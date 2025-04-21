@@ -28,8 +28,9 @@ If you want, you can install the pre-commit hook, that makes sure the source cod
    chmod +x .git/hooks/pre-commit
    ```
 
-## Known bugs
+## Known problems
 
-- Test case `all_minterms` fails for `prime_implicants_sparse`
 - Investigate why performance plot looks the way it looks
   - since we call `free()` on implicants and measure again, further measurements may partly be warm-cache
+  - probably our computation is memory-bound?
+- investigate better duplicate detection for sparse implementation

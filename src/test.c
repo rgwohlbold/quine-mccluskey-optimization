@@ -154,6 +154,7 @@ void test_implementations() {
                     LOG_INFO_IMP(&test.prime_implicants[p * test.num_bits], test.num_bits);
                 }
             }
+            free(primes);
         }
     }
     for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {

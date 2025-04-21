@@ -3,8 +3,17 @@
 #include <stdlib.h>
 #include <immintrin.h>
 
-implicant allocate_minterm_array(int num_bits) {
-    implicant minterms = (ternary_value *)calloc((1 << num_bits) * num_bits, sizeof(ternary_value));
+// calculate 3**num_bits
+int calculate_num_implicants(int num_bits) {
+    int num_implicants = 1;
+    for (int i = 0; i < num_bits; i++) {
+        num_implicants *= 3;
+    }
+    return num_implicants;
+}
+
+implicant allocate_minterm_array(int num_bits, int num_minterms) {
+    implicant minterms = (ternary_value *)calloc(num_minterms * num_bits, sizeof(ternary_value));
     if (minterms == NULL) {
         perror("could not allocate minterms array");
         exit(EXIT_FAILURE);
