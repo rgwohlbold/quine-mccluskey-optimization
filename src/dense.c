@@ -13,9 +13,9 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block++) {
+            int idx1 = 2 * block * block_len;
+            int idx2 = 2 * block * block_len + block_len;
             for (int k = 0; k < block_len; k++) {
-                int idx1 = 2 * block * block_len + k;
-                int idx2 = 2 * block * block_len + block_len + k;
                 bool impl1 = implicants[idx1];
                 bool impl2 = implicants[idx2];
                 bool merged1 = merged[idx1];
@@ -34,6 +34,8 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
                     // o_idx = ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
                     output[o_idx++] = res;
                 }
+                idx1++;
+                idx2++;
             }
         }
     }

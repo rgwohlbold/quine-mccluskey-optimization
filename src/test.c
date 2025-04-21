@@ -203,20 +203,23 @@ void measure_merge(int num_bits) {
 
     int input_elements = 1 << num_bits;
     int output_elements = num_bits << (num_bits-1);
-    const int warmup_iterations = 100;
-    // TODO: check whether calloc() or malloc() makes a difference
+    const int warmup_iterations = 10;
     bool *input_warmup = allocate_boolean_array(input_elements);
     bool *merged_warmup = allocate_boolean_array(input_elements);
     bool *output_warmup = allocate_boolean_array(output_elements);
 
     for (int i = 0; i < warmup_iterations; i++) {
         // use first difference 0 for now
-        merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
+      merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
     }
 
     bool *input = allocate_boolean_array(input_elements);
     bool *merged = allocate_boolean_array(input_elements);
     bool *output = allocate_boolean_array(output_elements);
+    // TODO: check if this makes a difference
+    flush_cache(input, input_elements);
+    flush_cache(merged, input_elements);
+    flush_cache(output, output_elements);
 
     init_tsc();
     uint64_t counter = start_tsc();
