@@ -137,11 +137,20 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
 
         // since we don't want any duplicates, make subsequent calls start at higher and higher bits
         // we need to adjust the number of output tables for this
+
+        int first_difference = 0;
+        int min_first_difference = 0;
         for (int i = 0; i < iterations; i++) {
-            merge_implicants_dense(input, output, merged, remaining_bits, i);
-            output = &output[(remaining_bits - i) * output_elements];
+            merge_implicants_dense(input, output, merged, remaining_bits, first_difference);
+            output = &output[(remaining_bits - first_difference) * output_elements];
             input = &input[input_elements];
             merged = &merged[input_elements];
+            if (first_difference == remaining_bits) {
+                min_first_difference++;
+                first_difference = min_first_difference;
+            } else {
+                first_difference++;
+            }
         }
 #ifdef COUNT_OPS
         num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
