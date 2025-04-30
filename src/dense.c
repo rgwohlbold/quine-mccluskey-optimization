@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "tsc_x86.h"
+        #include "tsc_x86.h"
 
 void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit
@@ -100,9 +100,9 @@ void put_implicant_from_iteration(int num_bits, int num_dashes, int iteration, i
     }
 }
 
-prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares) {
+prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *trues) {
     int num_implicants = calculate_num_implicants(num_bits);
-    implicant primes = allocate_minterm_array(num_bits, num_trues + num_dont_cares);
+    implicant primes = allocate_minterm_array(num_bits, num_trues);
 
     int binomials[num_bits + 1];
     calculate_binomials(num_bits, binomials);
@@ -110,9 +110,6 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
     bool *implicants = allocate_boolean_array(num_implicants);
     for (int i = 0; i < num_trues; i++) {
         implicants[trues[i]] = true;
-    }
-    for (int i = 0; i < num_dont_cares; i++) {
-        implicants[dont_cares[i]] = true;
     }
 
     bool *merged_implicants = allocate_boolean_array(num_implicants);  // will initialize to false

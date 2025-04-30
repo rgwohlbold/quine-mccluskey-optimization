@@ -4,12 +4,6 @@
 #include <stdint.h>
 
 typedef enum {
-    FV_FALSE,
-    FV_TRUE,
-    FV_DONT_CARE,
-} function_value;
-
-typedef enum {
     TV_FALSE,
     TV_TRUE,
     TV_DASH,
@@ -28,7 +22,7 @@ typedef struct {
 #endif
 } prime_implicant_result;
 
-typedef prime_implicant_result (*implementation_function)(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares);
+typedef prime_implicant_result (*implementation_function)(int num_bits, int num_trues, int *trues);
 
 typedef struct {
     const char *name;
