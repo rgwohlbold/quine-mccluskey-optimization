@@ -1,12 +1,6 @@
 #pragma once
 
 typedef enum {
-    FV_FALSE,
-    FV_TRUE,
-    FV_DONT_CARE,
-} function_value;
-
-typedef enum {
     TV_FALSE,
     TV_TRUE,
     TV_DASH,

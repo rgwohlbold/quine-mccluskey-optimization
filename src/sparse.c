@@ -70,24 +70,19 @@ bool check_elt_in_implicant_list(int num_bits, implicant needle, ternary_value *
  * values is a pointer to an array of 2**num_bits function values.
  * TODO: implement performance counters
  */
-prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int *trues, int num_dont_cares, int *dont_cares) {
+prime_implicant_result prime_implicants_sparse(int num_bits, int num_trues, int *trues) {
     int num_prime_implicants = 0;
     // a minterm is an array of num_bits ternary_value
     // to have space for all minterms, we allocate 3**num_bits * num_bits * sizeof(ternary_value)
     int num_implicants = calculate_num_implicants(num_bits);
     implicant uncombined = allocate_minterm_array(num_bits, num_implicants);
     implicant combined = allocate_minterm_array(num_bits, num_implicants);
-    implicant primes = allocate_minterm_array(num_bits, num_trues+num_dont_cares);
+    implicant primes = allocate_minterm_array(num_bits, num_trues);
     bool *merged = allocate_boolean_array(num_implicants);
 
     int num_uncombined_implicants = 0;
     for (int k = 0; k < num_trues; k++) {
         minterm_number_to_implicant(num_bits, trues[k], &uncombined[num_bits * num_uncombined_implicants]);
-        num_uncombined_implicants++;
-    }
-    // TODO: check what exactly to do with don't cares here
-    for (int k = 0; k < num_dont_cares; k++) {
-        minterm_number_to_implicant(num_bits, dont_cares[k], &uncombined[num_bits * num_uncombined_implicants]);
         num_uncombined_implicants++;
     }
 
