@@ -148,7 +148,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     int trues[] = {};
 
     // warmup iteration
-    impl.implementation(num_bits, 0, trues);
+    prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
@@ -162,6 +162,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
     fclose(f);
 
+    // free warmup result after measuring to prevent reuse of allocation leading to warm cache
+    bitmap_free(result_warmup.primes);
     bitmap_free(result.primes);
 }
 
