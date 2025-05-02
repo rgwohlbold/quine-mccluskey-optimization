@@ -34,6 +34,7 @@ void flush_cache(bool *array, int num_elements) {
     #ifdef __x86_64__
     for (; ptr < end; ptr += block_size) {
         _mm_clflush(ptr);
+    }
     #endif
     #ifdef __aarch64__
         // For each 64‐byte line in [p, end):
