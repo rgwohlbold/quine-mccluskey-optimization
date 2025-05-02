@@ -7,13 +7,11 @@
 #include "debug.h"
 #include "dense.h"
 #include "implicant.h"
-#include "sparse.h"
 #include "tsc_x86.h"
 #include "util.h"
 
 const prime_implicant_implementation implementations[] = {
     {"prime_implicants_dense", prime_implicants_dense},
-    {"prime_implicants_sparse", prime_implicants_sparse},
 };
 
 typedef struct {
@@ -22,38 +20,23 @@ typedef struct {
     int num_trues;
     int *trues;  // malloc'd
     int num_prime_implicants;
-    implicant prime_implicants;  // malloc'd
+    bitmap prime_implicants;
 } test_case;
 
-void parse_implicant(const char *s, implicant impl) {
-    while (*s) {
-        if (*s == '0') {
-            *impl = TV_FALSE;
-        } else if (*s == '1') {
-            *impl = TV_TRUE;
-        } else if (*s == '-') {
-            *impl = TV_DASH;
-        } else {
-            fprintf(stderr, "could not parse implicant %s\n", s);
-            exit(EXIT_FAILURE);
-        }
-        s++;
-        impl++;
-    }
-}
-
 test_case make_test(const char *name, int num_bits, int num_trues, int *trues, int num_prime_implicants, char **prime_implicants) {
+    int num_implicants = calculate_num_implicants(num_bits);
     int *new_trues = calloc(num_trues, sizeof(int));
-    implicant new_prime_implicants = calloc(num_bits * num_prime_implicants, sizeof(ternary_value));
-    if (new_trues == NULL || new_prime_implicants == NULL) {
+    if (new_trues == NULL) {
         perror("could not allocate test case array");
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < num_trues; i++) {
         new_trues[i] = trues[i];
     }
+    bitmap new_prime_implicants = bitmap_allocate(num_implicants);
     for (int i = 0; i < num_prime_implicants; i++) {
-        parse_implicant(prime_implicants[i], &new_prime_implicants[i * num_bits]);
+        int bitset_index = bitmap_implicant_to_index(num_bits, prime_implicants[i]);
+        BITMAP_SET_TRUE(new_prime_implicants, bitset_index);
     }
     test_case result = {name,
                         num_bits,
@@ -66,7 +49,7 @@ test_case make_test(const char *name, int num_bits, int num_trues, int *trues, i
 
 void free_test(test_case test) {
     free(test.trues);
-    free(test.prime_implicants);
+    bitmap_free(test.prime_implicants);
 }
 
 #define MAKE_TEST(name, num_bits, trues_arr, prime_implicants_arr)         \
@@ -119,34 +102,26 @@ void test_implementations() {
         test_case test = test_cases[i];
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
-
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
             prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
-            int num_prime_implicants = result.num_implicants;
-            implicant primes = result.primes;
-
-            if (num_prime_implicants != test.num_prime_implicants) {
-                LOG_INFO("wrong number of prime implicants: expected %d but got %d", test.num_prime_implicants,
-                         num_prime_implicants);
-            }
-            for (int p = 0; p < num_prime_implicants; p++) {
-                bool expected = check_elt_in_implicant_list(test.num_bits, &primes[p * test.num_bits],
-                                                            test.prime_implicants, test.num_prime_implicants);
-                if (!expected) {
-                    LOG_INFO("implementation returned implicant that was not expected by test case:");
-                    LOG_INFO_IMP(&primes[p * test.num_bits], test.num_bits);
+            if (!bitmap_cmp(result.primes, test.prime_implicants)) {
+                for (int i = 0; i < result.primes.num_bits; i++) {
+                    if (BITMAP_CHECK(result.primes, i) && !BITMAP_CHECK(test.prime_implicants, i)) {
+                        char s[test.num_bits+1];
+                        s[test.num_bits] = '\0';
+                        bitmap_index_to_implicant(test.num_bits, i, s);
+                        LOG_INFO("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                    }
+                    if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
+                        char s[test.num_bits+1];
+                        s[test.num_bits] = '\0';
+                        bitmap_index_to_implicant(test.num_bits, i, s);
+                        LOG_INFO("test case expected implicant %s (bitmap index %d) which was not returned by implementation", s, i);
+                    }
                 }
             }
-            for (int p = 0; p < test.num_prime_implicants; p++) {
-                bool expected = check_elt_in_implicant_list(test.num_bits, &test.prime_implicants[p * test.num_bits],
-                                                            primes, num_prime_implicants);
-                if (!expected) {
-                    LOG_INFO("test case expected implicant that was not returned by implementation:");
-                    LOG_INFO_IMP(&test.prime_implicants[p * test.num_bits], test.num_bits);
-                }
-            }
-            free(primes);
+            bitmap_free(result.primes);
         }
     }
     for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
@@ -187,7 +162,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
     fclose(f);
 
-    free(result.primes);
+    bitmap_free(result.primes);
 }
 
 void measure_merge(int num_bits) {

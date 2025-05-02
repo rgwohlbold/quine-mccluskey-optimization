@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "bitmap.h"
 #include "debug.h"
 #include "test.h"
 
@@ -23,6 +24,7 @@ int parse_int(const char *s) {
 
 int main(int argc, char *argv[]) { 
     if (argc <= 1 || strcmp(argv[1], "test") == 0) {
+        bitmap_test();
         test_implementations();
     } else if (strcmp(argv[1], "measure") == 0) {
         if (argc <= 3) {
