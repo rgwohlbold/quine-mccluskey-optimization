@@ -4,7 +4,12 @@
 #include <stdlib.h>
 
 #include "util.h"
-        #include "tsc_x86.h"
+#ifdef __x86_64__
+#include "tsc_x86.h"
+#endif
+#ifdef __aarch64__
+#include "vct_arm.h"
+#endif
 
 void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit

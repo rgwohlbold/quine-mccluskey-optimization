@@ -2,7 +2,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#ifdef __x86_64__
 #include <immintrin.h>
+#endif
+
 
 // calculate 3**num_bits
 int calculate_num_implicants(int num_bits) {
@@ -28,10 +31,25 @@ void flush_cache(bool *array, int num_elements) {
     // align pointer to 64 bytes
     uint8_t *ptr = (uint8_t *) (((unsigned long)array) & ~(block_size - 1));
     uint8_t *end = (uint8_t *) &array[num_elements];
+    #ifdef __x86_64__
     for (; ptr < end; ptr += block_size) {
         _mm_clflush(ptr);
+    #endif
+    #ifdef __aarch64__
+        // For each 64‐byte line in [p, end):
+    for (; ptr < end; ptr += block_size) {
+        // Clean & Invalidate to Point of Coherency
+        __asm__ volatile("dc civac, %0" :: "r"(ptr) : "memory");
     }
+    // Ensure the DC instructions have completed
+    __asm__ volatile("dsb ish" ::: "memory");
+    // Synchronize the instruction stream (not strictly needed for data caches,
+    // but often recommended after cache maintenance)
+    __asm__ volatile("isb" ::: "memory");
+    #endif
+    
 }
+
 
 /* Generated using the following Python code:
 for n in range(20):
