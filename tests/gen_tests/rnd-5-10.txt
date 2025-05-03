@@ -1,0 +1,12 @@
+rnd-5-10pct-s10433.qmc
+# 5 bits
+5 3 3
+# Minterms
+9
+22
+31
+# Primes
+01001
+10110
+11111
+# minterms: 3/32, primes: 3
