@@ -10,22 +10,28 @@ LOG_LEVEL 2: Debug log
 */
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL 1
+#define LOG_LEVEL 2
 #endif
 // #define LOG_NOCOLOR
 
-#define LOG_LEVEL_DEBUG 2
-#define LOG_LEVEL_INFO 1
+#define LOG_LEVEL_DEBUG 3
+#define LOG_LEVEL_INFO 2
+#define LOG_LEVEL_WARN 1
 
 #define _LL_INFO (LOG_LEVEL >= LOG_LEVEL_INFO)
 #define _LL_DEBUG (LOG_LEVEL >= LOG_LEVEL_DEBUG)
+#define _LL_WARN (LOG_LEVEL >= LOG_LEVEL_WARN)
 
 #ifdef LOG_NOCOLOR
 #define __DEBUG_PREFIX "[DEBUG]"
 #define __INFO_PREFIX "[INFO ]"
+#define __WARN_PREFIX "[WARN ]"
+#define __ERROR_PREFIX "[ERROR]"
 #else
 #define __DEBUG_PREFIX "[\033[32mDEBUG\033[39m]"
 #define __INFO_PREFIX "[\033[36mINFO\033[39m ]"
+#define __WARN_PREFIX "[\033[33mWARN\033[39m]"
+#define __ERROR_PREFIX "[\033[31mERROR\033[39m]"
 #endif
 
 int _log_fmt(const char *prefix, const char *file, int line, const char *format, ...);
@@ -35,3 +41,6 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
     (void)(_LL_INFO && _log_fmt(__INFO_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
 #define LOG_DEBUG(format, ...) \
     (void)(_LL_DEBUG && _log_fmt(__DEBUG_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
+#define LOG_WARN(format, ...) \
+    (void)(_LL_WARN && _log_fmt(__WARN_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
+#define LOG_ERROR(format, ...) (void)(_log_fmt(__ERROR_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
