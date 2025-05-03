@@ -46,6 +46,24 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
     }
 }
 
+int leading_stars(int num_bits, int num_dashes, int chunk_index) {
+    int dashes_passed = 0;
+    for (int i = 0; i < num_bits; i++) {
+        int dashes_remaining = num_dashes - dashes_passed;
+        if (dashes_remaining == 0) {
+            return num_bits - i;
+        } else {
+            int possibilities_if_dash_is_set = binomial_coefficient(num_bits-i-1, dashes_remaining-1);
+            if (chunk_index < possibilities_if_dash_is_set) {
+                dashes_passed++;
+            } else {
+                chunk_index -= possibilities_if_dash_is_set;
+            }
+        }
+    }
+    return 0;
+}
+
 prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *trues) {
     int num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
@@ -78,19 +96,12 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
         // since we don't want any duplicates, make subsequent calls start at higher and higher bits
         // we need to adjust the number of output tables for this
 
-        int first_difference = 0;
-        int min_first_difference = 0;
         for (int i = 0; i < iterations; i++) {
+            int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
             merge_implicants_dense(input, output, merged, remaining_bits, first_difference);
             output = &output[(remaining_bits - first_difference) * output_elements];
             input = &input[input_elements];
             merged = &merged[input_elements];
-            if (first_difference == remaining_bits) {
-                min_first_difference++;
-                first_difference = min_first_difference;
-            } else {
-                first_difference++;
-            }
         }
 #ifdef COUNT_OPS
         num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
