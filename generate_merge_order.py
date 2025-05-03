@@ -39,6 +39,13 @@ def chunk_merge_star_number(input_pattern: str, output_pattern: str):
         return None
     return Counter(input_pattern[difference_index+1:])['*']
 
+def calculate_first_difference(pattern: str):
+    num_stars = Counter(pattern)['*']
+    num_leading_stars = pattern.find('-')
+    if num_leading_stars == -1:
+        num_leading_stars = num_stars
+    return num_stars - num_leading_stars
+
 def merge_linear(num_bits: int):
     chunks = [
         (''.join(chunk), implicant_pattern_to_index(''.join(chunk)))
@@ -58,11 +65,15 @@ def merge_linear(num_bits: int):
             difference_indices.append(difference_index)
         else:
             # we can merge input_chunk into [output_chunk_left, output_chunk_right)
-            if output_chunk_left != output_chunk_right:
+            #if output_chunk_left != output_chunk_right:
+            if len(difference_indices) > 0:
                 first_difference = min(difference_indices)
-                num_stars = Counter(input_pattern)['*']
-                assert difference_indices == list(range(first_difference, num_stars))
-                print(chunks[input_chunk], chunks[output_chunk_left], chunks[output_chunk_right-1], first_difference)
+            else:
+                first_difference = Counter(input_pattern)['*']
+            num_stars = Counter(input_pattern)['*']
+            print(chunks[input_chunk], chunks[output_chunk_left], chunks[output_chunk_right-1], first_difference)
+            assert difference_indices == list(range(first_difference, num_stars))
+            assert first_difference == calculate_first_difference(input_pattern)
 
             output_chunk_left = output_chunk_right
             difference_indices = []
@@ -71,4 +82,4 @@ def merge_linear(num_bits: int):
             raise Exception(f"input_chunk={input_chunk} output_chunk={output_chunk_right}")
 
 if __name__ == '__main__':
-    print(merge_linear(8))
+    merge_linear(8)
