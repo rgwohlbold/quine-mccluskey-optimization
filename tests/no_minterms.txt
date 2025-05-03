@@ -1,0 +1,5 @@
+no minterms
+# num_bits num_trues num_prime
+10 0 0
+# trues
+# primes
