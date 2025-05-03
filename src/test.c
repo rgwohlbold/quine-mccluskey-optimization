@@ -20,7 +20,7 @@ const prime_implicant_implementation implementations[] = {
 };
 
 typedef struct {
-    const char *name;  // static storage
+    char *name;  // malloc'd
     int num_bits;
     int num_trues;
     int *trues;  // malloc'd
@@ -56,24 +56,9 @@ test_case make_test(const char *name, int num_bits, int num_trues, int *trues, i
 }
 
 void free_test(test_case test) {
+    free(test.name);
     free(test.trues);
     bitmap_free(test.prime_implicants);
-}
-
-#define MAKE_TEST(name, num_bits, trues_arr, prime_implicants_arr)                         \
-    make_test((name), (num_bits), sizeof(trues_arr) / sizeof((trues_arr)[0]), (trues_arr), \
-              sizeof(prime_implicants_arr) / sizeof((prime_implicants_arr)[0]), (prime_implicants_arr));
-
-test_case wikipedia_test() {
-    int trues[] = {4, 8, 9, 10, 11, 12, 14, 15};
-    char *prime_implicants[] = {"-100", "10--", "1--0", "1-1-"};
-    return MAKE_TEST("wikipedia example", 4, trues, prime_implicants);
-}
-
-test_case wikipedia_test_2() {
-    int trues[] = {4, 8, 10, 11, 12, 15};
-    char *prime_implicants[] = {"10-0", "1-00", "101-", "1-11", "-100"};
-    return MAKE_TEST("wikipedia example, no don't cares", 4, trues, prime_implicants);
 }
 
 char *fgets_comments(char *str, int num, FILE *stream) {
@@ -161,7 +146,7 @@ void from_testfile(const char *filename, test_case *dest) {
 }
 
 void test_implementations(char **testfiles, int num_testfiles) {
-    test_case *test_cases = malloc(num_testfiles * sizeof(test_case));
+    test_case test_cases[num_testfiles];
     for (int i = 0; i < num_testfiles; i++) {
         from_testfile(testfiles[i], &test_cases[i]);
     }
