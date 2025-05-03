@@ -35,7 +35,7 @@ test_case make_test(const char *name, int num_bits, int num_trues, int *trues, i
         perror("could not allocate name");
         exit(EXIT_FAILURE);
     }
-    strncpy(name_copy, name, strlen(name));
+    strncpy(name_copy, name, strlen(name) + 1);
     name_copy[strlen(name)] = '\0';  // null terminate
     int num_implicants = calculate_num_implicants(num_bits);
     int *new_trues = calloc(num_trues, sizeof(int));
@@ -121,7 +121,7 @@ void from_testfile(const char *filename, test_case *dest) {
         perror("could not allocate name");
         exit(EXIT_FAILURE);
     }
-    strncpy(name, line, strlen(line));
+    strncpy(name, line, strlen(line) + 1);
     LOG_DEBUG("name=%s", name);
     if (fgets_comments(line, sizeof(line), f) == NULL) {
         perror("could not read test file");
@@ -194,7 +194,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
             bitmap_free(result.primes);
         }
     }
-    for (unsigned long i = 0; i < num_testfiles; i++) {
+    for (int i = 0; i < num_testfiles; i++) {
         free_test(test_cases[i]);
     }
 }
