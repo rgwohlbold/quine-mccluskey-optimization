@@ -1,0 +1,17 @@
+wikipedia example
+# num_bits num_trues num_prime
+4 8 4
+# trues
+4
+8
+9
+10
+11
+12
+14
+15
+# primes
+-100
+10--
+1--0
+1-1-

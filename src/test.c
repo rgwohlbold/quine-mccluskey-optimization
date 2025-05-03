@@ -1,8 +1,8 @@
 #include "test.h"
 
 #include <stdbool.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 #include "dense.h"
@@ -28,7 +28,15 @@ typedef struct {
     bitmap prime_implicants;
 } test_case;
 
-test_case make_test(const char *name, int num_bits, int num_trues, int *trues, int num_prime_implicants, char **prime_implicants) {
+test_case make_test(const char *name, int num_bits, int num_trues, int *trues, int num_prime_implicants,
+                    char **prime_implicants) {
+    char *name_copy = malloc(strlen(name) + 1);
+    if (name_copy == NULL) {
+        perror("could not allocate name");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(name_copy, name, strlen(name));
+    name_copy[strlen(name)] = '\0';  // null terminate
     int num_implicants = calculate_num_implicants(num_bits);
     int *new_trues = calloc(num_trues, sizeof(int));
     if (new_trues == NULL) {
@@ -43,12 +51,7 @@ test_case make_test(const char *name, int num_bits, int num_trues, int *trues, i
         int bitset_index = bitmap_implicant_to_index(num_bits, prime_implicants[i]);
         BITMAP_SET_TRUE(new_prime_implicants, bitset_index);
     }
-    test_case result = {name,
-                        num_bits,
-                        num_trues,
-                        new_trues,
-                        num_prime_implicants,
-                        new_prime_implicants};
+    test_case result = {name_copy, num_bits, num_trues, new_trues, num_prime_implicants, new_prime_implicants};
     return result;
 }
 
@@ -57,7 +60,7 @@ void free_test(test_case test) {
     bitmap_free(test.prime_implicants);
 }
 
-#define MAKE_TEST(name, num_bits, trues_arr, prime_implicants_arr)         \
+#define MAKE_TEST(name, num_bits, trues_arr, prime_implicants_arr)                         \
     make_test((name), (num_bits), sizeof(trues_arr) / sizeof((trues_arr)[0]), (trues_arr), \
               sizeof(prime_implicants_arr) / sizeof((prime_implicants_arr)[0]), (prime_implicants_arr));
 
@@ -73,37 +76,96 @@ test_case wikipedia_test_2() {
     return MAKE_TEST("wikipedia example, no don't cares", 4, trues, prime_implicants);
 }
 
-test_case no_minterms() {
-    int trues[] = {};
-    char *prime_implicants[] = {};
-    return MAKE_TEST("no minterms", 10, trues, prime_implicants);
+char *fgets_comments(char *str, int num, FILE *stream) {
+    // Aux function same as fgets, but ignores the line if it starts with '#'
+    char *result = fgets(str, num, stream);
+    while (result != NULL && str[0] == '#') {
+        result = fgets(str, num, stream);
+    }
+    return result;
 }
 
-test_case all_minterms() {
-    int trues[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    char *prime_implicants[] = {"----"};
-    return MAKE_TEST("all minterms", 4, trues, prime_implicants);
+void from_testfile(const char *filename, test_case *dest) {
+    /**
+     * Format:
+     *  <name>
+     *   <num_bits> <num_trues> <num_prime_implicants>
+     *   <trues>... times num_trues
+     *   <prime_implicants>... times num_prime_implicants
+     *
+     * Comments:
+     *   <prime_implicants> is a string of '-' and '0'/'1' of length num_bits
+     *   <trues> is a number between 0 and 2^num_bits-1
+     */
+    FILE *f = fopen(filename, "r");
+    if (f == NULL) {
+        perror("could not open test file");
+        exit(EXIT_FAILURE);
+    }
+    char line[1024];
+    int num_bits = 0;
+    int num_trues = 0;
+    int num_prime_implicants = 0;
+    int *trues = NULL;
+    char **prime_implicants = NULL;
+    char *name = NULL;
+    if (fgets_comments(line, sizeof(line), f) == NULL) {
+        perror("could not read test file");
+        fclose(f);
+        exit(EXIT_FAILURE);
+    }
+
+    line[strcspn(line, "\n")] = 0;  // remove newline
+    name = malloc(strlen(line) + 1);
+    if (name == NULL) {
+        perror("could not allocate name");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(name, line, strlen(line));
+    LOG_DEBUG("name=%s", name);
+    if (fgets_comments(line, sizeof(line), f) == NULL) {
+        perror("could not read test file");
+        fclose(f);
+        free(name);
+        exit(EXIT_FAILURE);
+    }
+    sscanf(line, "%d %d %d", &num_bits, &num_trues, &num_prime_implicants);
+    LOG_DEBUG("num_bits=%d num_trues=%d num_prime_implicants=%d", num_bits, num_trues, num_prime_implicants);
+    trues = malloc(num_trues * sizeof(int));
+    prime_implicants = malloc(num_prime_implicants * sizeof(char *));
+    for (int i = 0; i < num_trues; i++) {
+        fgets_comments(line, sizeof(line), f);
+        sscanf(line, "%d", &trues[i]);
+    }
+    for (int i = 0; i < num_prime_implicants; i++) {
+        fgets_comments(line, sizeof(line), f);
+        line[strcspn(line, "\n")] = 0;  // remove newline
+        prime_implicants[i] = malloc(num_bits + 1);
+        if (prime_implicants[i] == NULL) {
+            perror("could not allocate prime implicant");
+            exit(EXIT_FAILURE);
+        }
+        strncpy(prime_implicants[i], line, num_bits);
+        prime_implicants[i][num_bits] = '\0';  // null terminate
+    }
+
+    *dest = make_test(name, num_bits, num_trues, trues, num_prime_implicants, prime_implicants);
+
+    free(trues);
+    for (int i = 0; i < num_prime_implicants; i++) {
+        free(prime_implicants[i]);
+    }
+    free(prime_implicants);
+    free(name);
+    fclose(f);
 }
 
-test_case half_minterms() {
-    int trues[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    char *prime_implicants[] = {"0---"};
-    return MAKE_TEST("half minterms", 4, trues, prime_implicants);
-}
-
-test_case other_half_minterms() {
-    int trues[] = {
-        992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007,
-        1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023};
-    char *prime_implicants[] = {"11111-----"};
-    return MAKE_TEST("upper minterms", 10, trues, prime_implicants);
-}
-
-void test_implementations() {
-    test_case test_cases[] = {
-        wikipedia_test(), no_minterms(), half_minterms(), other_half_minterms(), all_minterms(),
-    };
-    for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
+void test_implementations(char **testfiles, int num_testfiles) {
+    test_case *test_cases = malloc(num_testfiles * sizeof(test_case));
+    for (int i = 0; i < num_testfiles; i++) {
+        from_testfile(testfiles[i], &test_cases[i]);
+    }
+    for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
         test_case test = test_cases[i];
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
@@ -113,23 +175,26 @@ void test_implementations() {
             if (!bitmap_cmp(result.primes, test.prime_implicants)) {
                 for (int i = 0; i < result.primes.num_bits; i++) {
                     if (BITMAP_CHECK(result.primes, i) && !BITMAP_CHECK(test.prime_implicants, i)) {
-                        char s[test.num_bits+1];
+                        char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
-                        LOG_INFO("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                        LOG_WARN("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
                     }
                     if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
-                        char s[test.num_bits+1];
+                        char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
-                        LOG_INFO("test case expected implicant %s (bitmap index %d) which was not returned by implementation", s, i);
+                        LOG_WARN(
+                            "test case expected implicant %s (bitmap index %d) which was not returned by "
+                            "implementation",
+                            s, i);
                     }
                 }
             }
             bitmap_free(result.primes);
         }
     }
-    for (unsigned long i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
+    for (unsigned long i = 0; i < num_testfiles; i++) {
         free_test(test_cases[i]);
     }
 }
@@ -176,7 +241,7 @@ void measure_merge(int num_bits) {
     LOG_INFO("measuring merge_implicants_dense bits=%d", num_bits);
 
     int input_elements = 1 << num_bits;
-    int output_elements = num_bits << (num_bits-1);
+    int output_elements = num_bits << (num_bits - 1);
     const int warmup_iterations = 10;
     bool *input_warmup = allocate_boolean_array(input_elements);
     bool *merged_warmup = allocate_boolean_array(input_elements);
@@ -184,7 +249,7 @@ void measure_merge(int num_bits) {
 
     for (int i = 0; i < warmup_iterations; i++) {
         // use first difference 0 for now
-      merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
+        merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
     }
 
     bool *input = allocate_boolean_array(input_elements);
@@ -204,5 +269,4 @@ void measure_merge(int num_bits) {
     FILE *f = fopen("measurements_merge.csv", "a");
     fprintf(f, "%s,%d,%lu,%lu\n", "merge_implicants_dense", num_bits, cycles, num_ops);
     fclose(f);
-
 }

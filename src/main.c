@@ -1,16 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
+
 #include "bitmap.h"
 #include "debug.h"
 #include "test.h"
 
-void print_usage(char *argv[]) {
-    LOG_INFO("usage: %s [test|measure|help]", argv[0]);
+void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help]", argv[0]); }
+void print_test_usage(char *argv[]) {
+    LOG_INFO("usage: %s test <testfile1> <testfile2> ...", argv[0]);
 }
-
-void print_measure_usage(char *argv[]) {
-    LOG_INFO("usage: %s measure <implementation> <num_bits>", argv[0]);
-}
+void print_measure_usage(char *argv[]) { LOG_INFO("usage: %s measure <implementation> <num_bits>", argv[0]); }
 
 int parse_int(const char *s) {
     int x = 0;
@@ -22,10 +21,14 @@ int parse_int(const char *s) {
     return x;
 }
 
-int main(int argc, char *argv[]) { 
-    if (argc <= 1 || strcmp(argv[1], "test") == 0) {
+int main(int argc, char *argv[]) {
+    if (strcmp(argv[1], "test") == 0) {
         bitmap_test();
-        test_implementations();
+        if (argc <= 2) {
+            print_test_usage(argv);
+            return 0;
+        }
+        test_implementations(&argv[2], argc - 2);  // Pass the test files to the test_implementations function
     } else if (strcmp(argv[1], "measure") == 0) {
         if (argc <= 3) {
             print_measure_usage(argv);
@@ -41,7 +44,7 @@ int main(int argc, char *argv[]) {
             int num_bits = parse_int(argv[2]);
             measure_merge(num_bits);
         }
-        
+
     } else {
         print_usage(argv);
     }
