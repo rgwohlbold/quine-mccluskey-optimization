@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "debug.h"
-#include "dense.h"
+#include "implementations/baseline.h"
 #include "implicant.h"
 #ifdef __x86_64__
 #include "tsc_x86.h"
@@ -16,7 +16,7 @@
 #include "util.h"
 
 const prime_implicant_implementation implementations[] = {
-    {"prime_implicants_dense", prime_implicants_dense},
+    {"baseline", prime_implicants_baseline},
 };
 
 typedef struct {
@@ -234,7 +234,7 @@ void measure_merge(int num_bits) {
 
     for (int i = 0; i < warmup_iterations; i++) {
         // use first difference 0 for now
-        merge_implicants_dense(input_warmup, output_warmup, merged_warmup, num_bits, 0);
+        merge_implicants_baseline(input_warmup, output_warmup, merged_warmup, num_bits, 0);
     }
 
     bool *input = allocate_boolean_array(input_elements);
@@ -247,7 +247,7 @@ void measure_merge(int num_bits) {
 
     init_tsc();
     uint64_t counter = start_tsc();
-    merge_implicants_dense(input, output, merged, num_bits, 0);
+    merge_implicants_baseline(input, output, merged, num_bits, 0);
     uint64_t cycles = stop_tsc(counter);
 
     uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
