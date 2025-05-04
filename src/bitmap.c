@@ -4,8 +4,8 @@
 #include "debug.h"
 #include "util.h"
 
-bitmap bitmap_allocate(int num_bits) {
-    int num_bytes = (num_bits + 7) / 8;
+bitmap bitmap_allocate(size_t num_bits) {
+    size_t num_bytes = (num_bits + 7) / 8;
     uint8_t *bits = (uint8_t *) calloc(num_bytes, sizeof(uint8_t));
     if (bits == NULL) {
         perror("cannot allocate bitmap");
@@ -26,7 +26,7 @@ bool bitmap_cmp(bitmap map1, bitmap map2) {
     if (map1.num_bits != map2.num_bits) {
         return false;
     }
-    for (int i = 0; i < map1.num_bits; i++) {
+    for (size_t i = 0; i < map1.num_bits; i++) {
         if (BITMAP_CHECK(map1, i) ^ BITMAP_CHECK(map2, i)) {
             return false;
         }
@@ -119,21 +119,21 @@ void bitmap_index_to_implicant(int num_bits, int bitset_index, char *s) {
     }
 }
 
-static void test_bitmap_n(int n) {
+static void test_bitmap_n(size_t n) {
     LOG_INFO("testing bitmap n=%d", n);
     bitmap map = bitmap_allocate(n);
 
     // test number of bits
     assert(map.num_bits == n);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         assert(!BITMAP_CHECK(map, i));
     }
 
     // set ith bit
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         BITMAP_SET_TRUE(map, i);
         assert(BITMAP_CHECK(map, i));
-        for (int k = 0; k < n; k++) {
+        for (size_t k = 0; k < n; k++) {
             if (k != i) {
                 assert(!BITMAP_CHECK(map, k));
             }

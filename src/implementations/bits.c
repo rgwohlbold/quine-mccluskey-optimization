@@ -12,7 +12,7 @@
 #include "../debug.h"
 
 static void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
-    int o_idx = output_index;
+    size_t o_idx = output_index;
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
@@ -20,7 +20,7 @@ static void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input
         // implicants that are compared fit into one register
         if (num_bits >= 6 && block_len <= 32) {
             for (int block = 0; block < num_blocks; block += 32 / block_len) {
-                int idx1 = input_index + 2 * block * block_len;
+                size_t idx1 = input_index + 2 * block * block_len;
 
                 uint64_t *input_ptr = (uint64_t *) implicants.bits;
                 uint32_t *output_ptr = (uint32_t *) implicants.bits;
@@ -85,8 +85,8 @@ static void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input
             }
         } else {
             for (int block = 0; block < num_blocks; block++) {
-                int idx1 = input_index + 2 * block * block_len;
-                int idx2 = input_index + 2 * block * block_len + block_len;
+                size_t idx1 = input_index + 2 * block * block_len;
+                size_t idx2 = input_index + 2 * block * block_len + block_len;
 
                 if (block_len >= 64) {
                     for (int k = 0; k < block_len; k += 64) {
@@ -156,7 +156,7 @@ static void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input
 }
 
 prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *trues) {
-    int num_implicants = calculate_num_implicants(num_bits);
+    size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
     bitmap implicants = bitmap_allocate(num_implicants);
@@ -189,13 +189,13 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
 #endif
     }
     // Step 2: Scan for unmerged implicants
-    for (int i = 0; i < num_implicants / 64; i++) {
+    for (size_t i = 0; i < num_implicants / 64; i++) {
         uint64_t implicant_true = ((uint64_t*)implicants.bits)[i];
         uint64_t merged_true = ((uint64_t*)merged.bits)[i];
         uint64_t prime_true = implicant_true & ~merged_true;
         ((uint64_t*)primes.bits)[i] = prime_true;
     }
-    for (int i = num_implicants - (num_implicants % 64); i < num_implicants; i++) {
+    for (size_t i = num_implicants - (num_implicants % 64); i < num_implicants; i++) {
         if (BITMAP_CHECK(implicants, i) && !BITMAP_CHECK(merged, i)) {
             BITMAP_SET_TRUE(primes, i);
         }

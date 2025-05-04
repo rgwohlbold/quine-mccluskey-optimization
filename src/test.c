@@ -18,8 +18,8 @@
 #include "implementations/bits.h"
 
 const prime_implicant_implementation implementations[] = {
-    {"baseline", prime_implicants_baseline},
-    {"bits", prime_implicants_bits},
+    {"baseline", prime_implicants_baseline, 19},
+    {"bits", prime_implicants_bits, 30},
 };
 
 typedef struct {
@@ -40,7 +40,7 @@ test_case make_test(const char *name, int num_bits, int num_trues, int *trues, i
     }
     strncpy(name_copy, name, strlen(name) + 1);
     name_copy[strlen(name)] = '\0';  // null terminate
-    int num_implicants = calculate_num_implicants(num_bits);
+    size_t num_implicants = calculate_num_implicants(num_bits);
     int *new_trues = calloc(num_trues, sizeof(int));
     if (new_trues == NULL) {
         perror("could not allocate test case array");
@@ -157,11 +157,15 @@ void test_implementations(char **testfiles, int num_testfiles) {
         test_case test = test_cases[i];
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
+            if (test.num_bits > impl.max_bits) {
+                LOG_INFO("skipping '%s' -> '%s'", test.name, impl.name);
+                continue;
+            }
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
             prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
             if (!bitmap_cmp(result.primes, test.prime_implicants)) {
-                for (int i = 0; i < result.primes.num_bits; i++) {
+                for (size_t i = 0; i < result.primes.num_bits; i++) {
                     if (BITMAP_CHECK(result.primes, i) && !BITMAP_CHECK(test.prime_implicants, i)) {
                         char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
