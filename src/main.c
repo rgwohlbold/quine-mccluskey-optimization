@@ -5,7 +5,7 @@
 #include "debug.h"
 #include "test.h"
 
-void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help]", argv[0]); }
+void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help|implementations]", argv[0]); }
 void print_test_usage(char *argv[]) {
     LOG_INFO("usage: %s test <testfile1> <testfile2> ...", argv[0]);
 }
