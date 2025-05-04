@@ -22,7 +22,9 @@ int parse_int(const char *s) {
 }
 
 int main(int argc, char *argv[]) {
-    if (strcmp(argv[1], "test") == 0) {
+    if (argc <= 1) {
+        print_usage(argv);
+    } else if (strcmp(argv[1], "test") == 0) {
         bitmap_test();
         if (argc <= 2) {
             print_test_usage(argv);
