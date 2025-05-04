@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "debug.h"
-#include "implementations/baseline.h"
 #include "implicant.h"
 #ifdef __x86_64__
 #include "tsc_x86.h"
@@ -15,8 +14,12 @@
 #endif
 #include "util.h"
 
+#include "implementations/baseline.h"
+#include "implementations/bits.h"
+
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline},
+    {"bits", prime_implicants_bits},
 };
 
 typedef struct {
@@ -181,6 +184,12 @@ void test_implementations(char **testfiles, int num_testfiles) {
     }
     for (int i = 0; i < num_testfiles; i++) {
         free_test(test_cases[i]);
+    }
+}
+
+void print_implementations() {
+    for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
+        printf("%s\n", implementations[k].name);
     }
 }
 

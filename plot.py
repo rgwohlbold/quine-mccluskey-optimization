@@ -1,7 +1,6 @@
 import pandas as pd
 
 df = pd.read_csv("measurements.csv")
-df = df[df['implementation'] == 'baseline']
 df = df.groupby(['implementation', 'bits']).median().reset_index()
 df['performance'] = df['ops'] / df['cycles']
 print(df)
@@ -9,12 +8,12 @@ print(df)
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-plt.figure(figsize=(7, 5))
-sns.lineplot(data=df, x='bits', y='performance', marker='o')
+plt.figure(figsize=(9, 6))
+sns.lineplot(data=df, x='bits', y='performance', hue='implementation', marker='o')
 
 plt.xlabel('n')
 plt.ylabel('Performance [ops/cycle]')
-plt.title('Performance of baseline for different n')
+plt.title('Performance of all implementations for different n')
 plt.grid(True)
 plt.autoscale(enable=True, axis='y', tight=False)
 plt.ylim(bottom=0)

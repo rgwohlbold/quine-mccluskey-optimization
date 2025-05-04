@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         test_implementations(&argv[2], argc - 2);  // Pass the test files to the test_implementations function
+    } else if (strcmp(argv[1], "implementations") == 0) {
+        print_implementations();
     } else if (strcmp(argv[1], "measure") == 0) {
         if (argc <= 3) {
             print_measure_usage(argv);
