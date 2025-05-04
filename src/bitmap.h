@@ -7,11 +7,11 @@
 #include <stdbool.h>
 
 typedef struct {
-    int num_bits;
+    size_t num_bits;
     uint8_t *bits;
 } bitmap;
 
-bitmap bitmap_allocate(int num_bits);
+bitmap bitmap_allocate(size_t num_bits);
 void bitmap_free(bitmap map);
 bool bitmap_cmp(bitmap map1, bitmap map2);
 void bitmap_test();

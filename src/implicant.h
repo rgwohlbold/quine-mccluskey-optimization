@@ -20,4 +20,5 @@ typedef prime_implicant_result (*implementation_function)(int num_bits, int num_
 typedef struct {
     const char *name;
     implementation_function implementation;
+    int max_bits;
 } prime_implicant_implementation;
