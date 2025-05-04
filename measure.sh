@@ -1,6 +1,6 @@
 #!/bin/sh
 
-implementation="prime_implicants_dense"
+implementation="baseline"
 min_bits=1
 max_bits=18
 num_measurements=1

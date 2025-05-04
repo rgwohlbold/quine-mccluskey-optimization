@@ -1,17 +1,18 @@
-#include "dense.h"
+#include "baseline.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "util.h"
+#include "common.h"
+#include "../util.h"
 #ifdef __x86_64__
-#include "tsc_x86.h"
+#include "../tsc_x86.h"
 #endif
 #ifdef __aarch64__
-#include "vct_arm.h"
+#include "../vct_arm.h"
 #endif
 
-void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
+void merge_implicants_baseline(bool *implicants, bool *output, bool *merged, int num_bits, int first_difference) {
     // check all minterms that differ in the ith bit
     int o_idx = 0;
     for (int i = 0; i < num_bits; i++) {
@@ -46,25 +47,7 @@ void merge_implicants_dense(bool *implicants, bool *output, bool *merged, int nu
     }
 }
 
-int leading_stars(int num_bits, int num_dashes, int chunk_index) {
-    int dashes_passed = 0;
-    for (int i = 0; i < num_bits; i++) {
-        int dashes_remaining = num_dashes - dashes_passed;
-        if (dashes_remaining == 0) {
-            return num_bits - i;
-        } else {
-            int possibilities_if_dash_is_set = binomial_coefficient(num_bits-i-1, dashes_remaining-1);
-            if (chunk_index < possibilities_if_dash_is_set) {
-                dashes_passed++;
-            } else {
-                chunk_index -= possibilities_if_dash_is_set;
-            }
-        }
-    }
-    return 0;
-}
-
-prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_baseline(int num_bits, int num_trues, int *trues) {
     int num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
@@ -98,7 +81,7 @@ prime_implicant_result prime_implicants_dense(int num_bits, int num_trues, int *
 
         for (int i = 0; i < iterations; i++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
-            merge_implicants_dense(input, output, merged, remaining_bits, first_difference);
+            merge_implicants_baseline(input, output, merged, remaining_bits, first_difference);
             output = &output[(remaining_bits - first_difference) * output_elements];
             input = &input[input_elements];
             merged = &merged[input_elements];

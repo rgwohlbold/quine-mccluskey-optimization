@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(prime_implicants C)
 
-file(GLOB SRC_FILES src/*.c)
+file(GLOB SRC_FILES src/*.c src/implementations/*.c)
 add_executable(prime_implicants ${SRC_FILES})
 
 target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 -march=native)
