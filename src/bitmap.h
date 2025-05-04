@@ -21,5 +21,6 @@ void bitmap_index_to_implicant(int num_bits, int bitset_index, char *s);
 #define BITMAP_CHECK(map, index) (((map.bits)[(index)/8] >> ((index) % 8)) & 1)
 #define BITMAP_SET_TRUE(map, index) ((map.bits)[(index)/8] |= 1 << ((index) % 8))
 #define BITMAP_SET_FALSE(map, index) ((map.bits)[(index)/8] &= ~(1 << ((index) % 8)))
+#define BITMAP_SET(map, index, value) ((value) ? BITMAP_SET_TRUE((map), (index)) : BITMAP_SET_FALSE((map), (index)))
 
 
