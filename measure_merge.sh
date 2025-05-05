@@ -5,7 +5,7 @@ min_bits=1
 max_bits=19
 num_measurements=50
 measurements_file="measurements_merge.csv"
-implementations="merge_implicants_bits merge_implicants_avx2"
+implementations="merge_implicants_bits merge_implicants_avx2 merge_implicants_pext"
 
 make -j$(nproc)
 
