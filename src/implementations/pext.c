@@ -10,107 +10,7 @@
 #include "../vct_arm.h"
 #endif
 #include "../debug.h"
-
-static void merge_implicants_bits6(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int first_difference) {
-    uint64_t *implicant_ptr = (uint64_t *) implicants.bits;
-    uint64_t *merged_ptr = (uint64_t *) merged.bits;
-    uint32_t *output_ptr = (uint32_t *) implicants.bits;
-
-    uint64_t impl = implicant_ptr[input_index / 64];
-    uint64_t impl_merged = merged_ptr[input_index / 64];
-
-    // block size 1
-    uint64_t impl10 = impl & (impl >> 1) & 0b0101010101010101010101010101010101010101010101010101010101010101;
-    uint64_t impl10s = impl10 >> 1;
-    uint64_t impl11 = (impl10 | impl10s) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-    uint64_t impl11s = impl11 >> 2;
-    uint64_t impl12 = (impl11 | impl11s) & 0x0F0F0F0F0F0F0F0F;
-    uint64_t impl12s = impl12 >> 4;
-    uint64_t impl13 = (impl12 | impl12s) & 0x00FF00FF00FF00FF;
-    uint64_t impl13s = impl13 >> 8;
-    uint64_t impl14 = (impl13 | impl13s) & 0x0000FFFF0000FFFF;
-    uint64_t impl14s = impl14 >> 16;
-    uint64_t impl15 = (impl14 | impl14s) & 0x00000000FFFFFFFF;
-    uint32_t impl1res = (uint32_t) impl15;
-    uint64_t merged1 = impl10 | (impl10 << 1);
-
-    // block size 2
-    uint64_t impl21 = impl & (impl >> 2) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-    uint64_t impl21s = impl21 >> 2;
-    uint64_t impl22 = (impl21 | impl21s) & 0x0F0F0F0F0F0F0F0F;
-    uint64_t impl22s = impl22 >> 4;
-    uint64_t impl23 = (impl22 | impl22s) & 0x00FF00FF00FF00FF;
-    uint64_t impl23s = impl23 >> 8;
-    uint64_t impl24 = (impl23 | impl23s) & 0x0000FFFF0000FFFF;
-    uint64_t impl24s = impl24 >> 16;
-    uint64_t impl25 = (impl24 | impl24s) & 0x00000000FFFFFFFF;
-    uint32_t impl2res = (uint32_t) impl25;
-    uint64_t merged2 = impl21 | (impl21 << 2);
-
-    // block size 4
-    uint64_t impl32 = impl & (impl >> 4) & 0x0F0F0F0F0F0F0F0F;
-    uint64_t impl32s = impl32 >> 4;
-    uint64_t impl33 = (impl32 | impl32s) & 0x00FF00FF00FF00FF;
-    uint64_t impl33s = impl33 >> 8;
-    uint64_t impl34 = (impl33 | impl33s) & 0x0000FFFF0000FFFF;
-    uint64_t impl34s = impl34 >> 16;
-    uint64_t impl35 = (impl34 | impl34s) & 0x00000000FFFFFFFF;
-    uint32_t impl3res = (uint32_t) impl35;
-    uint64_t merged3 = impl32 | (impl32 << 4);
-
-    // block size 8
-    uint64_t impl43 = impl & (impl >> 8) & 0x00FF00FF00FF00FF;
-    uint64_t impl43s = impl43 >> 8;
-    uint64_t impl44 = (impl43 | impl43s) & 0x0000FFFF0000FFFF;
-    uint64_t impl44s = impl44 >> 16;
-    uint64_t impl45 = (impl44 | impl44s) & 0x00000000FFFFFFFF;
-    uint32_t impl4res = (uint32_t) impl45;
-    uint64_t merged4 = impl43 | (impl43 << 8);
-
-    // block size 16
-    uint64_t impl54 = impl & (impl >> 16) & 0x0000FFFF0000FFFF;
-    uint64_t impl54s = impl54 >> 16;
-    uint64_t impl55 = (impl54 | impl54s) & 0x00000000FFFFFFFF;
-    uint32_t impl5res = (uint32_t) impl55;
-    uint64_t merged5 = impl54 | (impl54 << 16);
-
-    // block size 32
-    uint64_t impl65 = impl & (impl >> 32) & 0x00000000FFFFFFFF;
-    uint32_t impl6res = (uint32_t) impl65;
-    uint64_t merged6 = impl65 | (impl65 << 32);
-
-    uint64_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4 | merged5 | merged6;
-
-    merged_ptr[input_index / 64] = res_merged;
-    if (first_difference == 0) {
-        output_ptr[(output_index / 32)] = impl1res;
-        output_ptr[(output_index / 32)+1] = impl2res;
-        output_ptr[(output_index / 32)+2] = impl3res;
-        output_ptr[(output_index / 32)+3] = impl4res;
-        output_ptr[(output_index / 32)+4] = impl5res;
-        output_ptr[(output_index / 32)+5] = impl6res;
-    } else if (first_difference == 1) {
-        output_ptr[output_index / 32] = impl2res;
-        output_ptr[(output_index / 32)+1] = impl3res;
-        output_ptr[(output_index / 32)+2] = impl4res;
-        output_ptr[(output_index / 32)+3] = impl5res;
-        output_ptr[(output_index / 32)+4] = impl6res;
-    } else if (first_difference == 2) {
-        output_ptr[output_index / 32] = impl3res;
-        output_ptr[(output_index / 32)+1] = impl4res;
-        output_ptr[(output_index / 32)+2] = impl5res;
-        output_ptr[(output_index / 32)+3] = impl6res;
-    } else if (first_difference == 3) {
-        output_ptr[output_index / 32] = impl4res;
-        output_ptr[(output_index / 32)+1] = impl5res;
-        output_ptr[(output_index / 32)+2] = impl6res;
-    } else if (first_difference == 4) {
-        output_ptr[output_index / 32] = impl5res;
-        output_ptr[(output_index / 32)+1] = impl6res;
-    } else if (first_difference == 5) {
-        output_ptr[output_index / 32] = impl6res;
-    }
-}
+#include "x86intrin.h"
 
 static void merge_implicants_bits5(
     bitmap implicants,
@@ -127,68 +27,58 @@ static void merge_implicants_bits5(
     uint32_t impl_merged = merged_ptr[input_index/32];
 
     // block size 1 (difference 2^0 = 1)
-    uint32_t impl10 = impl & (impl >> 1) & 0x55555555;
-    uint32_t impl10s = impl10 >> 1;
-    uint32_t impl11 = (impl10 | impl10s) & 0x33333333;
-    uint32_t impl11s = impl11 >> 2;
-    uint32_t impl12 = (impl11 | impl11s) & 0x0F0F0F0F;
-    uint32_t impl12s = impl12 >> 4;
-    uint32_t impl13 = (impl12 | impl12s) & 0x00FF00FF;
-    uint32_t impl13s = impl13 >> 8;
-    uint32_t impl1res32 = (impl13 | impl13s) & 0x0000FFFF;
+    uint32_t mask0 = 0b01010101010101010101010101010101;
+    uint32_t impl10 = impl & (impl >> 1) & mask0;
+    uint32_t impl11 = _pext_u32(impl10, mask0);
     uint32_t merged1 = impl10 | (impl10 << 1);
 
     // block size 2 (difference 2^1 = 2)
-    uint32_t impl21 = impl & (impl >> 2) & 0x33333333;
-    uint32_t impl21s = impl21 >> 2;
-    uint32_t impl22 = (impl21 | impl21s) & 0x0F0F0F0F;
-    uint32_t impl22s = impl22 >> 4;
-    uint32_t impl23 = (impl22 | impl22s) & 0x00FF00FF;
-    uint32_t impl23s = impl23 >> 8;
-    uint32_t impl2res32 = (impl23 | impl23s) & 0x0000FFFF;
-    uint32_t merged2 = impl21 | (impl21 << 2);
+    uint32_t mask1 = 0b00110011001100110011001100110011;
+    uint32_t impl20 = impl & (impl >> 2) & mask1;
+    uint32_t impl21 = _pext_u32(impl20, mask1);
+    uint32_t merged2 = impl20 | (impl20 << 2);
 
     // block size 4 (difference 2^2 = 4)
-    uint32_t impl32 = impl & (impl >> 4) & 0x0F0F0F0F;
-    uint32_t impl32s = impl32 >> 4;
-    uint32_t impl33 = (impl32 | impl32s) & 0x00FF00FF;
-    uint32_t impl33s = impl33 >> 8;
-    uint32_t impl3res32 = (impl33 | impl33s) & 0x0000FFFF;
-    uint32_t merged3 = impl32 | (impl32 << 4);
+    uint32_t mask2 = 0x0F0F0F0F;
+    uint32_t impl30 = impl & (impl >> 4) & mask2;
+    uint32_t impl31 = _pext_u32(impl30, mask2);
+    uint32_t merged3 = impl30 | (impl30 << 4);
 
     // block size 8 (difference 2^3 = 8)
-    uint32_t impl43 = impl & (impl >> 8) & 0x00FF00FF;
-    uint32_t impl43s = impl43 >> 8;
-    uint32_t impl4res32 = (impl43 | impl43s) & 0x0000FFFF;
-    uint32_t merged4 = impl43 | (impl43 << 8);
+    uint32_t mask3 = 0x00FF00FF;
+    uint32_t impl40 = impl & (impl >> 8) & mask3;
+    uint32_t impl41 = _pext_u32(impl40, mask3);
+    uint32_t merged4 = impl40 | (impl40 << 8);
 
     // block size 16 (difference 2^4 = 16)
-    uint32_t impl5res32 = impl & (impl >> 16) & 0x0000FFFF;
-    uint32_t merged5 = impl5res32 | (impl5res32 << 16);
+    uint32_t mask4 = 0x0000FFFF;
+    uint32_t impl50 = impl & (impl >> 16) & mask4;
+    uint32_t impl51 = impl51; // pext is not needed here
+    uint32_t merged5 = impl50 | (impl50 << 16);
 
     uint32_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4 | merged5;
     merged_ptr[input_index/32] = res_merged;
 
     if (first_difference == 0) {
-        output_ptr[(output_index/16)    ] = (uint16_t)impl1res32;
-        output_ptr[(output_index/16) + 1] = (uint16_t)impl2res32;
-        output_ptr[(output_index/16) + 2] = (uint16_t)impl3res32;
-        output_ptr[(output_index/16) + 3] = (uint16_t)impl4res32;
-        output_ptr[(output_index/16) + 4] = (uint16_t)impl5res32;
+        output_ptr[(output_index/16)    ] = (uint16_t)impl11;
+        output_ptr[(output_index/16) + 1] = (uint16_t)impl21;
+        output_ptr[(output_index/16) + 2] = (uint16_t)impl31;
+        output_ptr[(output_index/16) + 3] = (uint16_t)impl41;
+        output_ptr[(output_index/16) + 4] = (uint16_t)impl51;
     } else if (first_difference == 1) {
-        output_ptr[(output_index/16)    ] = (uint16_t)impl2res32;
-        output_ptr[(output_index/16) + 1] = (uint16_t)impl3res32;
-        output_ptr[(output_index/16) + 2] = (uint16_t)impl4res32;
-        output_ptr[(output_index/16) + 3] = (uint16_t)impl5res32;
+        output_ptr[(output_index/16)    ] = (uint16_t)impl21;
+        output_ptr[(output_index/16) + 1] = (uint16_t)impl31;
+        output_ptr[(output_index/16) + 2] = (uint16_t)impl41;
+        output_ptr[(output_index/16) + 3] = (uint16_t)impl41;
     } else if (first_difference == 2) {
-        output_ptr[(output_index/16)    ] = (uint16_t)impl3res32;
-        output_ptr[(output_index/16) + 1] = (uint16_t)impl4res32;
-        output_ptr[(output_index/16) + 2] = (uint16_t)impl5res32;
+        output_ptr[(output_index/16)    ] = (uint16_t)impl31;
+        output_ptr[(output_index/16) + 1] = (uint16_t)impl41;
+        output_ptr[(output_index/16) + 2] = (uint16_t)impl51;
     } else if (first_difference == 3) {
-        output_ptr[(output_index/16)] = (uint16_t)impl4res32;
-        output_ptr[(output_index/16) + 1] = (uint16_t)impl5res32;
+        output_ptr[(output_index/16)] = (uint16_t)impl41;
+        output_ptr[(output_index/16) + 1] = (uint16_t)impl51;
     } else if (first_difference == 4) {
-        output_ptr[output_index/16] = (uint16_t)impl5res32;
+        output_ptr[output_index/16] = (uint16_t)impl51;
     }
 }
 
@@ -388,7 +278,7 @@ static void merge_implicants_bits3(
     }
 }
 
-void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
+void merge_implicants_pext(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits == 1) {
         merge_implicants_bits1(implicants, merged, input_index, output_index, first_difference);
         return;
@@ -404,10 +294,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
     } else if (num_bits == 5) {
         merge_implicants_bits5(implicants, merged, input_index, output_index, first_difference);
         return;
-    } else if (num_bits == 6) {
-        merge_implicants_bits6(implicants, merged, input_index, output_index, first_difference);
-        return;
-    }
+    } 
     size_t o_idx = output_index;
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
@@ -454,52 +341,28 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                     uint64_t impl2 = impl1 >> block_len;
                     uint64_t aggregated = impl1 & impl2;
 
-                    uint64_t initial_result;
-
-                    uint64_t shifted = 0;
+                    uint64_t mask;
                     if (block_len == 1) {
-                        aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
-                        initial_result = aggregated;
-                        shifted = aggregated >> 1;
+                        mask = 0b0101010101010101010101010101010101010101010101010101010101010101;
+                    } else if (block_len == 2) {
+                        mask = 0b0011001100110011001100110011001100110011001100110011001100110011;
+                    } else if (block_len == 4) {
+                        mask = 0x0F0F0F0F0F0F0F0F;
+                    } else if (block_len == 8) {
+                        mask = 0x00FF00FF00FF00FF;
+                    } else if (block_len == 16) {
+                        mask = 0x0000FFFF0000FFFF;
+                    } else { // block_len == 32
+                        mask = 0x00000000FFFFFFFF;
                     }
-                    if (block_len <= 2) {
-                        aggregated = (aggregated | shifted) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-                        if (block_len == 2) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 2;
-                    }
-                    if (block_len <= 4) {
-                        aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
-                        if (block_len == 4) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 4;
-                    }
-                    if (block_len <= 8) {
-                        aggregated = (aggregated | shifted) & 0x00FF00FF00FF00FF;
-                        if (block_len == 8) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 8;
-                    }
-                    if (block_len <= 16) {
-                        aggregated = (aggregated | shifted) & 0x0000FFFF0000FFFF;
-                        if (block_len == 16) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 16;
-                    }
-                    aggregated = (aggregated | shifted) & 0x00000000FFFFFFFF;
-                    if (block_len == 32) {
-                        initial_result = aggregated;
-                    }
+                    uint64_t result = _pext_u64(aggregated, mask);
+                    uint64_t initial_result = aggregated & mask;
 
                     uint64_t merged2 = merged | initial_result | (initial_result << block_len);
 
                     merged_ptr[idx1 / 64] = merged2;
                     if (i >= first_difference) {
-                        output_ptr[o_idx / 32] = (uint32_t) aggregated;
+                        output_ptr[o_idx / 32] = (uint32_t) result;
                         o_idx += 32;
                     }
                     idx1 += 64;
@@ -509,7 +372,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
     }
 }
 
-prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_pext(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
@@ -533,7 +396,7 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
         size_t output_index = input_index + iterations * input_elements;
         for (int i = 0; i < iterations; i++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
-            merge_implicants_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
+            merge_implicants_pext(implicants, merged, input_index, output_index, remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }

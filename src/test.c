@@ -17,10 +17,12 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/avx2.h"
+#include "implementations/pext.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
     {"bits", prime_implicants_bits, 30},
+    {"pext", prime_implicants_pext, 30},
     {"avx2", prime_implicants_avx2, 30},
 };
 
@@ -31,6 +33,7 @@ typedef struct {
 
 merge_implementation merge_implementations[] = {
     {"merge_implicants_bits", merge_implicants_bits},
+    {"merge_implicants_pext", merge_implicants_pext},
     {"merge_implicants_avx2", merge_implicants_avx2},
 };
 
