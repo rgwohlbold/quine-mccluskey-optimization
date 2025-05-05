@@ -15,7 +15,7 @@ if(SANITIZE STREQUAL ON)
     target_compile_options(prime_implicants PUBLIC -fsanitize=address -fno-omit-frame-pointer)
     target_link_options(prime_implicants PUBLIC -fsanitize=address)
 else()
-    target_compile_options(prime_implicants PUBLIC -O3)
+    target_compile_options(prime_implicants PUBLIC -Ofast)
 endif()
 
 ### LOGGING OPTIONS BEGIN ###
