@@ -6,7 +6,7 @@
 #include "implicant.h"
 
 bool *allocate_boolean_array(int num_elements);
-void flush_cache(bool *array, int num_elements);
+void flush_cache(uint8_t *array, int num_elements);
 size_t calculate_num_implicants(int num_bits);
 
 extern const int binomial_coefficients[30][30];

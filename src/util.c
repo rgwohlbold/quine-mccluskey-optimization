@@ -25,7 +25,7 @@ bool *allocate_boolean_array(int num_elements) {
     return arr;
 }
 
-void flush_cache(bool *array, int num_elements) {
+void flush_cache(uint8_t *array, int num_elements) {
     const int block_size = 64;
 
     // align pointer to 64 bytes

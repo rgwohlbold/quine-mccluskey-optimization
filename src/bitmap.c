@@ -5,7 +5,7 @@
 #include "util.h"
 
 bitmap bitmap_allocate(size_t num_bits) {
-    size_t num_bytes = (num_bits + 7) / 8;
+    size_t num_bytes = (num_bits + 7) / 8 + 32; // add 32 bytes to make sure we are aligned
     uint8_t *bits = (uint8_t *) calloc(num_bytes, sizeof(uint8_t));
     if (bits == NULL) {
         perror("cannot allocate bitmap");
@@ -13,13 +13,14 @@ bitmap bitmap_allocate(size_t num_bits) {
     }
     bitmap result = {
         .num_bits = num_bits,
-        .bits = bits,
+        .malloc_ptr = bits,
+        .bits = bits + (32 - ((uintptr_t)bits & 0x1F)), // align to 32 bytes
     };
     return result;
 }
 
 void bitmap_free(bitmap map) {
-    free(map.bits);
+    free(map.malloc_ptr);
 }
 
 bool bitmap_cmp(bitmap map1, bitmap map2) {

@@ -8,6 +8,7 @@
 
 typedef struct {
     size_t num_bits;
+    uint8_t *malloc_ptr; // pointer to the malloc'd memory
     uint8_t *bits;
 } bitmap;
 

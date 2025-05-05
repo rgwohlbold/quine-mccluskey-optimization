@@ -1,9 +1,11 @@
 #!/bin/sh
+set -e
 
 min_bits=1
 max_bits=19
 num_measurements=50
 measurements_file="measurements_merge.csv"
+implementations="merge_implicants_bits merge_implicants_avx2"
 
 make -j$(nproc)
 
@@ -11,7 +13,9 @@ make -j$(nproc)
 echo "implementation,bits,cycles,ops" > "$measurements_file"
 for k in $(seq 1 "$num_measurements"); do
     for i in $(seq $min_bits $max_bits); do
-        ./prime_implicants measure_merge "$i"
+        for implementation in $implementations; do
+            ./prime_implicants measure_merge "$implementation" "$i"
+        done
     done
 done
 python plot_merge.py
