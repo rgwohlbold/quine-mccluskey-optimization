@@ -1,3 +1,4 @@
+#ifdef __BMI2__
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -53,7 +54,7 @@ static void merge_implicants_bits5(
     // block size 16 (difference 2^4 = 16)
     uint32_t mask4 = 0x0000FFFF;
     uint32_t impl50 = impl & (impl >> 16) & mask4;
-    uint32_t impl51 = impl51; // pext is not needed here
+    uint32_t impl51 = impl50; // pext is not needed here
     uint32_t merged5 = impl50 | (impl50 << 16);
 
     uint32_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4 | merged5;
@@ -434,3 +435,4 @@ prime_implicant_result prime_implicants_pext(int num_bits, int num_trues, int *t
     };
     return result;
 }
+#endif

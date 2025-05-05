@@ -22,8 +22,12 @@
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
     {"bits", prime_implicants_bits, 30},
+#ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
+#endif
+#ifdef __AVX2__
     {"avx2", prime_implicants_avx2, 30},
+#endif
 };
 
 typedef struct {
@@ -33,8 +37,12 @@ typedef struct {
 
 merge_implementation merge_implementations[] = {
     {"merge_implicants_bits", merge_implicants_bits},
+#ifdef __BMI2__
     {"merge_implicants_pext", merge_implicants_pext},
+#endif
+#ifdef __AVX2__
     {"merge_implicants_avx2", merge_implicants_avx2},
+#endif
 };
 
 typedef struct {
@@ -231,7 +239,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     int trues[] = {};
 
     // warmup iteration
-    prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
+    //prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
@@ -246,7 +254,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
-    bitmap_free(result_warmup.primes);
+    //bitmap_free(result_warmup.primes);
     bitmap_free(result.primes);
 }
 
