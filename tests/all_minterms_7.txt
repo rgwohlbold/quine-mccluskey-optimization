@@ -1,7 +1,8 @@
 all minterms 7
 # num_bits num_trues num_prime
-7 127 1
+7 128 1
 # trues
+0
 1
 2
 3
