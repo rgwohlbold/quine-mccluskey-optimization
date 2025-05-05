@@ -1,3 +1,4 @@
+#ifdef __AVX2__
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -299,3 +300,4 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
     };
     return result;
 }
+#endif
