@@ -5,8 +5,8 @@ import numpy as np
 
 
 def performance_plot(df):
-    plt.figure(figsize=(7, 5))
-    sns.lineplot(data=df, x='bits', y='performance', marker='o')
+    plt.figure(figsize=(9, 6))
+    sns.lineplot(data=df, x='bits', y='performance', hue='implementation', marker='o')
 
     plt.xlabel('n')
     plt.ylabel('Performance [ops/cycle]')
@@ -33,7 +33,7 @@ def roofline_plot(df):
     BETA_PEAK = 30.0
 
     # Plot the measured performance points
-    sns.lineplot(data=df, x='operational_intensity', y='performance', marker='o', label='Measured Performance')
+    sns.lineplot(data=df, x='operational_intensity', y='performance', hue='implementation', marker='o', label='Measured Performance')
     # Annotate points with 'n' values
     for i in range(df.shape[0]):
         plt.text(df['operational_intensity'].iloc[i],
@@ -86,7 +86,6 @@ def roofline_plot(df):
 
 if __name__ == '__main__':
     df = pd.read_csv("measurements_merge.csv")
-    df = df[df['implementation'] == 'merge_implicants_dense']
     df = df.groupby(['implementation', 'bits']).median().reset_index()
     df['performance'] = df['ops'] / df['cycles']
     df['transferred_bytes'] = df['bits'].apply(calculate_bytes)

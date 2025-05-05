@@ -16,10 +16,22 @@
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
+#include "implementations/avx2.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
     {"bits", prime_implicants_bits, 30},
+    {"avx2", prime_implicants_avx2, 30},
+};
+
+typedef struct {
+    const char *name; // static storage
+    void (*impl) (bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference);
+} merge_implementation;
+
+merge_implementation merge_implementations[] = {
+    {"merge_implicants_bits", merge_implicants_bits},
+    {"merge_implicants_avx2", merge_implicants_avx2},
 };
 
 typedef struct {
@@ -235,36 +247,51 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     bitmap_free(result.primes);
 }
 
-void measure_merge(int num_bits) {
-    LOG_INFO("measuring merge_implicants_dense bits=%d", num_bits);
+void measure_merge(const char *s, int num_bits) {
+    merge_implementation impl;
+    bool implementation_found = false;
+    for (unsigned long k = 0; k < sizeof(merge_implementations) / sizeof(merge_implementations[0]); k++) {
+        impl = merge_implementations[k];
+        if (strcmp(impl.name, s) == 0) {
+            implementation_found = true;
+            break;
+        }
+    }
+    if (!implementation_found) {
+        LOG_WARN("could not find implementation %s", s);
+        return;
+    }
+    LOG_INFO("measuring %s bits=%d", impl.name, num_bits);
 
-    int input_elements = 1 << num_bits;
-    int output_elements = num_bits << (num_bits - 1);
+    size_t input_elements = 1 << num_bits;
+    size_t output_elements = num_bits << (num_bits - 1);
     const int warmup_iterations = 10;
-    bool *input_warmup = allocate_boolean_array(input_elements);
-    bool *merged_warmup = allocate_boolean_array(input_elements);
-    bool *output_warmup = allocate_boolean_array(output_elements);
+    bitmap implicants_warmup = bitmap_allocate(input_elements+output_elements);
+    bitmap merged_warmup = bitmap_allocate(input_elements);
 
     for (int i = 0; i < warmup_iterations; i++) {
         // use first difference 0 for now
-        merge_implicants_baseline(input_warmup, output_warmup, merged_warmup, num_bits, 0);
+        impl.impl(implicants_warmup, merged_warmup, 0, input_elements, num_bits, 0);
     }
 
-    bool *input = allocate_boolean_array(input_elements);
-    bool *merged = allocate_boolean_array(input_elements);
-    bool *output = allocate_boolean_array(output_elements);
+    bitmap implicants = bitmap_allocate(input_elements+output_elements);
+    bitmap merged = bitmap_allocate(input_elements);
     // TODO: check if this makes a difference
-    flush_cache(input, input_elements);
-    flush_cache(merged, input_elements);
-    flush_cache(output, output_elements);
+    flush_cache(implicants.bits, (input_elements + output_elements + 7) / 8);
+    flush_cache(merged.bits, (input_elements + 7) / 8);
 
     init_tsc();
     uint64_t counter = start_tsc();
-    merge_implicants_baseline(input, output, merged, num_bits, 0);
+    impl.impl(implicants, merged, 0, input_elements, num_bits, 0);
     uint64_t cycles = stop_tsc(counter);
+
+    bitmap_free(implicants_warmup);
+    bitmap_free(merged_warmup);
+    bitmap_free(implicants);
+    bitmap_free(merged);
 
     uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
     FILE *f = fopen("measurements_merge.csv", "a");
-    fprintf(f, "%s,%d,%lu,%lu\n", "merge_implicants_dense", num_bits, cycles, num_ops);
+    fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, num_ops);
     fclose(f);
 }

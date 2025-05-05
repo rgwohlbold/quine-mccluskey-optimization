@@ -42,11 +42,12 @@ int main(int argc, char *argv[]) {
             measure_implementations(implementation, num_bits);
         }
     } else if (strcmp(argv[1], "measure_merge") == 0) {
-        if (argc <= 2) {
+        if (argc <= 3) {
             print_measure_usage(argv);
         } else {
-            int num_bits = parse_int(argv[2]);
-            measure_merge(num_bits);
+            const char *implementation = argv[2];
+            int num_bits = parse_int(argv[3]);
+            measure_merge(implementation, num_bits);
         }
 
     } else {
