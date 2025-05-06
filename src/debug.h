@@ -44,3 +44,8 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
 #define LOG_WARN(format, ...) \
     (void)(_LL_WARN && _log_fmt(__WARN_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
 #define LOG_ERROR(format, ...) (void)(_log_fmt(__ERROR_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
+
+#ifdef __AVX2__
+#include <x86intrin.h>
+void log_m256i(const char *msg, const __m256i *value);
+#endif
