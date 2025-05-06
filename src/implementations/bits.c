@@ -454,7 +454,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                     uint64_t impl2 = impl1 >> block_len;
                     uint64_t aggregated = impl1 & impl2;
 
-                    uint64_t initial_result;
+                    uint64_t initial_result = 0;
 
                     uint64_t shifted = 0;
                     if (block_len == 1) {
