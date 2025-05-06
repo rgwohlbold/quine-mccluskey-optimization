@@ -40,127 +40,51 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                     __m256i res = _mm256_and_si256(impl1, impl2);
                     __m256i merged1_ = _mm256_or_si256(merged1, res);
                     __m256i merged2_ = _mm256_or_si256(merged2, res);
-                    //_mm256_store_si256((__m256i*)(merged.bits + idx1 / 8), merged1_);
-                    //_mm256_store_si256((__m256i*)(merged.bits + idx2 / 8), merged2_);
+                    _mm256_store_si256((__m256i*)(merged.bits + idx1 / 8), merged1_);
+                    _mm256_store_si256((__m256i*)(merged.bits + idx2 / 8), merged2_);
                     if (i >= first_difference) {
-                        //_mm256_store_si256((__m256i*)(implicants.bits + o_idx / 8), res);
+                        _mm256_store_si256((__m256i*)(implicants.bits + o_idx / 8), res);
                         o_idx += 256;
                     }
                     idx1 += 256;
                     idx2 += 256;
                 }
             }
-        } else if (block_len >= 64) { // implicants do not fit into one register, and we use the largest register size
-            for (int block = 0; block < num_blocks; block++) {
-                size_t idx1 = input_index + 2 * block * block_len;
-                size_t idx2 = input_index + 2 * block * block_len + block_len;
-
-                for (int k = 0; k < block_len; k += 64) {
-                    uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
-                    uint64_t *merged_ptr = (uint64_t*) merged.bits;
-
-                    uint64_t impl1 = implicant_ptr[idx1 / 64];
-                    uint64_t impl2 = implicant_ptr[idx2 / 64];
-                    uint64_t merged1 = merged_ptr[idx1 / 64];
-                    uint64_t merged2 = merged_ptr[idx2 / 64];
-                    uint64_t res = impl1 & impl2;
-                    uint64_t merged1_ = merged1 | res;
-                    uint64_t merged2_ = merged2 | res;
-
-                    merged_ptr[idx1 / 64] = merged1_;
-                    merged_ptr[idx2 / 64] = merged2_;
-                    if (i >= first_difference) {
-                        implicant_ptr[o_idx / 64] = res;
-                        o_idx += 64;
-                    }
-                    idx1 += 64;
-                    idx2 += 64;
-                }
-            }
-        } else { // implicants that are compared fit into one 64-bit register
-            for (int block = 0; block < num_blocks; block += 32 / block_len) {
-                size_t idx1 = input_index + 2 * block * block_len;
-
-                uint64_t *input_ptr = (uint64_t *) implicants.bits;
-                uint32_t *output_ptr = (uint32_t *) implicants.bits;
-                uint64_t *merged_ptr = (uint64_t *) merged.bits;
-                for (int k = 0; k < block_len; k += 64) {
-                    uint64_t impl1 = input_ptr[idx1 / 64];
-                    uint64_t merged = merged_ptr[idx1 / 64];
-
-                    uint64_t impl2 = impl1 >> block_len;
-                    uint64_t aggregated = impl1 & impl2;
-
-                    uint64_t initial_result;
-
-                    uint64_t shifted = 0;
-                    if (block_len == 1) {
-                        aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
-                        initial_result = aggregated;
-                        shifted = aggregated >> 1;
-                    }
-                    if (block_len <= 2) {
-                        aggregated = (aggregated | shifted) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-                        if (block_len == 2) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 2;
-                    }
-                    if (block_len <= 4) {
-                        aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
-                        if (block_len == 4) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 4;
-                    }
-                    if (block_len <= 8) {
-                        aggregated = (aggregated | shifted) & 0x00FF00FF00FF00FF;
-                        if (block_len == 8) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 8;
-                    }
-                    if (block_len <= 16) {
-                        aggregated = (aggregated | shifted) & 0x0000FFFF0000FFFF;
-                        if (block_len == 16) {
-                            initial_result = aggregated;
-                        }
-                        shifted = aggregated >> 16;
-                    }
-                    aggregated = (aggregated | shifted) & 0x00000000FFFFFFFF;
-                    if (block_len == 32) {
-                        initial_result = aggregated;
-                    }
-
-                    uint64_t merged2 = merged | initial_result | (initial_result << block_len);
-
-                    merged_ptr[idx1 / 64] = merged2;
-                    if (i >= first_difference) {
-                        output_ptr[o_idx / 32] = (uint32_t) aggregated;
-                        o_idx += 32;
-                    }
-                    idx1 += 64;
-                }
-            }
-        } /*else { // implicants that are compared fit into one 256-bit register
+        } else { // implicants that are compared fit into one 256-bit register, i.e. block_len <= 128
             for (int block = 0; block < num_blocks; block += 128 / block_len) {
                 size_t idx1 = input_index + 2 * block * block_len;
 
-                for (int k = 0; k < block_len; k += 256) {
-                    __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
-                    __m256i merged1 = _mm256_load_si256((__m256i*)(merged.bits + idx1 / 8));
+                __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
+                __m256i merged1 = _mm256_load_si256((__m256i*)(merged.bits + idx1 / 8));
 
-                    // we would like to shift impl1 right by block_len bits. However, we cannot shift across 128-bit lanes.
-                    // therefore, use a high and a low part and combine them to simulate that shift
-                    __m256i lo = _mm256_srli_si256(impl1, 1); // TODO
-                    __m256i hi = _mm256_slli_si256(impl1, 128 - 1); // TODO
-                    __m256i hi_shuffled = _mm256_permute2x128_si256(hi, hi, 0x81);
-                    __m256i impl2 = _mm256_or_si256(lo, hi_shuffled);
+                if (block_len == 128) {
+                    // set upper half to zero, lower half to upper half of impl1
+                    __m256i impl1_shuffled = _mm256_permute2x128_si256(impl1, impl1, 0x81);
+                    __m256i aggregated = _mm256_and_si256(impl1, impl1_shuffled);
+                    // set upper and lower halves to lower half of aggregated
+                    __m256i merged2 = _mm256_permute2x128_si256(aggregated, aggregated, 0x00);
+                    __m256i merged_result = _mm256_or_si256(merged1, merged2);
+                    // use lower half of aggregated
+                    __m128i result = _mm256_castsi256_si128(aggregated);
+
+                    _mm256_store_epi64(merged.bits + idx1 / 8, merged_result);
+                    if (i >= first_difference) {
+                        _mm_store_epi64(implicants.bits + o_idx / 8, result);
+                        o_idx += 128;
+                    }
+                    idx1 += 256;
+                } else { // block_len <= 64: we can deal without permutations
+                    __m256i impl2;
+                    if (block_len == 64) {
+                        // we need to shift across 64-bit boundaries which needs an immediate value
+                        impl2 = _mm256_srli_si256(impl1, 8); // 8 bytes = 64 bits
+                    } else {
+                        impl2 = _mm256_srli_epi64(impl1, block_len);
+                    }
 
                     __m256i aggregated = _mm256_and_si256(impl1, impl2);
                     __m256i initial_result;
-
-                    __m256i shifted;
+                    __m256i shifted = _mm256_set1_epi64x(0);
                     if (block_len == 1) {
                         aggregated = _mm256_and_si256(aggregated, _mm256_set1_epi8(0b01010101));
                         initial_result = aggregated;
@@ -199,28 +123,27 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                         if (block_len == 32) {
                             initial_result = aggregated;
                         }
-                        shifted = _mm256_srli_epi64(aggregated, 32);
+                        shifted = _mm256_srli_si256(aggregated, 4); // 4 bytes = 32 bits
                     }
-                    if (block_len <= 64) {
-                        aggregated = _mm256_and_si256(_mm256_or_si256(aggregated, shifted), _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
-                        if (block_len == 64) {
-                            initial_result = aggregated;
-                        }
+                    aggregated = _mm256_and_si256(_mm256_or_si256(aggregated, shifted), _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+                    if (block_len == 64) {
+                        initial_result = aggregated;
                     }
-                    aggregated = _mm256_permute4x64_epi64(aggregated, 0x88);
-                    __m128i result = _mm256_castsi256_si128(aggregated);
+                    // move 64-bit value aggregated[2] to result256[1] so result is in lower half
+                    __m256i result256 = _mm256_permute4x64_epi64(aggregated, 0b00001000);
+                    __m128i result = _mm256_castsi256_si128(result256);
 
                     __m256i merged2 = _mm256_or_si256(merged1, initial_result);
 
-                    // now we need to shift initial_result left across 128-bit lanes
-                    __m256i shifted_low = _mm256_srli_si256(initial_result, 128 - 1); // TODO
-                    __m256i shifted_high = _mm256_slli_si256(initial_result, 1); // TODO
-                    __m256i cross_bits = _mm256_permute2x128_si256(shifted_low, shifted_low, 0x08);
-                    __m256i shifted_initial_result = _mm256_or_si256(shifted_high, cross_bits);
-
-                    __m256i merged3 = _mm256_or_si256(merged2, shifted_initial_result);
-
-                    _mm256_store_epi64(merged.bits + idx1 / 8, merged3);
+                    // shift initial_result left by block_len
+                    __m256i merged3;
+                    if (block_len == 64) {
+                        merged3 = _mm256_slli_si256(initial_result, 8); // 8 bytes = 64 bits
+                    } else {
+                        merged3 = _mm256_slli_epi64(initial_result, block_len);
+                    }
+                    __m256i merged4 = _mm256_or_si256(merged2, merged3);
+                    _mm256_store_epi64(merged.bits + idx1 / 8, merged4);
                     if (i >= first_difference) {
                         _mm_store_epi64(implicants.bits + o_idx / 8, result);
                         o_idx += 128;
@@ -228,7 +151,7 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                     idx1 += 256;
                 }
             }
-        } */
+        } 
     }
 }
 
