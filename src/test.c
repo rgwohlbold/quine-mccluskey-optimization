@@ -254,7 +254,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
-    //bitmap_free(result_warmup.primes);
+    bitmap_free(result_warmup.primes);
     bitmap_free(result.primes);
 }
 

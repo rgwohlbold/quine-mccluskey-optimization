@@ -11,12 +11,18 @@
 #include "../vct_arm.h"
 #endif
 #include "../debug.h"
+#include <x86intrin.h>
+
 #include "bits.h"
-#include "immintrin.h"
+#include "pext.h"
 
 void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 7) {
+#ifdef __BMI2__
+        merge_implicants_pext(implicants, merged, input_index, output_index, num_bits, first_difference);
+#else
         merge_implicants_bits(implicants, merged, input_index, output_index, num_bits, first_difference);
+#endif
         return;
     }
     size_t o_idx = output_index;
@@ -30,9 +36,6 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                 size_t idx2 = input_index + 2 * block * block_len + block_len;
 
                 for (int k = 0; k < block_len; k += 256) {
-                    uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
-                    uint64_t *merged_ptr = (uint64_t*) merged.bits;
-
                     __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
                     __m256i impl2 = _mm256_load_si256((__m256i*)(implicants.bits + idx2 / 8));
                     __m256i merged1 = _mm256_load_si256((__m256i*)(merged.bits + idx1 / 8));
@@ -73,7 +76,7 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                         o_idx += 128;
                     }
                     idx1 += 256;
-                } else { // block_len <= 64: we can deal without permutations
+                } else { // block_len <= 64: we can shift and compare without crossing 128-bit boundaries
                     __m256i impl2;
                     if (block_len == 64) {
                         // we need to shift across 64-bit boundaries which needs an immediate value
@@ -83,7 +86,7 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                     }
 
                     __m256i aggregated = _mm256_and_si256(impl1, impl2);
-                    __m256i initial_result;
+                    __m256i initial_result = _mm256_set1_epi64x(0); // prevent unitialized warnings
                     __m256i shifted = _mm256_set1_epi64x(0);
                     if (block_len == 1) {
                         aggregated = _mm256_and_si256(aggregated, _mm256_set1_epi8(0b01010101));
