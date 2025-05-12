@@ -1,0 +1,3 @@
+const char *compiler_version = "@COMPILER_VERSION_STR@";
+const char *compiler_flags = "@COMPILER_FLAGS_STR@";
+const char *cpu_model = "@CPU_MODEL_STR@";
