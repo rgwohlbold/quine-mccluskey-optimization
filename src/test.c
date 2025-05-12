@@ -13,6 +13,7 @@
 #include "vct_arm.h"
 #endif
 #include "util.h"
+#include "system.h"
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
@@ -250,7 +251,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     uint64_t ops = 0;
 #endif
     FILE *f = fopen("measurements.csv", "a");
-    fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles, ops);
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
@@ -303,6 +304,6 @@ void measure_merge(const char *s, int num_bits) {
 
     uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
     FILE *f = fopen("measurements_merge.csv", "a");
-    fprintf(f, "%s,%d,%lu,%lu\n", impl.name, num_bits, cycles, num_ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles, num_ops);
     fclose(f);
 }

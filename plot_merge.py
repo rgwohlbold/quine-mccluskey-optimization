@@ -5,12 +5,13 @@ import numpy as np
 
 
 def performance_plot(df):
+    cpu_model = df['cpu_model'][0]
     plt.figure(figsize=(9, 6))
-    sns.lineplot(data=df, x='bits', y='performance', hue='implementation', marker='o')
+    sns.lineplot(data=df, x='bits', y='performance', hue='function', marker='o')
 
     plt.xlabel('n')
     plt.ylabel('Performance [ops/cycle]')
-    plt.title('Performance of merge_implicants_dense for different n')
+    plt.title(f"Performance of all merge step implementations for different number of bits n\nCPU: {cpu_model}", loc='left')
     plt.grid(True)
     plt.autoscale(enable=True, axis='y', tight=False)
     plt.ylim(bottom=0)
@@ -20,7 +21,7 @@ def performance_plot(df):
     plt.show()
 
 def calculate_bytes(n):
-    BYTES_PER_BOOL = 1
+    BYTES_PER_BOOL = 0.125 # we use bitmasks, so 8 bools per byte
     input_bools = 2**n
     merge_bools = 2**n
     output_bools = n*2**(n-1)
@@ -29,11 +30,11 @@ def calculate_bytes(n):
 # Source: Gemini 2.5 Pro
 def roofline_plot(df):
     # TODO: use hw values here
-    PI_PEAK = 4.0
+    PI_PEAK = 3 * 256.0 # Skylake: throughput of 3 for _mm256_and_si256 -> 3*356 logic operations per second
     BETA_PEAK = 30.0
 
     # Plot the measured performance points
-    sns.lineplot(data=df, x='operational_intensity', y='performance', hue='implementation', marker='o', label='Measured Performance')
+    sns.lineplot(data=df, x='operational_intensity', y='performance', hue='function', marker='o')
     # Annotate points with 'n' values
     for i in range(df.shape[0]):
         plt.text(df['operational_intensity'].iloc[i],
@@ -86,10 +87,13 @@ def roofline_plot(df):
 
 if __name__ == '__main__':
     df = pd.read_csv("measurements_merge.csv")
-    df = df.groupby(['implementation', 'bits']).median().reset_index()
+    print(df)
+    df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
+    print(df)
     df['performance'] = df['ops'] / df['cycles']
     df['transferred_bytes'] = df['bits'].apply(calculate_bytes)
     df['operational_intensity'] = df['ops'] / df['transferred_bytes']
+    df['function'] = df['implementation'] + ', ' + df['compiler_version'] + ', ' + df['compiler_flags']
     print(df)
     performance_plot(df)
-    roofline_plot(df)
+    #roofline_plot(df)
