@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(prime_implicants C)
+project(prime_implicants C CXX)
 
 file(GLOB SRC_FILES src/*.c src/implementations/*.c)
-add_executable(prime_implicants ${SRC_FILES})
+set(CPP_FILES src/implementations/hellman.cpp)
+
+
+add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
+# set_property(SOURCE ${CPP_FILES} PROPERTY LANGUAGE CXX)
+# set_target_properties(prime_implicants PROPERTIES LINKER_LANGUAGE CXX)
 
 
 option(SANITIZE "use sanitizers for debugging")
@@ -25,7 +30,16 @@ else()
     endif()
 endif()
 
-target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
+# target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
+
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra)
+
+# Apply std flags per language
+target_compile_options(prime_implicants PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:-std=c11>
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++2a>
+    ${COMPILER_FLAGS}
+)
 
 # include information in executable
 # get compiler version by calling compiler
