@@ -33,9 +33,7 @@ else()
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast)
 endif()
 
-# target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
-
-target_compile_options(prime_implicants PUBLIC -Wall -Wextra)
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
 
 # Apply std flags per language
 target_compile_options(prime_implicants PRIVATE
