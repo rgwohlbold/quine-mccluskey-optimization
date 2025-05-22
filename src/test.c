@@ -19,9 +19,11 @@
 #include "implementations/bits.h"
 #include "implementations/avx2.h"
 #include "implementations/pext.h"
+#include "implementations/hellman.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
+    {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
