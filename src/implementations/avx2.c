@@ -149,9 +149,9 @@ void merge_implicants_avx2(bitmap implicants, bitmap merged, size_t input_index,
                 __m128i impl_result;
                 __m256i merged_result;
                 merge_avx2_single_register(i, impl1, merged1, &impl_result, &merged_result);
-                _mm256_store_epi64(merged.bits + idx1 / 8, merged_result);
+                _mm256_store_si256((__m256i*)(merged.bits + idx1 / 8), merged_result);
                 if (i >= first_difference) {
-                    _mm_store_epi64(implicants.bits + o_idx / 8, impl_result);
+                    _mm_store_si128((__m128i*)(implicants.bits + o_idx / 8), impl_result);
                     o_idx += 128;
                 }
                 idx1 += 256;
