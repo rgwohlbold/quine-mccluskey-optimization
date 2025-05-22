@@ -14,6 +14,9 @@ add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
 option(SANITIZE "use sanitizers for debugging")
 message(STATUS "Using SANITIZE=${SANITIZE}")
 
+option(PROFILING "use profiling flags for compilation")
+message(STATUS "Using PROFILING=${PROFILING}")
+
 set(COMPILER_FLAGS -march=native)
 
 # Only clang supports AddressSanitizer
@@ -21,13 +24,13 @@ if(SANITIZE STREQUAL ON)
     set(CMAKE_C_COMPILER "/usr/bin/clang")
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -fsanitize=address -fno-omit-frame-pointer)
     target_link_options(prime_implicants PUBLIC -fsanitize=address)
+elseif(PROFILING STREQUAL ON)
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -O2 -g -pg)
+    target_link_options(prime_implicants PUBLIC -pg)
+elseif(CMAKE_C_COMPILER STREQUAL "/usr/bin/clang")
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3)
 else()
-    # Clang does not support -Ofast
-    if(CMAKE_C_COMPILER STREQUAL "/usr/bin/clang")
-        set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3)
-    else()
-        set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast)
-    endif()
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast)
 endif()
 
 # target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
