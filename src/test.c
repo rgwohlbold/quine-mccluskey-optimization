@@ -47,6 +47,7 @@ merge_implementation merge_implementations[] = {
 #endif
 #ifdef __AVX2__
     {"merge_implicants_avx2", merge_implicants_avx2},
+    {"merge_implicants_avx2_single_pass", merge_implicants_avx2_single_pass},
 #endif
 };
 
