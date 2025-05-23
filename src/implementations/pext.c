@@ -70,7 +70,7 @@ static void merge_implicants_bits5(
         output_ptr[(output_index/16)    ] = (uint16_t)impl21;
         output_ptr[(output_index/16) + 1] = (uint16_t)impl31;
         output_ptr[(output_index/16) + 2] = (uint16_t)impl41;
-        output_ptr[(output_index/16) + 3] = (uint16_t)impl41;
+        output_ptr[(output_index/16) + 3] = (uint16_t)impl51;
     } else if (first_difference == 2) {
         output_ptr[(output_index/16)    ] = (uint16_t)impl31;
         output_ptr[(output_index/16) + 1] = (uint16_t)impl41;
