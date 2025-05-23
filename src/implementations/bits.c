@@ -408,6 +408,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
         merge_implicants_bits6(implicants, merged, input_index, output_index, first_difference);
         return;
     }
+
     size_t o_idx = output_index;
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
@@ -453,12 +454,12 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
 
                     uint64_t impl2 = impl1 >> block_len;
                     uint64_t aggregated = impl1 & impl2;
-
                     uint64_t initial_result = 0;
 
                     uint64_t shifted = 0;
                     if (block_len == 1) {
                         aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
+                        
                         initial_result = aggregated;
                         shifted = aggregated >> 1;
                     }
@@ -469,6 +470,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                         }
                         shifted = aggregated >> 2;
                     }
+
                     if (block_len <= 4) {
                         aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
                         if (block_len == 4) {
@@ -494,14 +496,15 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                     if (block_len == 32) {
                         initial_result = aggregated;
                     }
-
+            
                     uint64_t merged2 = merged | initial_result | (initial_result << block_len);
-
+    
                     merged_ptr[idx1 / 64] = merged2;
                     if (i >= first_difference) {
                         output_ptr[o_idx / 32] = (uint32_t) aggregated;
                         o_idx += 32;
                     }
+        
                     idx1 += 64;
                 }
             }
@@ -531,6 +534,7 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
         int output_elements = 1 << (remaining_bits - 1);
 
         size_t output_index = input_index + iterations * input_elements;
+  
         for (int i = 0; i < iterations; i++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
             merge_implicants_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);

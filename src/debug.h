@@ -45,7 +45,17 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
     (void)(_LL_WARN && _log_fmt(__WARN_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
 #define LOG_ERROR(format, ...) (void)(_log_fmt(__ERROR_PREFIX, __BASE_FILE__, __LINE__, format, ##__VA_ARGS__));
 
+void print_bitmap(const char *msg, const bitmap *map);
+void print_bitmap_sparse(const char *msg, const bitmap *map);
+void print_bitmap_bits(const bitmap *map, size_t n);
 #ifdef __AVX2__
 #include <x86intrin.h>
 void log_m256i(const char *msg, const __m256i *value);
 #endif
+
+#ifdef __aarch64__
+#include <arm_neon.h>
+void log_u64x2(const char *msg, const uint64x2_t *value);
+void log_u64x2_binary(const char *msg, const uint64x2_t *value);
+#endif
+

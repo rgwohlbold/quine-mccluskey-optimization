@@ -19,6 +19,7 @@
 #include "implementations/bits.h"
 #include "implementations/avx2.h"
 #include "implementations/pext.h"
+#include "implementations/neon.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
@@ -28,6 +29,9 @@ const prime_implicant_implementation implementations[] = {
 #endif
 #ifdef __AVX2__
     {"avx2", prime_implicants_avx2, 30},
+#endif
+#ifdef __aarch64__
+    {"neon", prime_implicants_neon, 30},
 #endif
 };
 
@@ -43,6 +47,9 @@ merge_implementation merge_implementations[] = {
 #endif
 #ifdef __AVX2__
     {"merge_implicants_avx2", merge_implicants_avx2},
+#endif
+#ifdef __aarch64__
+    {"merge_implicants_neon", merge_implicants_neon}
 #endif
 };
 
