@@ -18,6 +18,7 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/avx2.h"
+#include "implementations/avx2_single_pass.h"
 #include "implementations/pext.h"
 #include "implementations/hellman.h"
 
@@ -30,6 +31,7 @@ const prime_implicant_implementation implementations[] = {
 #endif
 #ifdef __AVX2__
     {"avx2", prime_implicants_avx2, 30},
+    {"avx2_single_pass", prime_implicants_avx2_single_pass, 30},
 #endif
 };
 
