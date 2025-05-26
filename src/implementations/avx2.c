@@ -172,7 +172,6 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
     bitmap merged = bitmap_allocate(num_implicants);
     
     uint64_t num_ops = 0;
-    init_itt_handles();
     init_tsc();
     uint64_t counter_start = start_tsc();
 
