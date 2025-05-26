@@ -12,31 +12,32 @@
 #ifdef __aarch64__
 #include "vct_arm.h"
 #endif
-#include "util.h"
-#include "system.h"
-#include "vtune.h"
-
+#include "implementations/avx2.h"
+#include "implementations/avx2_single_pass.h"
+#include "implementations/avx2_srm.h"
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_single_pass.h"
-#include "implementations/avx2.h"
-#include "implementations/avx2_single_pass.h"
-#include "implementations/pext.h"
+#include "implementations/hellman.h"
 #include "implementations/neon.h"
 #include "implementations/neon_single_pass.h"
-#include "implementations/hellman.h"
+#include "implementations/pext.h"
+#include "system.h"
+#include "util.h"
+#include "vtune.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
-    // {"hellman", prime_implicants_hellman, 23},
+    {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
-    {"bits_single_pass", prime_implicants_bits_single_pass, 30},
+    {"bits_blocked", prime_implicants_bits_blocked, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
 #ifdef __AVX2__
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_single_pass", prime_implicants_avx2_single_pass, 30},
+    {"avx2_srm", prime_implicants_avx2_srm, 30},
 #endif
 
 #ifdef __aarch64__
@@ -46,8 +47,9 @@ const prime_implicant_implementation implementations[] = {
 };
 
 typedef struct {
-    const char *name; // static storage
-    void (*impl) (bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference);
+    const char *name;  // static storage
+    void (*impl)(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits,
+                 int first_difference);
 } merge_implementation;
 
 merge_implementation merge_implementations[] = {
@@ -274,7 +276,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     uint64_t ops = 0;
 #endif
     FILE *f = fopen("measurements.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles, ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles,
+            ops);
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
@@ -301,7 +304,7 @@ void measure_merge(const char *s, int num_bits) {
     size_t input_elements = 1 << num_bits;
     size_t output_elements = num_bits << (num_bits - 1);
     const int warmup_iterations = 10;
-    bitmap implicants_warmup = bitmap_allocate(input_elements+output_elements);
+    bitmap implicants_warmup = bitmap_allocate(input_elements + output_elements);
     bitmap merged_warmup = bitmap_allocate(input_elements);
 
     for (int i = 0; i < warmup_iterations; i++) {
@@ -309,7 +312,7 @@ void measure_merge(const char *s, int num_bits) {
         impl.impl(implicants_warmup, merged_warmup, 0, input_elements, num_bits, 0);
     }
 
-    bitmap implicants = bitmap_allocate(input_elements+output_elements);
+    bitmap implicants = bitmap_allocate(input_elements + output_elements);
     bitmap merged = bitmap_allocate(input_elements);
     // TODO: check if this makes a difference
     flush_cache(implicants.bits, (input_elements + output_elements + 7) / 8);
@@ -327,6 +330,7 @@ void measure_merge(const char *s, int num_bits) {
 
     uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
     FILE *f = fopen("measurements_merge.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles, num_ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles,
+            num_ops);
     fclose(f);
 }
