@@ -1,4 +1,3 @@
-#include <immintrin.h>
 #ifdef __AVX2__
 #include <stdbool.h>
 #include <stdlib.h>
@@ -7,12 +6,13 @@
 #include "../util.h"
 #ifdef __x86_64__
 #include "../tsc_x86.h"
+#include <x86intrin.h>
+#include <immintrin.h>
 #endif
 #ifdef __aarch64__
 #include "../vct_arm.h"
 #endif
 #include "../debug.h"
-#include <x86intrin.h>
 
 #include "bits.h"
 

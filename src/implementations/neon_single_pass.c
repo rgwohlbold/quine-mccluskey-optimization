@@ -9,14 +9,14 @@
 #include "../debug.h"
 #include "../my_signpost.h"
 #include <arm_neon.h>
-#include "bits.h"
+#include "bits_single_pass.h"
 
 static inline void merge_neon_single_register(
     int bit_difference,
     uint64x2_t impl1,
-    uint64x2_t merged1,
+    uint64x2_t primes1,
     uint64_t  *result,
-    uint64x2_t *merged_result
+    uint64x2_t *primes_result
 ) {
     assert(0 <= bit_difference && bit_difference <= 6);
 
@@ -88,28 +88,25 @@ static inline void merge_neon_single_register(
 
     // Move 64-bit value aggregated[1] to result[1] so result is in the lower half
     *result = vgetq_lane_u64(aggregated, 0);
-    // Perform bitwise OR between merged1 and initial_result
-    uint64x2_t merged2 = vorrq_u64(merged1, initial_result);
     // Shift initial_result left by block_len
-    uint64x2_t merged3;
+    uint64x2_t merged2;
     if (block_len == 64) {
         // Shift left by 8 bytes (64 bits)
-        merged3 = vextq_u64(vdupq_n_u64(0), initial_result, 1);
+        merged2 = vextq_u64(vdupq_n_u64(0), initial_result, 1);
     } else {
             /// Shift left within 64-bit lanes
         int64x2_t shift_amount = vdupq_n_s64(block_len);
-        merged3 = vshlq_u64(initial_result, shift_amount);
+        merged2 = vshlq_u64(initial_result, shift_amount);
     }
-
-    // Perform bitwise OR between merged2 and merged3
-    *merged_result = vorrq_u64(merged2, merged3);
+    merged2 = vorrq_u64(merged2, initial_result);
+    *primes_result = vbicq_u64(primes1, merged2);
 
     return;
 }
 
-void merge_implicants_neon(
+void merge_implicants_neon_single_pass(
     bitmap implicants,
-    bitmap merged,
+    bitmap primes,
     size_t input_index,
     size_t output_index,
     int num_bits,
@@ -117,7 +114,7 @@ void merge_implicants_neon(
 ) 
 {
     if (num_bits <= 6) {
-        merge_implicants_bits(implicants, merged, input_index, output_index, num_bits, first_difference);
+        merge_implicants_bits_single_pass(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
     size_t o_idx = output_index;
@@ -135,13 +132,13 @@ void merge_implicants_neon(
                 for (int k = 0; k < block_len; k += 128) {
                     uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + idx1/8));
                     uint64x2_t impl2 = vld1q_u64((uint64_t*)(implicants.bits + idx2/8));
-                    uint64x2_t merged1 = vld1q_u64((uint64_t*)(merged.bits + idx1/8));
-                    uint64x2_t merged2 = vld1q_u64((uint64_t*)(merged.bits + idx2/8));
+                    uint64x2_t primes1 = vld1q_u64((uint64_t*)(primes.bits + idx1/8));
+                    uint64x2_t primes2 = vld1q_u64((uint64_t*)(primes.bits + idx2/8));
                     uint64x2_t res = vandq_u64(impl1, impl2);
-                    uint64x2_t merged1_ = vorrq_u64(merged1, res);
-                    uint64x2_t merged2_ = vorrq_u64(merged2, res);
-                    vst1q_u64((uint64_t*)(merged.bits + idx1/8), merged1_);
-                    vst1q_u64((uint64_t*)(merged.bits + idx2/8), merged2_);
+                    uint64x2_t primes1_ = vbicq_u64(primes1, res);
+                    uint64x2_t primes2_ = vbicq_u64(primes2, res);
+                    vst1q_u64((uint64_t*)(primes.bits + idx1/8), primes1_);
+                    vst1q_u64((uint64_t*)(primes.bits + idx2/8), primes2_);
                     if (i >= first_difference) {
                         vst1q_u64((uint64_t*)(implicants.bits + o_idx/8), res);
                         o_idx += 128;
@@ -156,12 +153,17 @@ void merge_implicants_neon(
                 size_t idx1 = input_index + 2 * block * block_len;
 
                 uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + idx1/8));
-                uint64x2_t merged1 = vld1q_u64((uint64_t*)(merged.bits + idx1/8));
+                uint64x2_t primes1;
+                if (block_len == 1) { 
+                    primes1 = impl1;
+                } else {
+                    primes1 = vld1q_u64((uint64_t*)(primes.bits + idx1/8));
+                }
                 uint64_t impl_result;
-                uint64x2_t merged_result;
-                merge_neon_single_register(i, impl1, merged1, &impl_result, &merged_result);
+                uint64x2_t primes_result;
+                merge_neon_single_register(i, impl1, primes1, &impl_result, &primes_result);
 
-                vst1q_u64((uint64_t*)(merged.bits + idx1/8), merged_result);
+                vst1q_u64((uint64_t*)(primes.bits + idx1/8), primes_result);
                 if (i >= first_difference) {
                     output_ptr[o_idx/64] = impl_result;
                     o_idx += 64;
@@ -176,19 +178,17 @@ void merge_implicants_neon(
 
 
 
-prime_implicant_result prime_implicants_neon(
+prime_implicant_result prime_implicants_neon_single_pass(
     int num_bits,
     int num_trues,
     int *trues
 ) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
-
     bitmap implicants = bitmap_allocate(num_implicants);
     for (int i = 0; i < num_trues; i++) {
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
-    bitmap merged = bitmap_allocate(num_implicants);
 
     uint64_t num_ops = 0;
     init_signpost();
@@ -196,10 +196,12 @@ prime_implicant_result prime_implicants_neon(
     init_tsc();
     uint64_t counter_start = start_tsc();
     size_t input_index = 0;
-
+    // LOG_DEBUG("num bits: %d", num_bits);
     SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "all_dashes", "Metadata: %s", "Foo");
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
-        SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "dashes", "num: %d", num_dashes);
+        // LOG_DEBUG("Processing %d dashes", num_dashes);
+        // print_bitmap_sparse("implicants", &implicants);
+        // print_bitmap_sparse("primes", &primes);
         int remaining_bits = num_bits - num_dashes;
         int iterations = binomial_coefficient(num_bits, num_dashes);
         int input_elements = 1 << remaining_bits;
@@ -210,49 +212,21 @@ prime_implicant_result prime_implicants_neon(
         for (int j = 0; j < iterations; j++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, j);
             
-            merge_implicants_neon(implicants, merged, input_index, output_index, remaining_bits, first_difference);
+            merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }
-        SIGNPOST_INTERVAL_END(gLog, gSpid, "dashes", "");
     
 #ifdef COUNT_OPS
         num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
 #endif
     }
-    SIGNPOST_INTERVAL_END(gLog, gSpid, "all_dashes", "Metadata: %s", "Baz");
-    SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "scan_unmerged", "Metadata: %s", "Bar");
-    // Step 2: Scan for unmerged implicants (process 64-bit lanes)
-    for (size_t i = 0; i < num_implicants - (num_implicants % 128); i += 128) {
-        uint64x2_t impl = vld1q_u64((uint64_t*)(implicants.bits + i/8));
-        uint64x2_t mer = vld1q_u64((uint64_t*)(merged.bits + i/8));
-        uint64x2_t prime = vbicq_u64(impl, mer);
-        vst1q_u64((uint64_t*)(primes.bits + i/8), prime);
 
-    }
-    for (size_t i = num_implicants - (num_implicants % 128); i < num_implicants - num_implicants % 64; i += 64) {
-        uint64_t implicant_true = ((uint64_t*)implicants.bits)[i / 64];
-        uint64_t merged_true = ((uint64_t*)merged.bits)[i / 64];
-        uint64_t prime_true = implicant_true & ~merged_true;
-        ((uint64_t*)primes.bits)[i / 64] = prime_true;
-    }
-    for (size_t i = num_implicants - (num_implicants % 64); i < num_implicants; i++) {
-        if (BITMAP_CHECK(implicants, i) && !BITMAP_CHECK(merged, i)) {
-            BITMAP_SET_TRUE(primes, i);
-        }
-    }
-
-  
-
-
-
-#ifdef COUNT_OPS
-    num_ops += 2 * num_implicants;
-#endif
-    SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "Metadata: %s", "Qux");
+    BITMAP_SET(primes, num_implicants-1, BITMAP_CHECK(implicants, num_implicants-1));
     uint64_t cycles = stop_tsc(counter_start);
+    SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "Metadata: %s", "Qux");
+
     bitmap_free(implicants);
-    bitmap_free(merged);
 
     prime_implicant_result result = {
         .primes = primes,
