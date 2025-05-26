@@ -535,7 +535,7 @@ prime_implicant_result prime_implicants_avx2_single_pass(int num_bits, int num_t
 
     size_t input_index = 0;
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
-        ITT_START_TASK_NBITS(num_dashes);
+        ITT_START_TASK_SECTION(num_dashes);
         int remaining_bits = num_bits - num_dashes;
         int iterations = binomial_coefficient(num_bits, num_dashes);
         int input_elements = 1 << remaining_bits;
