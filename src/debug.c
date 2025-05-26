@@ -14,6 +14,7 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
     vprintf(format, args);
     printf("\n");
     va_end(args);
+    fflush(stdout); // Ensure the output is flushed immediately
     return 0;
 }
 
