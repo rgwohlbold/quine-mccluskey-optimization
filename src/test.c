@@ -14,6 +14,7 @@
 #endif
 #include "util.h"
 #include "system.h"
+#include "vtune.h"
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
@@ -255,6 +256,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
+    init_itt_handles(implementation_name);
 
     int trues[] = {};
 
@@ -262,7 +264,9 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
+    ITT_START_FRAME();
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
+    ITT_END_FRAME();
     uint64_t cycles = result.cycles;
 #ifdef COUNT_OPS
     uint64_t ops = result.num_ops;
