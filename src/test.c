@@ -14,6 +14,7 @@
 #endif
 #include "util.h"
 #include "system.h"
+#include "vtune.h"
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
@@ -236,6 +237,7 @@ void print_implementations() {
 
 // for now, call all implementations on empty input and see performance
 void measure_implementations(const char *implementation_name, int num_bits) {
+    init_itt_handles();
     prime_implicant_implementation impl;
     bool implementation_found = false;
     for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
@@ -256,7 +258,9 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
+    ITT_START_FRAME();
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
+    ITT_END_FRAME();
     uint64_t cycles = result.cycles;
 #ifdef COUNT_OPS
     uint64_t ops = result.num_ops;

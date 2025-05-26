@@ -24,13 +24,30 @@ if(SANITIZE STREQUAL ON)
     set(CMAKE_C_COMPILER "/usr/bin/clang")
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -fsanitize=address -fno-omit-frame-pointer)
     target_link_options(prime_implicants PUBLIC -fsanitize=address)
-elseif(PROFILING STREQUAL ON)
-    set(COMPILER_FLAGS ${COMPILER_FLAGS} -O2 -g -pg)
-    target_link_options(prime_implicants PUBLIC -pg)
 elseif(CMAKE_C_COMPILER STREQUAL "/usr/bin/clang")
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3)
 else()
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast)
+endif()
+
+if(PROFILING STREQUAL ON)
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -g -pg)
+    target_link_options(prime_implicants PUBLIC -pg)
+    add_definitions(-DVTUNE_API)
+
+    # Set VTUNE_HOME
+    find_path(VTUNE_INCLUDE_DIR ittnotify.h HINTS $ENV{VTUNE_HOME}/include)
+    find_library(VTUNE_ITT_LIB ittnotify HINTS $ENV{VTUNE_HOME}/lib64)
+    find_library(VTUNE_COLLECTOR_LIB ittnotify_collector HINTS $ENV{VTUNE_HOME}/lib64/runtime)
+
+    if(NOT VTUNE_INCLUDE_DIR OR NOT VTUNE_ITT_LIB OR NOT VTUNE_COLLECTOR_LIB)
+        message(FATAL_ERROR "Could not find ittnotify (VTune) headers or library. Please add VTUNE_HOME environment variable pointing to the VTune installation directory.")
+    endif()
+
+    include_directories(${VTUNE_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${VTUNE_ITT_LIB} ${VTUNE_COLLECTOR_LIB})
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${VTUNE_ITT_LIB}:${VTUNE_COLLECTOR_LIB}")
 endif()
 
 target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
