@@ -12,3 +12,4 @@ for pct in "${percentages[@]}"; do
         python tester.py verify $testp/rnd-$n-$pct.txt
     done
 done
+
