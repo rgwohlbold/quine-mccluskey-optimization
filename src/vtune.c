@@ -24,7 +24,7 @@ void init_itt_handles(const char* implementation_name) {
     itt_reduce_handle = __itt_string_handle_create(domain_name);
     for (int i = 0; i < 32; i++) {
         char use_name[128];
-        snprintf(use_name, sizeof(use_name), "impl.%s.num_bits=%02d", implementation_name, i);
+        snprintf(use_name, sizeof(use_name), "impl.%s.num_dashes=%02d", implementation_name, i);
         itt_section_handles[i] = __itt_string_handle_create(use_name);
     }
 }

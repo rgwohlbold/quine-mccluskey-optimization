@@ -237,7 +237,6 @@ void print_implementations() {
 
 // for now, call all implementations on empty input and see performance
 void measure_implementations(const char *implementation_name, int num_bits) {
-    init_itt_handles();
     prime_implicant_implementation impl;
     bool implementation_found = false;
     for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
@@ -251,6 +250,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
+    init_itt_handles(implementation_name);
 
     int trues[] = {};
 
