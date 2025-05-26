@@ -1,8 +1,5 @@
 #ifdef VTUNE_API
 #include <ittnotify.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "debug.h"
 // static void init_itt_handles();
@@ -10,7 +7,7 @@
 extern __itt_domain *itt_domain;
 extern __itt_string_handle *itt_section_handles[32];
 extern __itt_string_handle *itt_reduce_handle;
-void init_itt_handles();
+void init_itt_handles(const char* name);
 
 #define ITT_START_TASK_NBITS(n) (__itt_task_begin(itt_domain, __itt_null, __itt_null, itt_section_handles[n]));
 #define ITT_START_GATHER_TASK() (__itt_task_begin(itt_domain, __itt_null, __itt_null, itt_reduce_handle));
@@ -21,7 +18,7 @@ void init_itt_handles();
 #define ITT_START_TASK_NBITS(n)
 #define ITT_START_GATHER_TASK()
 #define ITT_END_TASK()
-void init_itt_handles() {};
+void init_itt_handles(const char* name) {};
 #define ITT_START_FRAME()
 #define ITT_END_FRAME()
 #endif
