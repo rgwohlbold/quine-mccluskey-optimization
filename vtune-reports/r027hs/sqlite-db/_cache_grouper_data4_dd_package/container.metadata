@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<bag xmlns:unsignedLong="http://www.w3.org/2001/XMLSchema#unsignedLong">
+ <entry path="grouper" unsignedLong:size="0">
+  <indexFields>
+   <field path="dd_package"/>
+   <field path="frame_data_attr"/>
+   <field path="frame_data_scale"/>
+  </indexFields>
+  <int64Fields/>
+  <doubleFields/>
+ </entry>
+</bag>
