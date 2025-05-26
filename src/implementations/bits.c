@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "../util.h"
+#include "../vtune.h"
 #ifdef __x86_64__
 #include "../tsc_x86.h"
 #endif
@@ -523,11 +524,13 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
     bitmap merged = bitmap_allocate(num_implicants);
 
     uint64_t num_ops = 0;
+    init_itt_handles();
     init_tsc();
     uint64_t counter_start = start_tsc();
 
     size_t input_index = 0;
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
+        ITT_START_TASK_NBITS(num_dashes);
         int remaining_bits = num_bits - num_dashes;
         int iterations = binomial_coefficient(num_bits, num_dashes);
         int input_elements = 1 << remaining_bits;
@@ -541,11 +544,12 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }
-
+        ITT_END_TASK();
 #ifdef COUNT_OPS
         num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
 #endif
     }
+    ITT_START_GATHER_TASK();
     // Step 2: Scan for unmerged implicants
     for (size_t i = 0; i < num_implicants / 64; i++) {
         uint64_t implicant_true = ((uint64_t*)implicants.bits)[i];
@@ -558,6 +562,7 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
             BITMAP_SET_TRUE(primes, i);
         }
     }
+    ITT_END_TASK();
 #ifdef COUNT_OPS
         num_ops += 2 * num_implicants;
 #endif
