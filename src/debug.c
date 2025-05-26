@@ -48,6 +48,15 @@ void print_bitmap_sparse(const char *msg, const bitmap *map) {
     printf("\n");
 }
 
+void print_primes_sparse(const char *msg, const bitmap* implicants, const bitmap* merged){
+    LOG_DEBUG("%s: ", msg);
+    for (size_t i = 0; i < implicants->num_bits; i++) {
+        if (BITMAP_CHECK((*implicants), i) && !BITMAP_CHECK((*merged), i)) {
+            printf("%lu ", i);
+        }
+    }
+    printf("\n");
+}
 
 
 #ifdef __AVX2__

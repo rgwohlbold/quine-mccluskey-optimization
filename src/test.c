@@ -17,16 +17,19 @@
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
+#include "implementations/bits_single_pass.h"
 #include "implementations/avx2.h"
 #include "implementations/avx2_single_pass.h"
 #include "implementations/pext.h"
 #include "implementations/neon.h"
+#include "implementations/neon_single_pass.h"
 #include "implementations/hellman.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
-    {"hellman", prime_implicants_hellman, 23},
+    // {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
+    {"bits_single_pass", prime_implicants_bits_single_pass, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
@@ -37,6 +40,7 @@ const prime_implicant_implementation implementations[] = {
 
 #ifdef __aarch64__
     {"neon", prime_implicants_neon, 30},
+    {"neon_single_pass", prime_implicants_neon_single_pass, 30},
 #endif
 };
 
@@ -47,6 +51,7 @@ typedef struct {
 
 merge_implementation merge_implementations[] = {
     {"merge_implicants_bits", merge_implicants_bits},
+    {"merge_implicants_bits_single_pass", merge_implicants_bits_single_pass},
 #ifdef __BMI2__
     {"merge_implicants_pext", merge_implicants_pext},
 #endif
@@ -55,7 +60,8 @@ merge_implementation merge_implementations[] = {
     {"merge_implicants_avx2_single_pass", merge_implicants_avx2_single_pass},
 #endif
 #ifdef __aarch64__
-    {"merge_implicants_neon", merge_implicants_neon}
+    {"merge_implicants_neon", merge_implicants_neon},
+    {"merge_implicants_neon_single_pass", merge_implicants_neon_single_pass}
 #endif
 };
 
