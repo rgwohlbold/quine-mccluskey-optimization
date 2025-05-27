@@ -15,7 +15,7 @@
 #endif
 #include "merge/avx2_sp.h"
 
-prime_implicant_result prime_implicants_avx2_single_pass(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_avx2_sp(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
