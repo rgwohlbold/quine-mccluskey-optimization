@@ -48,7 +48,7 @@ void flush_cache(uint8_t *array, int num_elements) {
     // but often recommended after cache maintenance)
     __asm__ volatile("isb" ::: "memory");
     #endif
-    
+
 }
 
 
