@@ -22,6 +22,9 @@ bool *allocate_boolean_array(int num_elements) {
         perror("could not allocate boolean array");
         exit(EXIT_FAILURE);
     }
+    for (int i = 0; i < num_elements; i += 4096) {
+        arr[i] = false;
+    }
     return arr;
 }
 
