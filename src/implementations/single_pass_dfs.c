@@ -5,17 +5,20 @@
 #include "../util.h"
 #include "../vtune.h"
 #include "bits.h"
+#include "bits_single_pass.h"
 #include "common.h"
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
+#include "avx2_single_pass.h"
 #endif
 
 #ifdef __aarch64__
 #include "../vct_arm.h"
+#include "neon_single_pass.h"
 #endif
 
-prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_single_pass_dfs(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
@@ -23,7 +26,6 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
     for (int i = 0; i < num_trues; i++) {
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
-    bitmap merged = bitmap_allocate(num_implicants);
 
     uint64_t num_ops = 0;
 
@@ -82,7 +84,16 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
             int leading_value = leading_stars(num_bits, section_index, layer_input_idx);
             int first_difference = remaining_bits - leading_value;
 
-            merge_implicants_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
+#if defined(__AVX2__)
+            merge_implicants_avx2_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+                                              first_difference);
+#elif defined(__aarch64__)
+            merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+                                              first_difference);
+#else
+            merge_implicants_bits_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+                                              first_difference);
+#endif
 
 #ifdef COUNT_OPS
             num_ops += 3 * remaining_bits * (1 << (remaining_bits - 1));
@@ -107,20 +118,8 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
         ITT_END_TASK();
     }
 
-    ITT_START_GATHER_TASK();
-    // Step 2: Scan for unmerged implicants
-    for (size_t i = 0; i < num_implicants / 64; i++) {
-        uint64_t implicant_true = ((uint64_t *)implicants.bits)[i];
-        uint64_t merged_true = ((uint64_t *)merged.bits)[i];
-        uint64_t prime_true = implicant_true & ~merged_true;
-        ((uint64_t *)primes.bits)[i] = prime_true;
-    }
-    for (size_t i = num_implicants - (num_implicants % 64); i < num_implicants; i++) {
-        if (BITMAP_CHECK(implicants, i) && !BITMAP_CHECK(merged, i)) {
-            BITMAP_SET_TRUE(primes, i);
-        }
-    }
-    ITT_END_TASK();
+    // mark last implicant prime if it is true
+    BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
 #ifdef COUNT_OPS
     num_ops += 2 * num_implicants;
@@ -128,7 +127,6 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
 
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
-    bitmap_free(merged);
 
     prime_implicant_result result = {
         .primes = primes,
