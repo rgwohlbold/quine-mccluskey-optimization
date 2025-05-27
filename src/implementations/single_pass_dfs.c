@@ -10,7 +10,7 @@
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
-#include "avx2_single_pass.h"
+#include "merge/avx2_sp.h"
 #endif
 
 #ifdef __aarch64__
@@ -85,7 +85,7 @@ prime_implicant_result prime_implicants_single_pass_dfs(int num_bits, int num_tr
             int first_difference = remaining_bits - leading_value;
 
 #if defined(__AVX2__)
-            merge_implicants_avx2_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+            merge_avx2_sp(implicants, primes, input_index, output_index, remaining_bits,
                                               first_difference);
 #elif defined(__aarch64__)
             merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits,
