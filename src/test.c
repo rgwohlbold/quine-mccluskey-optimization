@@ -13,7 +13,7 @@
 #include "vct_arm.h"
 #endif
 #include "implementations/avx2.h"
-#include "implementations/avx2_single_pass.h"
+#include "implementations/avx2_sp.h"
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
@@ -21,7 +21,7 @@
 #include "implementations/neon.h"
 #include "implementations/neon_sp.h"
 #include "implementations/pext.h"
-#include "implementations/single_pass_dfs.h"
+#include "implementations/native_sp_dfs.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/avx2_sp.h"
@@ -34,19 +34,18 @@ const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
     {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
-    {"bits_sp", prime_implicants_bits_single_pass, 30},
-    {"native_sp_dfs", prime_implicants_single_pass_dfs, 30},
+    {"bits_sp", prime_implicants_bits_sp, 30},
+    {"native_sp_dfs", prime_implicants_native_sp_dfs, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
 #ifdef __AVX2__
     {"avx2", prime_implicants_avx2, 30},
-    {"avx2_sp", prime_implicants_avx2_single_pass, 30},
+    {"avx2_sp", prime_implicants_avx2_sp, 30},
 #endif
-
 #ifdef __aarch64__
     {"neon", prime_implicants_neon, 30},
-    {"neon_sp", prime_implicants_neon_single_pass, 30},
+    {"neon_sp", prime_implicants_neon_sp, 30},
 #endif
 };
 
