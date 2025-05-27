@@ -23,6 +23,7 @@
 #include "implementations/neon_single_pass.h"
 #include "implementations/pext.h"
 #include "implementations/single_pass_dfs.h"
+#include "implementations/merge/avx2_sp.h"
 #include "system.h"
 #include "util.h"
 #include "vtune.h"
@@ -61,7 +62,7 @@ merge_implementation merge_implementations[] = {
 #endif
 #ifdef __AVX2__
     {"merge_implicants_avx2", merge_implicants_avx2},
-    {"merge_implicants_avx2_single_pass", merge_implicants_avx2_single_pass},
+    {"merge_implicants_avx2_single_pass", merge_avx2_sp},
 #endif
 #ifdef __aarch64__
     {"merge_implicants_neon", merge_implicants_neon},
