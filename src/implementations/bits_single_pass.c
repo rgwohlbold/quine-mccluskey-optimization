@@ -3,12 +3,12 @@
 
 #include "common.h"
 #include "../util.h"
+#include "../my_signpost.h"
 #ifdef __x86_64__
 #include "../tsc_x86.h"
 #endif
 #ifdef __aarch64__
 #include "../vct_arm.h"
-#include "../my_signpost.h"
 #endif
 #include "../debug.h"
 
