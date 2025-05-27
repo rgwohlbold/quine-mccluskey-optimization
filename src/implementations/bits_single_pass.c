@@ -223,7 +223,7 @@ static void merge_implicants_bits5(
      uint32_t impl13s = impl13 >> 8;
      uint32_t impl1res32 = (impl13 | impl13s) & 0x0000FFFF;
      uint32_t merged1 = impl10 | (impl10 << 1);
- 
+
      // block size 2 (difference 2^1 = 2)
      uint32_t impl21 = impl & (impl >> 2) & 0x33333333;
      uint32_t impl21s = impl21 >> 2;
@@ -233,7 +233,7 @@ static void merge_implicants_bits5(
      uint32_t impl23s = impl23 >> 8;
      uint32_t impl2res32 = (impl23 | impl23s) & 0x0000FFFF;
      uint32_t merged2 = impl21 | (impl21 << 2);
- 
+
      // block size 4 (difference 2^2 = 4)
      uint32_t impl32 = impl & (impl >> 4) & 0x0F0F0F0F;
      uint32_t impl32s = impl32 >> 4;
@@ -241,13 +241,13 @@ static void merge_implicants_bits5(
      uint32_t impl33s = impl33 >> 8;
      uint32_t impl3res32 = (impl33 | impl33s) & 0x0000FFFF;
      uint32_t merged3 = impl32 | (impl32 << 4);
- 
+
      // block size 8 (difference 2^3 = 8)
      uint32_t impl43 = impl & (impl >> 8) & 0x00FF00FF;
      uint32_t impl43s = impl43 >> 8;
      uint32_t impl4res32 = (impl43 | impl43s) & 0x0000FFFF;
      uint32_t merged4 = impl43 | (impl43 << 8);
- 
+
      // block size 16 (difference 2^4 = 16)
      uint32_t impl5res32 = impl & (impl >> 16) & 0x0000FFFF;
      uint32_t merged5 = impl5res32 | (impl5res32 << 16);
@@ -429,7 +429,7 @@ void merge_implicants_bits_single_pass(bitmap implicants, bitmap primes, size_t 
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
-        
+
         if (block_len >= 64) { // implicants do not fit into one register, and we use the largest register size
             for (int block = 0; block < num_blocks; block++) {
                 size_t idx1 = input_index + 2 * block * block_len;
@@ -480,7 +480,7 @@ void merge_implicants_bits_single_pass(bitmap implicants, bitmap primes, size_t 
                 uint64_t shifted = 0;
                 if (block_len == 1) {
                     aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
-                    
+
                     initial_result = aggregated;
                     shifted = aggregated >> 1;
                 }
@@ -517,7 +517,7 @@ void merge_implicants_bits_single_pass(bitmap implicants, bitmap primes, size_t 
                 if (block_len == 32) {
                     initial_result = aggregated;
                 }
-        
+
                 uint64_t primes2 = primes & ~(initial_result | (initial_result << block_len));
 
                 primes_ptr[idx1 / 64] = primes2;
@@ -525,11 +525,11 @@ void merge_implicants_bits_single_pass(bitmap implicants, bitmap primes, size_t 
                     output_ptr[o_idx / 32] = (uint32_t) aggregated;
                     o_idx += 32;
                 }
-    
+
                 idx1 += 64;
-                
+
             }
-        } 
+        }
     }
 }
 

@@ -40,7 +40,7 @@ static void merge_implicants_bits2(bitmap implicants, bitmap merged, size_t inpu
     bool merged3 = BITMAP_CHECK(merged, input_index+3);
     bool res0 = impl0 && impl1;
     bool res1 = impl2 && impl3;
-    
+
     bool res2 = impl0 && impl2;
     bool res3 = impl1 && impl3;
 
@@ -220,7 +220,7 @@ static void merge_implicants_bits5(
 ) {
     uint32_t *implicant_ptr = (uint32_t *) implicants.bits;
     uint32_t *merged_ptr = (uint32_t *) merged.bits;
-    uint16_t *output_ptr = (uint16_t *) implicants.bits; 
+    uint16_t *output_ptr = (uint16_t *) implicants.bits;
 
     uint32_t impl = implicant_ptr[input_index/32];
     uint32_t impl_merged = merged_ptr[input_index/32];
@@ -418,7 +418,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
     for (int i = 0; i < num_bits; i++) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
-        
+
         if (block_len >= 64) { // implicants do not fit into one register, and we use the largest register size
             for (int block = 0; block < num_blocks; block++) {
                 size_t idx1 = input_index + 2 * block * block_len;
@@ -464,7 +464,7 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                     uint64_t shifted = 0;
                     if (block_len == 1) {
                         aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
-                        
+
                         initial_result = aggregated;
                         shifted = aggregated >> 1;
                     }
@@ -501,19 +501,19 @@ void merge_implicants_bits(bitmap implicants, bitmap merged, size_t input_index,
                     if (block_len == 32) {
                         initial_result = aggregated;
                     }
-            
+
                     uint64_t merged2 = merged | initial_result | (initial_result << block_len);
-    
+
                     merged_ptr[idx1 / 64] = merged2;
                     if (i >= first_difference) {
                         output_ptr[o_idx / 32] = (uint32_t) aggregated;
                         o_idx += 32;
                     }
-        
+
                     idx1 += 64;
                 }
             }
-        } 
+        }
     }
 }
 
