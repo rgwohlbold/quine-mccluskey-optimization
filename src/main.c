@@ -5,7 +5,7 @@
 #include "debug.h"
 #include "test.h"
 
-void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help|implementations]", argv[0]); }
+void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help|implementations|merge_implementations]", argv[0]); }
 void print_test_usage(char *argv[]) {
     LOG_INFO("usage: %s test <testfile1> <testfile2> ...", argv[0]);
 }
@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
         test_implementations(&argv[2], argc - 2);  // Pass the test files to the test_implementations function
     } else if (strcmp(argv[1], "implementations") == 0) {
         print_implementations();
+    } else if (strcmp(argv[1], "merge_implementations") == 0) {
+        print_merge_implementations();
     } else if (strcmp(argv[1], "measure") == 0) {
         if (argc <= 3) {
             print_measure_usage(argv);
