@@ -1,13 +1,14 @@
 // my_signpost.h
 #pragma once
 
+#ifdef __aarch64__
+#ifdef APPLE_PROFILING
 #include <os/log.h>
 #include <os/signpost.h>
 
 // Create one global log and signpost-id for your module
 static os_log_t          gLog;
 static os_signpost_id_t  gSpid;
-#define PROFILING
 static inline void init_signpost(void) {
     static bool inited = false;
     if (!inited) {
@@ -17,7 +18,6 @@ static inline void init_signpost(void) {
         inited = true;
     }
 }
-#ifdef PROFILING && __arch64__
 #define SIGNPOST_INIT() init_signpost()
 // Macros for profiling
 #define SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, name, format, ...) \
@@ -28,6 +28,7 @@ static inline void init_signpost(void) {
 
 #define SIGNPOST_EVENT(gLog, gSpid, name, format, ...) \
     os_signpost_event_emit(gLog, gSpid, name, format, ##__VA_ARGS__)
+#endif
 #else
 // If PROFILING is not defined, make the macros no-ops
 #define SIGNPOST_INIT() ((void)0)
