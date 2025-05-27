@@ -7,7 +7,6 @@
 extern __itt_domain *itt_domain;
 extern __itt_string_handle *itt_section_handles[32];
 extern __itt_string_handle *itt_reduce_handle;
-void init_itt_handles(const char* name);
 
 #define ITT_START_TASK_SECTION(n) (__itt_task_begin(itt_domain, __itt_null, __itt_null, itt_section_handles[n]));
 #define ITT_START_GATHER_TASK() (__itt_task_begin(itt_domain, __itt_null, __itt_null, itt_reduce_handle));
@@ -18,7 +17,7 @@ void init_itt_handles(const char* name);
 #define ITT_START_TASK_SECTION(n)
 #define ITT_START_GATHER_TASK()
 #define ITT_END_TASK()
-static void init_itt_handles(const char* name) {};
 #define ITT_START_FRAME()
 #define ITT_END_FRAME()
 #endif
+void init_itt_handles(const char* name);
