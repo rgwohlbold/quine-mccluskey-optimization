@@ -30,13 +30,13 @@ static inline void merge_neon_single_register(
         // // Shift within 64-bit lanes by a runtime-determined amount
         int64x2_t cnt = vdupq_n_s64(-block_len);     // negative => right shift
         impl2 = vshlq_u64(impl1, cnt);
-    }   
+    }
 
     uint64x2_t aggregated = vandq_u64(impl1, impl2);
     uint64x2_t initial_result = vdupq_n_u64(0); // prevent uninitialized warnings
     uint64x2_t shifted = vdupq_n_u64(0);
 
- 
+
     if (block_len == 1) {
         aggregated = vandq_u64(aggregated, vdupq_n_u8(0b01010101));
         initial_result = aggregated;
@@ -111,7 +111,7 @@ void merge_implicants_neon_single_pass(
     size_t output_index,
     int num_bits,
     int first_difference
-) 
+)
 {
     if (num_bits <= 6) {
         merge_implicants_bits_single_pass(implicants, primes, input_index, output_index, num_bits, first_difference);
@@ -154,7 +154,7 @@ void merge_implicants_neon_single_pass(
 
                 uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + idx1/8));
                 uint64x2_t primes1;
-                if (block_len == 1) { 
+                if (block_len == 1) {
                     primes1 = impl1;
                 } else {
                     primes1 = vld1q_u64((uint64_t*)(primes.bits + idx1/8));
@@ -190,7 +190,6 @@ prime_implicant_result prime_implicants_neon_single_pass(
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
 
-    uint64_t num_ops = 0;
     init_signpost();
 
     init_tsc();
@@ -211,15 +210,13 @@ prime_implicant_result prime_implicants_neon_single_pass(
 
         for (int j = 0; j < iterations; j++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, j);
-            
+
             merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }
-    
-#ifdef COUNT_OPS
-        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
+
     }
 
     BITMAP_SET(primes, num_implicants-1, BITMAP_CHECK(implicants, num_implicants-1));
@@ -231,9 +228,6 @@ prime_implicant_result prime_implicants_neon_single_pass(
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
     };
     return result;
 }

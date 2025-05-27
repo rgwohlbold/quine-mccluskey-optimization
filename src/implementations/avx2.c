@@ -24,7 +24,6 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
     }
     bitmap merged = bitmap_allocate(num_implicants);
 
-    uint64_t num_ops = 0;
     init_tsc();
     uint64_t counter_start = start_tsc();
 
@@ -44,9 +43,7 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
             input_index += input_elements;
         }
         ITT_END_TASK();
-#ifdef COUNT_OPS
-        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
     }
     ITT_START_GATHER_TASK();
     // Step 2: Scan for unmerged implicants
@@ -68,9 +65,7 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
         }
     }
     ITT_END_TASK();
-#ifdef COUNT_OPS
-        num_ops += 2 * num_implicants;
-#endif
+
 
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
@@ -79,9 +74,7 @@ prime_implicant_result prime_implicants_avx2(int num_bits, int num_trues, int *t
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
+
     };
     return result;
 }

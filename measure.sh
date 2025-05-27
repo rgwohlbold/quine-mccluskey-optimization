@@ -4,11 +4,12 @@ set -e
 min_bits=1
 max_bits=20
 num_measurements=10
-compilers="/usr/bin/gcc /usr/bin/clang"
+compilers="/usr/bin/gcc"
+#compilers="/usr/bin/gcc /usr/bin/clang"
 measurements_file="measurements.csv"
 
 [ -e "$measurements_file" ] && rm "$measurements_file"
-echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,ops" > "$measurements_file"
+echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles" > "$measurements_file"
 
 for compiler in $compilers; do
     # since we change the compiler, we have to set the other options in another cmake run

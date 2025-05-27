@@ -25,8 +25,6 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
 
-    uint64_t num_ops = 0;
-
     init_tsc();
     uint64_t counter_start = start_tsc();
 
@@ -93,9 +91,7 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
                                               first_difference);
 #endif
 
-#ifdef COUNT_OPS
-            num_ops += 3 * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
             iterations--;
             input_chunk_index[section_index]++;
             output_chunk_index[section_index + 1] += leading_value;
@@ -119,9 +115,7 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
     // mark last implicant prime if it is true
     BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
-#ifdef COUNT_OPS
-    num_ops += 2 * num_implicants;
-#endif
+
 
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
@@ -129,9 +123,7 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
+
     };
     return result;
 }

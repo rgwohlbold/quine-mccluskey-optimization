@@ -91,7 +91,7 @@ extern "C" {
         uint64_t total_ops, useful_ops;
         size_t n_blocks;
         vector<BITSET3> S;
-        
+
         QuineMcCluskey(int _n) {
             h = BITSET3_LOG3;
             n = max(_n, h); // we will do full block processing anyway
@@ -110,7 +110,7 @@ extern "C" {
             S[xter / BITSET3_PER3][xter % BITSET3_PER3] = 1;
         }
 
-        void run() {        
+        void run() {
             // merge: top layer
             {
                 size_t step = 1;
@@ -167,22 +167,22 @@ extern "C" {
 
                     u = ((Sa >> 2) & MASKS_TERNARY[0]);
                     Sa &= ~(u | (u << 1));
-                    
+
                     u = ((Sa >> 6) & MASKS_TERNARY[1]);
                     Sa &= ~(u | (u << 3));
-                    
+
                     u = ((Sa >> 18) & MASKS_TERNARY[2]);
                     Sa &= ~(u | (u << 9));
-                    
+
                     u = ((Sa >> 54) & MASKS_TERNARY[3]);
                     Sa &= ~(u | (u << 27));
-                    
+
                     u = ((Sa >> 162) & MASKS_TERNARY[4]);
                     Sa &= ~(u | (u << 81));
-     
-                }        
+
+                }
             }
-            
+
             // reduce: top layer
             {
                 size_t step = 1;
@@ -259,21 +259,19 @@ extern "C" {
         }
 
         // start the counter and perform the algorithm
-        uint64_t num_ops = 0;
         init_tsc();
         uint64_t counter_start = start_tsc();
 
         D.run();
 
         uint64_t cycles = stop_tsc(counter_start);
-        num_ops = D.total_ops;
 
 
-        // instead being written to a file, 
+        // instead being written to a file,
         // the hellman string optput (e.g. "0-11-1") is converted
         // to a bitmap in our format using already existing helper functions
         // and returned as a prime_implicant_result
-        // assert(n < 99);	
+        // assert(n < 99);
         char buf[100] = {};
         buf[num_bits] = '\n';
         cnt = 0;
@@ -302,13 +300,8 @@ extern "C" {
         prime_implicant_result result = {
             .primes = primes,
             .cycles = cycles,
-        #ifdef COUNT_OPS
-                .num_ops = num_ops,
-        #endif
-            };
-            return result;
-
-        
+        };
+        return result;
     }
 
 }

@@ -21,8 +21,6 @@ prime_implicant_result prime_implicants_bits_sp(int num_bits, int num_trues, int
     for (int i = 0; i < num_trues; i++) {
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
-
-    uint64_t num_ops = 0;
     init_tsc();
     uint64_t counter_start = start_tsc();
 
@@ -47,9 +45,7 @@ prime_implicant_result prime_implicants_bits_sp(int num_bits, int num_trues, int
         }
 
 
-#ifdef COUNT_OPS
-        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
     }
     SIGNPOST_INTERVAL_END(gLog, gSpid, "all_dashes", "");
    // mark last implicant prime if it is true
@@ -61,9 +57,7 @@ prime_implicant_result prime_implicants_bits_sp(int num_bits, int num_trues, int
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
+
     };
     return result;
 }

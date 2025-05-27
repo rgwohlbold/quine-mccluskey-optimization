@@ -24,7 +24,6 @@ prime_implicant_result prime_implicants_avx2_sp(int num_bits, int num_trues, int
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
 
-    uint64_t num_ops = 0;
     init_tsc();
     uint64_t counter_start = start_tsc();
 
@@ -44,9 +43,7 @@ prime_implicant_result prime_implicants_avx2_sp(int num_bits, int num_trues, int
             input_index += input_elements;
         }
         ITT_END_TASK();
-#ifdef COUNT_OPS
-        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
     }
     // mark last implicant prime if it is true
     BITMAP_SET(primes, num_implicants-1, BITMAP_CHECK(implicants, num_implicants-1));
@@ -57,9 +54,7 @@ prime_implicant_result prime_implicants_avx2_sp(int num_bits, int num_trues, int
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
+
     };
     return result;
 }
