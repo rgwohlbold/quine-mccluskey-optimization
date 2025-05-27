@@ -16,6 +16,10 @@ bitmap bitmap_allocate(size_t num_bits) {
         .malloc_ptr = bits,
         .bits = bits + (32 - ((uintptr_t)bits & 0x1F)), // align to 32 bytes
     };
+    // access all pages of the bitmap once to make the OS back them with physical memory
+    for (size_t i = 0; i < num_bits; i += 4096 * 8) {
+        BITMAP_SET_FALSE(result, i);
+    }
     return result;
 }
 
