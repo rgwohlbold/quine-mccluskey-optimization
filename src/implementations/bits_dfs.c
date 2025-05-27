@@ -15,6 +15,8 @@
 #include "../vct_arm.h"
 #endif
 
+#include "merge/bits.h"
+
 prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
@@ -82,7 +84,7 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
             int leading_value = leading_stars(num_bits, section_index, layer_input_idx);
             int first_difference = remaining_bits - leading_value;
 
-            merge_implicants_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
+            merge_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
 
 #ifdef COUNT_OPS
             num_ops += 3 * remaining_bits * (1 << (remaining_bits - 1));

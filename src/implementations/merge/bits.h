@@ -2,39 +2,45 @@
 
 #include "../../bitmap.h"
 
-static inline void merge_bits_sp1(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int first_difference) {
+static void merge_bits1(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int first_difference) {
     bool impl1 = BITMAP_CHECK(implicants, input_index);
     bool impl2 = BITMAP_CHECK(implicants, input_index+1);
+    bool merged1 = BITMAP_CHECK(merged, input_index);
+    bool merged2 = BITMAP_CHECK(merged, input_index+1);
 
     bool res = impl1 && impl2;
-    bool prime1_ = impl1 && !impl2;
-    bool prime2_ = impl2 && !impl1;
-    BITMAP_SET(primes, input_index, prime1_);
-    BITMAP_SET(primes, input_index+1, prime2_);
+    bool merged1_ = merged1 || res;
+    bool merged2_ = merged2 || res;
+    BITMAP_SET(merged, input_index, merged1_);
+    BITMAP_SET(merged, input_index+1, merged2_);
     if (first_difference == 0) {
         BITMAP_SET(implicants, output_index, res);
     }
 }
 
-static inline void merge_bits_sp2(bitmap implicants, bitmap prime, size_t input_index, size_t output_index, int first_difference) {
+static void merge_bits2(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int first_difference) {
     bool impl0 = BITMAP_CHECK(implicants, input_index);
     bool impl1 = BITMAP_CHECK(implicants, input_index+1);
     bool impl2 = BITMAP_CHECK(implicants, input_index+2);
     bool impl3 = BITMAP_CHECK(implicants, input_index+3);
+    bool merged0 = BITMAP_CHECK(merged, input_index);
+    bool merged1 = BITMAP_CHECK(merged, input_index+1);
+    bool merged2 = BITMAP_CHECK(merged, input_index+2);
+    bool merged3 = BITMAP_CHECK(merged, input_index+3);
     bool res0 = impl0 && impl1;
     bool res1 = impl2 && impl3;
 
     bool res2 = impl0 && impl2;
     bool res3 = impl1 && impl3;
 
-    bool prime0_ = impl0 && !(impl1 || impl2);
-    bool prime1_ = impl1 && !(impl0 || impl3);
-    bool prime2_ = impl2 && !(impl0 || impl3);
-    bool prime3_ = impl3 && !(impl1 || impl2);
-    BITMAP_SET(prime, input_index, prime0_);
-    BITMAP_SET(prime, input_index+1, prime1_);
-    BITMAP_SET(prime, input_index+2, prime2_);
-    BITMAP_SET(prime, input_index+3, prime3_);
+    bool merged0_ = merged0 || res0 || res2;
+    bool merged1_ = merged1 || res0 || res3;
+    bool merged2_ = merged2 || res1 || res2;
+    bool merged3_ = merged3 || res1 || res3;
+    BITMAP_SET(merged, input_index, merged0_);
+    BITMAP_SET(merged, input_index+1, merged1_);
+    BITMAP_SET(merged, input_index+2, merged2_);
+    BITMAP_SET(merged, input_index+3, merged3_);
     if (first_difference == 0) {
         BITMAP_SET(implicants, output_index, res0);
         BITMAP_SET(implicants, output_index+1, res1);
@@ -46,14 +52,13 @@ static inline void merge_bits_sp2(bitmap implicants, bitmap prime, size_t input_
     }
 }
 
-static inline void merge_bits_sp3(
+static void merge_bits3(
     bitmap implicants,
-    bitmap primes,
+    bitmap merged,
     size_t input_index,
     size_t output_index,
     int first_difference
 ) {
-    // TODO: load everything as byte and perform bitwise operations
     bool impl0 = BITMAP_CHECK(implicants, input_index);
     bool impl1 = BITMAP_CHECK(implicants, input_index+1);
     bool impl2 = BITMAP_CHECK(implicants, input_index+2);
@@ -62,6 +67,14 @@ static inline void merge_bits_sp3(
     bool impl5 = BITMAP_CHECK(implicants, input_index+5);
     bool impl6 = BITMAP_CHECK(implicants, input_index+6);
     bool impl7 = BITMAP_CHECK(implicants, input_index+7);
+    bool merged0 = BITMAP_CHECK(merged, input_index);
+    bool merged1 = BITMAP_CHECK(merged, input_index+1);
+    bool merged2 = BITMAP_CHECK(merged, input_index+2);
+    bool merged3 = BITMAP_CHECK(merged, input_index+3);
+    bool merged4 = BITMAP_CHECK(merged, input_index+4);
+    bool merged5 = BITMAP_CHECK(merged, input_index+5);
+    bool merged6 = BITMAP_CHECK(merged, input_index+6);
+    bool merged7 = BITMAP_CHECK(merged, input_index+7);
     bool res0 = impl0 && impl1;
     bool res1 = impl2 && impl3;
     bool res2 = impl4 && impl5;
@@ -74,22 +87,22 @@ static inline void merge_bits_sp3(
     bool res9 = impl1 && impl5;
     bool res10 = impl2 && impl6;
     bool res11 = impl3 && impl7;
-    bool prime0_ = impl0 && !(res0 || res4 || res8);
-    bool prime1_ = impl1 && !(res0 || res5 || res9);
-    bool prime2_ = impl2 && !(res1 || res4 || res10);
-    bool prime3_ = impl3 && !(res1 || res5 || res11);
-    bool prime4_ = impl4 && !(res2 || res6 || res8);
-    bool prime5_ = impl5 && !(res2 || res7 || res9);
-    bool prime6_ = impl6 && !(res3 || res6 || res10);
-    bool prime7_ = impl7 && !(res3 || res7 || res11);
-    BITMAP_SET(primes, input_index, prime0_);
-    BITMAP_SET(primes, input_index+1, prime1_);
-    BITMAP_SET(primes, input_index+2, prime2_);
-    BITMAP_SET(primes, input_index+3, prime3_);
-    BITMAP_SET(primes, input_index+4, prime4_);
-    BITMAP_SET(primes, input_index+5, prime5_);
-    BITMAP_SET(primes, input_index+6, prime6_);
-    BITMAP_SET(primes, input_index+7, prime7_);
+    bool merged0_ = merged0 || res0 || res4 || res8;
+    bool merged1_ = merged1 || res0 || res5 || res9;
+    bool merged2_ = merged2 || res1 || res4 || res10;
+    bool merged3_ = merged3 || res1 || res5 || res11;
+    bool merged4_ = merged4 || res2 || res6 || res8;
+    bool merged5_ = merged5 || res2 || res7 || res9;
+    bool merged6_ = merged6 || res3 || res6 || res10;
+    bool merged7_ = merged7 || res3 || res7 || res11;
+    BITMAP_SET(merged, input_index, merged0_);
+    BITMAP_SET(merged, input_index+1, merged1_);
+    BITMAP_SET(merged, input_index+2, merged2_);
+    BITMAP_SET(merged, input_index+3, merged3_);
+    BITMAP_SET(merged, input_index+4, merged4_);
+    BITMAP_SET(merged, input_index+5, merged5_);
+    BITMAP_SET(merged, input_index+6, merged6_);
+    BITMAP_SET(merged, input_index+7, merged7_);
 
     if (first_difference == 0) {
         BITMAP_SET(implicants, output_index, res0);
@@ -121,19 +134,19 @@ static inline void merge_bits_sp3(
     }
 }
 
-
-static inline void merge_bits_sp4(
+static void merge_bits4(
     bitmap implicants,
-    bitmap primes,
+    bitmap merged,
     size_t input_index,
     size_t output_index,
     int first_difference
 ) {
     uint16_t *implicant_ptr = (uint16_t *) implicants.bits;
-    uint16_t *primes_ptr = (uint16_t *) primes.bits;
+    uint16_t *merged_ptr = (uint16_t *) merged.bits;
     uint8_t *output_ptr = (uint8_t *) implicants.bits;
 
     uint16_t impl = implicant_ptr[input_index/16];
+    uint16_t impl_merged = merged_ptr[input_index/16];
 
     // block size 1 (difference 2^0 = 1)
     uint16_t impl10 = impl & (impl >> 1) & 0x5555;
@@ -164,8 +177,8 @@ static inline void merge_bits_sp4(
     uint16_t merged4 = impl4res16 | (impl4res16 << 8);
 
     // --- Combine merged markers (uint16_t) ---
-    uint16_t res_prime = impl & ~(merged1 | merged2 | merged3 | merged4);
-    primes_ptr[input_index/16] = res_prime;
+    uint16_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4;
+    merged_ptr[input_index/16] = res_merged;
 
     // --- Write output implicants (uint8_t) ---
     if (first_difference == 0) {
@@ -185,65 +198,64 @@ static inline void merge_bits_sp4(
     }
 }
 
-static inline void merge_bits_sp5(
+
+
+static void merge_bits5(
     bitmap implicants,
-    bitmap primes,
+    bitmap merged,
     size_t input_index,
     size_t output_index,
     int first_difference
 ) {
-    // pointers into the two bitmaps (32 bits per word in implicants & primes)
-    uint32_t *implicant_ptr = (uint32_t *)implicants.bits;
-    uint32_t *primes_ptr     = (uint32_t *)primes.bits;
-    // output_ptr writes 16-bit output words back into the implicants buffer
-    uint16_t *output_ptr     = (uint16_t *)implicants.bits;
+    uint32_t *implicant_ptr = (uint32_t *) implicants.bits;
+    uint32_t *merged_ptr = (uint32_t *) merged.bits;
+    uint16_t *output_ptr = (uint16_t *) implicants.bits;
 
-    // load the 32-bit word of implicants
-    uint32_t impl = implicant_ptr[input_index / 32];
+    uint32_t impl = implicant_ptr[input_index/32];
+    uint32_t impl_merged = merged_ptr[input_index/32];
 
-     // block size 1 (difference 2^0 = 1)
-     uint32_t impl10 = impl & (impl >> 1) & 0x55555555;
-     uint32_t impl10s = impl10 >> 1;
-     uint32_t impl11 = (impl10 | impl10s) & 0x33333333;
-     uint32_t impl11s = impl11 >> 2;
-     uint32_t impl12 = (impl11 | impl11s) & 0x0F0F0F0F;
-     uint32_t impl12s = impl12 >> 4;
-     uint32_t impl13 = (impl12 | impl12s) & 0x00FF00FF;
-     uint32_t impl13s = impl13 >> 8;
-     uint32_t impl1res32 = (impl13 | impl13s) & 0x0000FFFF;
-     uint32_t merged1 = impl10 | (impl10 << 1);
+    // block size 1 (difference 2^0 = 1)
+    uint32_t impl10 = impl & (impl >> 1) & 0x55555555;
+    uint32_t impl10s = impl10 >> 1;
+    uint32_t impl11 = (impl10 | impl10s) & 0x33333333;
+    uint32_t impl11s = impl11 >> 2;
+    uint32_t impl12 = (impl11 | impl11s) & 0x0F0F0F0F;
+    uint32_t impl12s = impl12 >> 4;
+    uint32_t impl13 = (impl12 | impl12s) & 0x00FF00FF;
+    uint32_t impl13s = impl13 >> 8;
+    uint32_t impl1res32 = (impl13 | impl13s) & 0x0000FFFF;
+    uint32_t merged1 = impl10 | (impl10 << 1);
 
-     // block size 2 (difference 2^1 = 2)
-     uint32_t impl21 = impl & (impl >> 2) & 0x33333333;
-     uint32_t impl21s = impl21 >> 2;
-     uint32_t impl22 = (impl21 | impl21s) & 0x0F0F0F0F;
-     uint32_t impl22s = impl22 >> 4;
-     uint32_t impl23 = (impl22 | impl22s) & 0x00FF00FF;
-     uint32_t impl23s = impl23 >> 8;
-     uint32_t impl2res32 = (impl23 | impl23s) & 0x0000FFFF;
-     uint32_t merged2 = impl21 | (impl21 << 2);
+    // block size 2 (difference 2^1 = 2)
+    uint32_t impl21 = impl & (impl >> 2) & 0x33333333;
+    uint32_t impl21s = impl21 >> 2;
+    uint32_t impl22 = (impl21 | impl21s) & 0x0F0F0F0F;
+    uint32_t impl22s = impl22 >> 4;
+    uint32_t impl23 = (impl22 | impl22s) & 0x00FF00FF;
+    uint32_t impl23s = impl23 >> 8;
+    uint32_t impl2res32 = (impl23 | impl23s) & 0x0000FFFF;
+    uint32_t merged2 = impl21 | (impl21 << 2);
 
-     // block size 4 (difference 2^2 = 4)
-     uint32_t impl32 = impl & (impl >> 4) & 0x0F0F0F0F;
-     uint32_t impl32s = impl32 >> 4;
-     uint32_t impl33 = (impl32 | impl32s) & 0x00FF00FF;
-     uint32_t impl33s = impl33 >> 8;
-     uint32_t impl3res32 = (impl33 | impl33s) & 0x0000FFFF;
-     uint32_t merged3 = impl32 | (impl32 << 4);
+    // block size 4 (difference 2^2 = 4)
+    uint32_t impl32 = impl & (impl >> 4) & 0x0F0F0F0F;
+    uint32_t impl32s = impl32 >> 4;
+    uint32_t impl33 = (impl32 | impl32s) & 0x00FF00FF;
+    uint32_t impl33s = impl33 >> 8;
+    uint32_t impl3res32 = (impl33 | impl33s) & 0x0000FFFF;
+    uint32_t merged3 = impl32 | (impl32 << 4);
 
-     // block size 8 (difference 2^3 = 8)
-     uint32_t impl43 = impl & (impl >> 8) & 0x00FF00FF;
-     uint32_t impl43s = impl43 >> 8;
-     uint32_t impl4res32 = (impl43 | impl43s) & 0x0000FFFF;
-     uint32_t merged4 = impl43 | (impl43 << 8);
+    // block size 8 (difference 2^3 = 8)
+    uint32_t impl43 = impl & (impl >> 8) & 0x00FF00FF;
+    uint32_t impl43s = impl43 >> 8;
+    uint32_t impl4res32 = (impl43 | impl43s) & 0x0000FFFF;
+    uint32_t merged4 = impl43 | (impl43 << 8);
 
-     // block size 16 (difference 2^4 = 16)
-     uint32_t impl5res32 = impl & (impl >> 16) & 0x0000FFFF;
-     uint32_t merged5 = impl5res32 | (impl5res32 << 16);
+    // block size 16 (difference 2^4 = 16)
+    uint32_t impl5res32 = impl & (impl >> 16) & 0x0000FFFF;
+    uint32_t merged5 = impl5res32 | (impl5res32 << 16);
 
-    // write the prime‐mask (bits that never got merged)
-    uint32_t res_prime = impl & ~(merged1 | merged2 | merged3 | merged4 | merged5);
-    primes_ptr[input_index / 32] = res_prime;
+    uint32_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4 | merged5;
+    merged_ptr[input_index/32] = res_merged;
 
     if (first_difference == 0) {
         output_ptr[(output_index/16)    ] = (uint16_t)impl1res32;
@@ -268,21 +280,13 @@ static inline void merge_bits_sp5(
     }
 }
 
-static inline void merge_bits_sp6(
-    bitmap implicants,
-    bitmap primes,
-    size_t input_index,
-    size_t output_index,
-    int first_difference
-) {
-    // pointers into the two bitmaps
-    uint64_t *implicant_ptr = (uint64_t *)implicants.bits;
-    uint64_t *primes_ptr     = (uint64_t *)primes.bits;
-    // we'll write 32-bit outputs back into the implicants buffer
-    uint32_t *output_ptr     = (uint32_t *)implicants.bits;
+static void merge_bits6(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int first_difference) {
+    uint64_t *implicant_ptr = (uint64_t *) implicants.bits;
+    uint64_t *merged_ptr = (uint64_t *) merged.bits;
+    uint32_t *output_ptr = (uint32_t *) implicants.bits;
 
-    // load the 64-bit word of implicants
     uint64_t impl = implicant_ptr[input_index / 64];
+    uint64_t impl_merged = merged_ptr[input_index / 64];
 
     // block size 1
     uint64_t impl10 = impl & (impl >> 1) & 0b0101010101010101010101010101010101010101010101010101010101010101;
@@ -344,10 +348,9 @@ static inline void merge_bits_sp6(
     uint32_t impl6res = (uint32_t) impl65;
     uint64_t merged6 = impl65 | (impl65 << 32);
 
-    // compute and store the prime‐mask
-    uint64_t res_prime = impl & ~(merged1 | merged2 | merged3 | merged4 | merged5 | merged6);
-    primes_ptr[input_index / 64] = res_prime;
+    uint64_t res_merged = impl_merged | merged1 | merged2 | merged3 | merged4 | merged5 | merged6;
 
+    merged_ptr[input_index / 64] = res_merged;
     if (first_difference == 0) {
         output_ptr[(output_index / 32)] = impl1res;
         output_ptr[(output_index / 32)+1] = impl2res;
@@ -378,24 +381,25 @@ static inline void merge_bits_sp6(
     }
 }
 
-static inline void merge_bits_sp(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
+
+static inline void merge_bits(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits == 1) {
-        merge_bits_sp1(implicants, primes, input_index, output_index, first_difference);
+        merge_bits1(implicants, merged, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 2) {
-        merge_bits_sp2(implicants, primes, input_index, output_index, first_difference);
+        merge_bits2(implicants, merged, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 3) {
-        merge_bits_sp3(implicants, primes, input_index, output_index, first_difference);
+        merge_bits3(implicants, merged, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 4) {
-        merge_bits_sp4(implicants, primes, input_index, output_index, first_difference);
+        merge_bits4(implicants, merged, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 5) {
-        merge_bits_sp5(implicants, primes, input_index, output_index, first_difference);
+        merge_bits5(implicants, merged, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 6) {
-        merge_bits_sp6(implicants, primes, input_index, output_index, first_difference);
+        merge_bits6(implicants, merged, input_index, output_index, first_difference);
         return;
     }
 
@@ -411,18 +415,18 @@ static inline void merge_bits_sp(bitmap implicants, bitmap primes, size_t input_
 
                 for (int k = 0; k < block_len; k += 64) {
                     uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
-                    uint64_t *primes_ptr = (uint64_t*) primes.bits;
+                    uint64_t *merged_ptr = (uint64_t*) merged.bits;
 
                     uint64_t impl1 = implicant_ptr[idx1 / 64];
                     uint64_t impl2 = implicant_ptr[idx2 / 64];
-                    uint64_t primes1 = primes_ptr[idx1 / 64];
-                    uint64_t primes2 = primes_ptr[idx2 / 64];
+                    uint64_t merged1 = merged_ptr[idx1 / 64];
+                    uint64_t merged2 = merged_ptr[idx2 / 64];
                     uint64_t res = impl1 & impl2;
-                    uint64_t primes1_ = primes1 & ~res;
-                    uint64_t primes2_ = primes2 & ~res;
+                    uint64_t merged1_ = merged1 | res;
+                    uint64_t merged2_ = merged2 | res;
 
-                    primes_ptr[idx1 / 64] = primes1_;
-                    primes_ptr[idx2 / 64] = primes2_;
+                    merged_ptr[idx1 / 64] = merged1_;
+                    merged_ptr[idx2 / 64] = merged2_;
                     if (i >= first_difference) {
                         implicant_ptr[o_idx / 64] = res;
                         o_idx += 64;
@@ -433,75 +437,70 @@ static inline void merge_bits_sp(bitmap implicants, bitmap primes, size_t input_
             }
         } else { // implicants that are compared fit into one 64-bit register
             for (int block = 0; block < num_blocks; block += 32 / block_len) {
-                // LOG_DEBUG("Block: %d, block_len: %d", block, block_len);
                 size_t idx1 = input_index + 2 * block * block_len;
 
                 uint64_t *input_ptr = (uint64_t *) implicants.bits;
                 uint32_t *output_ptr = (uint32_t *) implicants.bits;
-                uint64_t *primes_ptr = (uint64_t *) primes.bits;
-                uint64_t impl1 = input_ptr[idx1 / 64];
-                uint64_t primes;
-                if (block_len == 1) {
-                    primes = impl1;
-                }
-                else {
-                    primes = primes_ptr[idx1 / 64];
-                }
-                uint64_t impl2 = impl1 >> block_len;
-                uint64_t aggregated = impl1 & impl2;
-                uint64_t initial_result = 0;
+                uint64_t *merged_ptr = (uint64_t *) merged.bits;
+                for (int k = 0; k < block_len; k += 64) {
+                    uint64_t impl1 = input_ptr[idx1 / 64];
+                    uint64_t merged = merged_ptr[idx1 / 64];
 
-                uint64_t shifted = 0;
-                if (block_len == 1) {
-                    aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
+                    uint64_t impl2 = impl1 >> block_len;
+                    uint64_t aggregated = impl1 & impl2;
+                    uint64_t initial_result = 0;
 
-                    initial_result = aggregated;
-                    shifted = aggregated >> 1;
-                }
-                if (block_len <= 2) {
-                    aggregated = (aggregated | shifted) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-                    if (block_len == 2) {
+                    uint64_t shifted = 0;
+                    if (block_len == 1) {
+                        aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
+
+                        initial_result = aggregated;
+                        shifted = aggregated >> 1;
+                    }
+                    if (block_len <= 2) {
+                        aggregated = (aggregated | shifted) & 0b0011001100110011001100110011001100110011001100110011001100110011;
+                        if (block_len == 2) {
+                            initial_result = aggregated;
+                        }
+                        shifted = aggregated >> 2;
+                    }
+
+                    if (block_len <= 4) {
+                        aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
+                        if (block_len == 4) {
+                            initial_result = aggregated;
+                        }
+                        shifted = aggregated >> 4;
+                    }
+                    if (block_len <= 8) {
+                        aggregated = (aggregated | shifted) & 0x00FF00FF00FF00FF;
+                        if (block_len == 8) {
+                            initial_result = aggregated;
+                        }
+                        shifted = aggregated >> 8;
+                    }
+                    if (block_len <= 16) {
+                        aggregated = (aggregated | shifted) & 0x0000FFFF0000FFFF;
+                        if (block_len == 16) {
+                            initial_result = aggregated;
+                        }
+                        shifted = aggregated >> 16;
+                    }
+                    aggregated = (aggregated | shifted) & 0x00000000FFFFFFFF;
+                    if (block_len == 32) {
                         initial_result = aggregated;
                     }
-                    shifted = aggregated >> 2;
-                }
 
-                if (block_len <= 4) {
-                    aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
-                    if (block_len == 4) {
-                        initial_result = aggregated;
+                    uint64_t merged2 = merged | initial_result | (initial_result << block_len);
+
+                    merged_ptr[idx1 / 64] = merged2;
+                    if (i >= first_difference) {
+                        output_ptr[o_idx / 32] = (uint32_t) aggregated;
+                        o_idx += 32;
                     }
-                    shifted = aggregated >> 4;
-                }
-                if (block_len <= 8) {
-                    aggregated = (aggregated | shifted) & 0x00FF00FF00FF00FF;
-                    if (block_len == 8) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 8;
-                }
-                if (block_len <= 16) {
-                    aggregated = (aggregated | shifted) & 0x0000FFFF0000FFFF;
-                    if (block_len == 16) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 16;
-                }
-                aggregated = (aggregated | shifted) & 0x00000000FFFFFFFF;
-                if (block_len == 32) {
-                    initial_result = aggregated;
-                }
 
-                uint64_t primes2 = primes & ~(initial_result | (initial_result << block_len));
-
-                primes_ptr[idx1 / 64] = primes2;
-                if (i >= first_difference) {
-                    output_ptr[o_idx / 32] = (uint32_t) aggregated;
-                    o_idx += 32;
+                    idx1 += 64;
                 }
-
-                idx1 += 64;
-
             }
         }
     }

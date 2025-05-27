@@ -25,6 +25,7 @@
 #include "implementations/single_pass_dfs.h"
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/bits_sp.h"
+#include "implementations/merge/bits.h"
 #include "system.h"
 #include "util.h"
 #include "vtune.h"
@@ -56,7 +57,7 @@ typedef struct {
 } merge_implementation;
 
 merge_implementation merge_implementations[] = {
-    {"merge_implicants_bits", merge_implicants_bits},
+    {"merge_implicants_bits", merge_bits},
     {"merge_implicants_bits_single_pass", merge_bits_sp},
 #ifdef __BMI2__
     {"merge_implicants_pext", merge_implicants_pext},
