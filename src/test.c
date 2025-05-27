@@ -17,7 +17,7 @@
 #include "implementations/avx2_srm.h"
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
-#include "implementations/bits_dfs.h"
+#include "implementations/avx2sp_dfs.h"
 #include "implementations/bits_single_pass.h"
 #include "implementations/hellman.h"
 #include "implementations/neon.h"
@@ -32,7 +32,7 @@ const prime_implicant_implementation implementations[] = {
     {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
     {"bits_blocked", prime_implicants_bits_blocked, 30},
-    {"bits_dfs", prime_implicants_bits_dfs, 30},
+    {"avx2sp_dfs", prime_implicants_avx2sp_dfs, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
