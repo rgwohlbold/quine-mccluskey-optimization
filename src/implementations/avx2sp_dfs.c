@@ -11,9 +11,9 @@
 #endif
 #include "../debug.h"
 #include "../vtune.h"
-#include "bits.h"
+#include "avx2_single_pass.h"
 
-prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_avx2sp_dfs(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
@@ -21,7 +21,6 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
     for (int i = 0; i < num_trues; i++) {
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
-    bitmap merged = bitmap_allocate(num_implicants);
 
     uint64_t num_ops = 0;
 
@@ -34,20 +33,21 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
     size_t *total_chunks = malloc((num_bits + 1) * sizeof(size_t));
 
     output_chunk_index[0] = 1;
-    base_section_offset[0] = 0;
-
+    
     for (int i = 0; i <= num_bits; i++) {
         total_chunks[i] = binomial_coefficient(num_bits, i);
     }
+    base_section_offset[0] = 0;
     for (int num_dashes = 1; num_dashes <= num_bits; num_dashes++) {
         int remaining_bits = num_bits - num_dashes;
         base_section_offset[num_dashes] =
-            base_section_offset[num_dashes - 1] + total_chunks[num_dashes - 1] * (1 << (remaining_bits));
+            base_section_offset[num_dashes - 1] + total_chunks[num_dashes - 1] * (1 << (remaining_bits + 1));
     }
 
     int sections_todo = num_bits + 1;
     int section_index = 0;
     while (sections_todo > 0) {
+        ITT_START_TASK_SECTION(section_index);
         // 1. Check if current layer needs developing.
         size_t input_chunk_idx = input_chunk_index[section_index];
         size_t output_chunk_idx = output_chunk_index[section_index];
@@ -55,10 +55,11 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
         size_t all_chunks = total_chunks[section_index];
         bool finished = (input_chunk_idx >= all_chunks);
         bool underdeveloped = output_chunk_idx <= input_chunk_idx;
-        LOG_DEBUG("Section IN  %2zu; [inp=%d/out=%d/all=%d]", section_index, input_chunk_idx, output_chunk_idx, all_chunks);
+        LOG_DEBUG("Section IN  %2zu; [inp=%d/out=%d/all=%d]", section_index, input_chunk_idx, output_chunk_idx,
+                  all_chunks);
 
         // print_bitmap_sparse("Implicants", &implicants);
-        // print_bitmap_sparse("Merged", &merged);
+        // print_bitmap_sparse("Merged", &primes);
 
         // 1. a) Finished: Reduce current layer. pop.
         if (finished || underdeveloped) {
@@ -79,7 +80,8 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
             int ls = leading_stars(num_bits, section_index, input_chunk_idx);
             int first_difference = remaining_bits - ls;
 
-            merge_implicants_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
+            merge_implicants_avx2_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+                                              first_difference);
 
             input_chunk_index[section_index]++;
             output_chunk_index[section_index + 1] += ls;
@@ -88,51 +90,21 @@ prime_implicant_result prime_implicants_bits_dfs(int num_bits, int num_trues, in
                 sections_todo--;
             }
             // 2. Go deeper
-            if(last_section){
+            if (last_section) {
                 section_index--;
-            }else{
+            } else {
                 section_index++;
             }
         }
         LOG_DEBUG("Section OUT %2zu; [inp=%d/out=%d/all=%d]", orig_section_index, input_chunk_index[orig_section_index],
                   output_chunk_index[orig_section_index], total_chunks[orig_section_index]);
+        ITT_END_TASK();
     }
 
-    // for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
-    //     int remaining_bits = num_bits - num_dashes;
-    //     int num_chunks = binomial_coefficient(num_bits, num_dashes);
-    //     int input_elements = 1 << remaining_bits;
-    //     int output_elements = 1 << (remaining_bits - 1);
-    //     output_chunk_index[num_dashes] = input_chunk_index[num_dashes] + num_chunks * input_elements;
+    BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
-    //     for (int i = 0; i < num_chunks; i++) {
-    //         int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
-    //         merge_implicants_bits_dfs(implicants, merged, input_index, output_index, remaining_bits,
-    //         first_difference); output_index += (remaining_bits - first_difference) * output_elements; input_index +=
-    //         input_elements;
-    //     }
-    // }
-
-    // Step 2: Scan for unmerged implicants
-    ITT_START_GATHER_TASK();
-    for (size_t i = 0; i < num_implicants / 64; i++) {
-        uint64_t implicant_true = ((uint64_t *)implicants.bits)[i];
-        uint64_t merged_true = ((uint64_t *)merged.bits)[i];
-        uint64_t prime_true = implicant_true & ~merged_true;
-        ((uint64_t *)primes.bits)[i] = prime_true;
-    }
-    for (size_t i = num_implicants - (num_implicants % 64); i < num_implicants; i++) {
-        if (BITMAP_CHECK(implicants, i) && !BITMAP_CHECK(merged, i)) {
-            BITMAP_SET_TRUE(primes, i);
-        }
-    }
-#ifdef COUNT_OPS
-    num_ops += 2 * num_implicants;
-#endif
-    ITT_END_TASK();
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
-    bitmap_free(merged);
 
     prime_implicant_result result = {
         .primes = primes,
