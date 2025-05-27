@@ -22,6 +22,7 @@
 #include "implementations/neon.h"
 #include "implementations/neon_single_pass.h"
 #include "implementations/pext.h"
+#include "implementations/single_pass_dfs.h"
 #include "system.h"
 #include "util.h"
 #include "vtune.h"
@@ -31,6 +32,7 @@ const prime_implicant_implementation implementations[] = {
     {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
     {"bits_dfs", prime_implicants_bits_dfs, 30},
+    {"single_pass_dfs", prime_implicants_single_pass_dfs, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
