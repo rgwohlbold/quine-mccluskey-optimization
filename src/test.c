@@ -246,6 +246,12 @@ void print_implementations() {
     }
 }
 
+void print_merge_implementations() {
+    for (unsigned long k = 0; k < sizeof(merge_implementations) / sizeof(merge_implementations[0]); k++) {
+        printf("%s\n", merge_implementations[k].name);
+    }
+}
+
 // for now, call all implementations on empty input and see performance
 void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_implementation impl;

@@ -7,7 +7,6 @@ num_measurements=50
 compilers="/usr/bin/gcc"
 #compilers="/usr/bin/gcc /usr/bin/clang"
 measurements_file="measurements_merge.csv"
-implementations="merge_implicants_bits merge_implicants_avx2 merge_implicants_pext"
 
 make -j$(nproc)
 
@@ -20,6 +19,7 @@ for compiler in $compilers; do
     cmake . -D LOG_LEVEL=2
     make clean
     make -j $(nproc)
+    implementations="$(./prime_implicants merge_implementations)"
     for k in $(seq 1 "$num_measurements"); do
         for i in $(seq $min_bits $max_bits); do
             for implementation in $implementations; do
