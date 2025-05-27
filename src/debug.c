@@ -59,6 +59,17 @@ void print_primes_sparse(const char *msg, const bitmap* implicants, const bitmap
     printf("\n");
 }
 
+void print_bitmap_sparse_repr(const char *msg, const bitmap *map, int num_bits) {
+    for (size_t i = 0; i < map->num_bits; i++) {
+        if (BITMAP_CHECK((*map), i)) {
+            char s[map->num_bits + 1];
+            bitmap_index_to_implicant(num_bits, i, s);
+            printf("%s ", s);
+        }
+    }
+    printf("\n");
+}
+
 
 #ifdef __AVX2__
 void log_m256i(const char *msg, const __m256i *value) {
