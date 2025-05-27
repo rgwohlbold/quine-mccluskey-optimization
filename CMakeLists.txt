@@ -50,7 +50,7 @@ if(PROFILING STREQUAL ON)
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${VTUNE_ITT_LIB}:${VTUNE_COLLECTOR_LIB}")
 endif()
 
-target_compile_options(prime_implicants PUBLIC -Wall -Wextra -std=c11 ${COMPILER_FLAGS})
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra ${COMPILER_FLAGS})
 
 # Apply std flags per language
 target_compile_options(prime_implicants PRIVATE
