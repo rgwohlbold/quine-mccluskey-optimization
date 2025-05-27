@@ -4,18 +4,16 @@
 #include "../debug.h"
 #include "../util.h"
 #include "../vtune.h"
-#include "bits.h"
-#include "bits_single_pass.h"
 #include "common.h"
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
 #include "merge/avx2_sp.h"
-#endif
-
-#ifdef __aarch64__
+#elif defined(__aarch64__)
 #include "../vct_arm.h"
 #include "neon_single_pass.h"
+#else
+#include "merge/bits.h"
 #endif
 
 prime_implicant_result prime_implicants_single_pass_dfs(int num_bits, int num_trues, int *trues) {
@@ -91,7 +89,7 @@ prime_implicant_result prime_implicants_single_pass_dfs(int num_bits, int num_tr
             merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits,
                                               first_difference);
 #else
-            merge_implicants_bits_single_pass(implicants, primes, input_index, output_index, remaining_bits,
+            merge_bits_sp(implicants, primes, input_index, output_index, remaining_bits,
                                               first_difference);
 #endif
 

@@ -108,7 +108,7 @@ static void merge_avx2_sp_small_n(bitmap implicants, bitmap primes, size_t input
     }
 }
 
-static inline void merge_avx2_single_register(int bit_difference, __m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register(int bit_difference, __m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
     assert(0 <= bit_difference && bit_difference <= 7);
 
     int block_len = 1 << bit_difference;
@@ -244,7 +244,7 @@ static void merge_avx2_sp(bitmap implicants, bitmap primes, size_t input_index, 
                 }
                 __m128i impl_result;
                 __m256i primes_result;
-                merge_avx2_single_register(i, impl1, primes1, &impl_result, &primes_result);
+                merge_avx2_sp_single_register(i, impl1, primes1, &impl_result, &primes_result);
                 _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes_result);
                 if (i >= first_difference) {
                     _mm_store_si128((__m128i*)(implicants.bits + o_idx / 8), impl_result);
