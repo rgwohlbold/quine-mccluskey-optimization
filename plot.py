@@ -5,6 +5,7 @@ import seaborn as sns
 
 df = pd.read_csv("measurements.csv")
 df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
+df['ops'] = df['bits'] * 3**df['bits']
 df['performance'] = df['ops'] / df['cycles']
 df['function'] = df['implementation'] + ', ' + df['compiler_version'] + ', ' + df['compiler_flags']
 print(df)

@@ -90,6 +90,7 @@ if __name__ == '__main__':
     print(df)
     df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
     print(df)
+    df['ops'] = 3 * df['bits'] * (2 ** df['bits'] - 1)
     df['performance'] = df['ops'] / df['cycles']
     df['transferred_bytes'] = df['bits'].apply(calculate_bytes)
     df['operational_intensity'] = df['ops'] / df['transferred_bytes']
