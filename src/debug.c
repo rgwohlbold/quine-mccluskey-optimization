@@ -18,7 +18,7 @@ int _log_fmt(const char *prefix, const char *file, int line, const char *format,
     return 0;
 }
 
-void print_bitmap(const char *msg, const bitmap *map) {
+void print_bitmap(const bitmap *map) {
     char *buffer = malloc(map->num_bits + 1); // Allocate memory for the bitmap string (+1 for null terminator)
     if (!buffer) {
         LOG_DEBUG("Failed to allocate memory for bitmap printing.");
@@ -28,9 +28,6 @@ void print_bitmap(const char *msg, const bitmap *map) {
         buffer[i] = BITMAP_CHECK((*map), i) ? '1' : '0'; // Convert each bit to '1' or '0'
     }
     buffer[map->num_bits] = '\0'; // Null-terminate the string
-
-    LOG_DEBUG("%s: %s", msg, buffer); // Print the message and the bitmap in one line
-
     free(buffer); // Free the allocated memory
 }
 
@@ -54,6 +51,17 @@ void print_primes_sparse(const char *msg, const bitmap* implicants, const bitmap
     for (size_t i = 0; i < implicants->num_bits; i++) {
         if (BITMAP_CHECK((*implicants), i) && !BITMAP_CHECK((*merged), i)) {
             printf("%lu ", i);
+        }
+    }
+    printf("\n");
+}
+
+void print_bitmap_sparse_repr(const bitmap *map, int num_bits) {
+    for (size_t i = 0; i < map->num_bits; i++) {
+        if (BITMAP_CHECK((*map), i)) {
+            char s[map->num_bits + 1];
+            bitmap_index_to_implicant(num_bits, i, s);
+            printf("%s ", s);
         }
     }
     printf("\n");
