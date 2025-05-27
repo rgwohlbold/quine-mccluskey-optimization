@@ -18,7 +18,7 @@ void init_itt_handles(const char* name);
 #define ITT_START_TASK_SECTION(n)
 #define ITT_START_GATHER_TASK()
 #define ITT_END_TASK()
-void init_itt_handles(const char* name) {};
+static void init_itt_handles(const char* name) {};
 #define ITT_START_FRAME()
 #define ITT_END_FRAME()
 #endif
