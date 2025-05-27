@@ -28,4 +28,6 @@ void init_itt_handles(const char* implementation_name) {
         itt_section_handles[i] = __itt_string_handle_create(use_name);
     }
 }
+#else
+void init_itt_handles(__attribute__((unused)) const char* x) {};
 #endif
