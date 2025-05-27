@@ -30,13 +30,13 @@ static inline void merge_neon_single_register(
         // // Shift within 64-bit lanes by a runtime-determined amount
         int64x2_t cnt = vdupq_n_s64(-block_len);     // negative => right shift
         impl2 = vshlq_u64(impl1, cnt);
-    }   
+    }
 
     uint64x2_t aggregated = vandq_u64(impl1, impl2);
     uint64x2_t initial_result = vdupq_n_u64(0); // prevent uninitialized warnings
     uint64x2_t shifted = vdupq_n_u64(0);
 
- 
+
     if (block_len == 1) {
         aggregated = vandq_u64(aggregated, vdupq_n_u8(0b01010101));
         initial_result = aggregated;
@@ -114,7 +114,7 @@ void merge_implicants_neon(
     size_t output_index,
     int num_bits,
     int first_difference
-) 
+)
 {
     if (num_bits <= 6) {
         merge_implicants_bits(implicants, merged, input_index, output_index, num_bits, first_difference);
@@ -190,7 +190,6 @@ prime_implicant_result prime_implicants_neon(
     }
     bitmap merged = bitmap_allocate(num_implicants);
 
-    uint64_t num_ops = 0;
     init_signpost();
 
     init_tsc();
@@ -209,16 +208,14 @@ prime_implicant_result prime_implicants_neon(
 
         for (int j = 0; j < iterations; j++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, j);
-            
+
             merge_implicants_neon(implicants, merged, input_index, output_index, remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }
         SIGNPOST_INTERVAL_END(gLog, gSpid, "dashes", "");
-    
-#ifdef COUNT_OPS
-        num_ops += 3 * iterations * remaining_bits * (1 << (remaining_bits - 1));
-#endif
+
+
     }
     SIGNPOST_INTERVAL_END(gLog, gSpid, "all_dashes", "Metadata: %s", "Baz");
     SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "scan_unmerged", "Metadata: %s", "Bar");
@@ -242,13 +239,11 @@ prime_implicant_result prime_implicants_neon(
         }
     }
 
-  
 
 
 
-#ifdef COUNT_OPS
-    num_ops += 2 * num_implicants;
-#endif
+
+
     SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "Metadata: %s", "Qux");
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
@@ -257,9 +252,7 @@ prime_implicant_result prime_implicants_neon(
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-#ifdef COUNT_OPS
-        .num_ops = num_ops,
-#endif
+
     };
     return result;
 }

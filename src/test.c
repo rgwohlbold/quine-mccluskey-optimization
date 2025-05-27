@@ -273,14 +273,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
     ITT_END_FRAME();
     uint64_t cycles = result.cycles;
-#ifdef COUNT_OPS
-    uint64_t ops = result.num_ops;
-#else
-    uint64_t ops = 0;
-#endif
     FILE *f = fopen("measurements.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles,
-            ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles);
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
@@ -331,9 +325,7 @@ void measure_merge(const char *s, int num_bits) {
     bitmap_free(implicants);
     bitmap_free(merged);
 
-    uint64_t num_ops = 3 * num_bits * (1 << (num_bits - 1));
     FILE *f = fopen("measurements_merge.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles,
-            num_ops);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles);
     fclose(f);
 }
