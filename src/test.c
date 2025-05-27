@@ -56,18 +56,18 @@ typedef struct {
 } merge_implementation;
 
 merge_implementation merge_implementations[] = {
-    {"merge_implicants_bits", merge_bits},
-    {"merge_implicants_bits_single_pass", merge_bits_sp},
+    {"merge_bits", merge_bits},
+    {"merge_bits_sp", merge_bits_sp},
 #ifdef __BMI2__
-    {"merge_implicants_pext", merge_pext},
+    {"merge_pext", merge_pext},
 #endif
 #ifdef __AVX2__
-    {"merge_implicants_avx2", merge_avx2},
-    {"merge_implicants_avx2_single_pass", merge_avx2_sp},
+    {"merge_avx2", merge_avx2},
+    {"merge_avx2_sp", merge_avx2_sp},
 #endif
 #ifdef __aarch64__
-    {"merge_implicants_neon", merge_implicants_neon},
-    {"merge_implicants_neon_single_pass", merge_implicants_neon_single_pass}
+    {"merge_neon", merge_implicants_neon},
+    {"merge_neon_sp", merge_implicants_neon_single_pass}
 #endif
 };
 
