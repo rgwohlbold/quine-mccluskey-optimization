@@ -11,19 +11,19 @@
 
 static void merge_avx2_sp_small_n(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits == 1) {
-        merge_implicants_bits1(implicants, primes, input_index, output_index, first_difference);
+        merge_bits_sp1(implicants, primes, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 2) {
-        merge_implicants_bits2(implicants, primes, input_index, output_index, first_difference);
+        merge_bits_sp2(implicants, primes, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 3) {
-        merge_implicants_bits3(implicants, primes, input_index, output_index, first_difference);
+        merge_bits_sp3(implicants, primes, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 4) {
-        merge_implicants_bits4(implicants, primes, input_index, output_index, first_difference);
+        merge_bits_sp4(implicants, primes, input_index, output_index, first_difference);
         return;
     } else if (num_bits == 5) {
-        merge_implicants_bits5(implicants, primes, input_index, output_index, first_difference);
+        merge_bits_sp5(implicants, primes, input_index, output_index, first_difference);
         return;
     }
     size_t o_idx = output_index;
