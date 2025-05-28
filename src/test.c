@@ -20,12 +20,15 @@
 #include "implementations/hellman.h"
 #include "implementations/neon.h"
 #include "implementations/neon_sp.h"
-#include "implementations/pext.h"
-#include "implementations/native_sp_dfs.h"
+#include "implementations/native_dfs_sp.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/bits.h"
+#include "implementations/merge/neon.h"
+#include "implementations/merge/pext.h"
+#include "implementations/pext.h"
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/bits_sp.h"
+#include "implementations/merge/neon_sp.h"
 #include "system.h"
 #include "util.h"
 #include "vtune.h"
@@ -35,7 +38,7 @@ const prime_implicant_implementation implementations[] = {
     {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
-    {"native_sp_dfs", prime_implicants_native_sp_dfs, 30},
+    {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
@@ -66,8 +69,8 @@ merge_implementation merge_implementations[] = {
     {"merge_avx2_sp", merge_avx2_sp},
 #endif
 #ifdef __aarch64__
-    {"merge_neon", merge_implicants_neon},
-    {"merge_neon_sp", merge_implicants_neon_single_pass}
+    {"merge_neon", merge_neon},
+    {"merge_neon_sp", merge_neon_sp}
 #endif
 };
 
