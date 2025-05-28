@@ -8,34 +8,41 @@
 #include "implicant.h"
 #ifdef __x86_64__
 #include "tsc_x86.h"
+#include "vtune.h"
+#include "implementations/avx2.h"
+#include "implementations/avx2_sp.h"
+#include "implementations/hellman.h"
+#include "implementations/pext.h"
+
+#include "implementations/merge/avx2_sp.h"
+#include "implementations/merge/avx2.h"
+#include "implementations/merge/pext.h"
+
+
+
 #endif
 #ifdef __aarch64__
 #include "vct_arm.h"
+#include "implementations/merge/neon_sp.h"
+#include "implementations/merge/neon.h"
+#include "implementations/neon.h"
+#include "implementations/neon_sp.h"
 #endif
-#include "implementations/avx2.h"
-#include "implementations/avx2_sp.h"
+
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
-#include "implementations/hellman.h"
-#include "implementations/neon.h"
-#include "implementations/neon_sp.h"
+
 #include "implementations/native_dfs_sp.h"
-#include "implementations/merge/avx2.h"
 #include "implementations/merge/bits.h"
-#include "implementations/merge/neon.h"
-#include "implementations/merge/pext.h"
-#include "implementations/pext.h"
-#include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/bits_sp.h"
-#include "implementations/merge/neon_sp.h"
 #include "system.h"
 #include "util.h"
-#include "vtune.h"
+
+
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
-    {"hellman", prime_implicants_hellman, 23},
     {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
     {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
@@ -43,6 +50,7 @@ const prime_implicant_implementation implementations[] = {
     {"pext", prime_implicants_pext, 30},
 #endif
 #ifdef __AVX2__
+    {"hellman", prime_implicants_hellman, 23},
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_sp", prime_implicants_avx2_sp, 30},
 #endif
@@ -270,7 +278,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
-    init_itt_handles(implementation_name);
+    //init_itt_handles(implementation_name);
 
     int trues[] = {};
 
@@ -278,9 +286,9 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
-    ITT_START_FRAME();
+    // ITT_START_FRAME();
     prime_implicant_result result = impl.implementation(num_bits, 0, trues);
-    ITT_END_FRAME();
+    // ITT_END_FRAME();
     uint64_t cycles = result.cycles;
     FILE *f = fopen("measurements.csv", "a");
     fprintf(f, "%s,%s,%s,%s,%d,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles);
