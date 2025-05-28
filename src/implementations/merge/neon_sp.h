@@ -1,5 +1,7 @@
 #ifdef __aarch64__
 #include "bits_sp.h"
+#include <arm_neon.h>
+#include <assert.h>
 
 static inline void merge_neon_sp_single_register(
     int bit_difference,

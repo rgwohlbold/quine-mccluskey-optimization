@@ -29,12 +29,10 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
 
-    SIGNPOST_INIT();
 
     init_tsc();
     uint64_t counter_start = start_tsc();
 
-    SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "all_dashes", "Metadata: %s", "Foo");
     size_t input_index = 0;
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
         ITT_START_TASK_SECTION(num_dashes);
@@ -57,7 +55,6 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
     BITMAP_SET(primes, num_implicants-1, BITMAP_CHECK(implicants, num_implicants-1));
 
     uint64_t cycles = stop_tsc(counter_start);
-    SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "");
 
     bitmap_free(implicants);
 

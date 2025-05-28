@@ -36,11 +36,9 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
 
     init_tsc();
 
-    SIGNPOST_INIT();
 
     uint64_t counter_start = start_tsc();
 
-    SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "all_dashes", "Metadata: %s", "Foo");
     size_t input_index = 0;
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
         ITT_START_TASK_SECTION(num_dashes);
@@ -62,7 +60,6 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
     REDUCE_FUNCTION(num_implicants, implicants, merged, primes);
     ITT_END_TASK();
     uint64_t cycles = stop_tsc(counter_start);
-    SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "");
 
     bitmap_free(implicants);
     bitmap_free(merged);

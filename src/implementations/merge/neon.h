@@ -2,6 +2,7 @@
 #include "../../bitmap.h"
 #include "bits.h"
 #include <arm_neon.h>
+#include <assert.h>
 
 static inline void merge_neon_single_register(
     int bit_difference,
