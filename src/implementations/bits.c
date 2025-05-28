@@ -1,57 +1,6 @@
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include "common.h"
-#include "../util.h"
-#include "../vtune.h"
-#include "../my_signpost.h"
-#ifdef __x86_64__
-#include "../tsc_x86.h"
-#endif
-#ifdef __aarch64__
-#include "../vct_arm.h"
-#endif
 #include "merge/bits.h"
 
-prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *trues) {
-    size_t num_implicants = calculate_num_implicants(num_bits);
-    bitmap primes = bitmap_allocate(num_implicants);
-
-    bitmap implicants = bitmap_allocate(num_implicants);
-    for (int i = 0; i < num_trues; i++) {
-        BITMAP_SET_TRUE(implicants, trues[i]);
-    }
-    bitmap merged = bitmap_allocate(num_implicants);
-    SIGNPOST_INIT();
-
-    init_tsc();
-    uint64_t counter_start = start_tsc();
-
-    size_t input_index = 0;
-    SIGNPOST_INTERVAL_BEGIN(gLog, gSpid, "all_dashes", "Metadata: %s", "Foo");
-
-    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
-        ITT_START_TASK_SECTION(num_dashes);
-        int remaining_bits = num_bits - num_dashes;
-        int iterations = binomial_coefficient(num_bits, num_dashes);
-        int input_elements = 1 << remaining_bits;
-        int output_elements = 1 << (remaining_bits - 1);
-
-        size_t output_index = input_index + iterations * input_elements;
-        // LOG_DEBUG("num_dashes: %d", num_dashes);
-        // print_bitmap_sparse("Implicants", &implicants);
-        // print_primes_sparse("primes", &implicants, &merged);
-        for (int i = 0; i < iterations; i++) {
-            int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
-            merge_bits(implicants, merged, input_index, output_index, remaining_bits, first_difference);
-            output_index += (remaining_bits - first_difference) * output_elements;
-            input_index += input_elements;
-        }
-        ITT_END_TASK();
-
-    }
-    ITT_START_GATHER_TASK();
-    // Step 2: Scan for unmerged implicants
+static inline void reduce_bits(size_t num_implicants, bitmap implicants, bitmap merged, bitmap primes) {
     for (size_t i = 0; i < num_implicants / 64; i++) {
         uint64_t implicant_true = ((uint64_t*)implicants.bits)[i];
         uint64_t merged_true = ((uint64_t*)merged.bits)[i];
@@ -63,18 +12,10 @@ prime_implicant_result prime_implicants_bits(int num_bits, int num_trues, int *t
             BITMAP_SET_TRUE(primes, i);
         }
     }
-    ITT_END_TASK();
-
-
-    uint64_t cycles = stop_tsc(counter_start);
-    bitmap_free(implicants);
-    bitmap_free(merged);
-    SIGNPOST_INTERVAL_END(gLog, gSpid, "scan_unmerged", "");
-
-    prime_implicant_result result = {
-        .primes = primes,
-        .cycles = cycles,
-
-    };
-    return result;
 }
+
+#define IMPLEMENTATION_FUNCTION prime_implicants_bits
+#define MERGE_FUNCTION merge_bits
+#define REDUCE_FUNCTION reduce_bits
+
+#include "algorithms/base.h"
