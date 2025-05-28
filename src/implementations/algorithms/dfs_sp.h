@@ -1,22 +1,26 @@
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include "../debug.h"
-#include "../util.h"
-#include "../vtune.h"
-#include "common.h"
-
+#pragma once
+#include "../../debug.h"
+#include "../../implicant.h"
+#include "../../util.h"
+#include "../../vtune.h"
+#include "../common.h"
 #ifdef __x86_64__
-#include "../tsc_x86.h"
-#include "merge/avx2_sp.h"
-#elif defined(__aarch64__)
-#include "../vct_arm.h"
-#include "neon_single_pass.h"
-#else
-#include "merge/bits.h"
+#include "../../tsc_x86.h"
+#endif
+#ifdef __aarch64__
+#include "../../vct_arm.h"
 #endif
 
-prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_trues, int *trues) {
+#ifndef IMPLEMENTATION_FUNCTION
+#error "need to define IMPLEMENTATION_FUNCTION"
+#endif
+
+#ifndef MERGE_FUNCTION
+#error "need to define MERGE_FUNCTION"
+#endif
+
+
+prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
@@ -47,7 +51,6 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
 
     int section_index = 0;
 
-    size_t iterations = (1 << num_bits) - 1;
     while (section_index >= 0) {
         ITT_START_TASK_SECTION(section_index);
 
@@ -80,19 +83,8 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
             int leading_value = leading_stars(num_bits, section_index, layer_input_idx);
             int first_difference = remaining_bits - leading_value;
 
-#if defined(__AVX2__)
-            merge_avx2_sp(implicants, primes, input_index, output_index, remaining_bits,
-                                              first_difference);
-#elif defined(__aarch64__)
-            merge_implicants_neon_single_pass(implicants, primes, input_index, output_index, remaining_bits,
-                                              first_difference);
-#else
-            merge_bits_sp(implicants, primes, input_index, output_index, remaining_bits,
-                                              first_difference);
-#endif
+            MERGE_FUNCTION(implicants, primes, input_index, output_index, remaining_bits, first_difference);
 
-
-            iterations--;
             input_chunk_index[section_index]++;
             output_chunk_index[section_index + 1] += leading_value;
 
@@ -114,8 +106,6 @@ prime_implicant_result prime_implicants_native_sp_dfs(int num_bits, int num_true
 
     // mark last implicant prime if it is true
     BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
-
-
 
     uint64_t cycles = stop_tsc(counter_start);
     bitmap_free(implicants);
