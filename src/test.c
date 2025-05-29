@@ -27,6 +27,8 @@
 #include "implementations/merge/neon.h"
 #include "implementations/neon.h"
 #include "implementations/neon_sp.h"
+#include "implementations/neon_sp_load.h"
+#include "implementations/neon_sp_dfs_load.h"
 #endif
 
 #include "implementations/baseline.h"
@@ -46,6 +48,7 @@ const prime_implicant_implementation implementations[] = {
     {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
     {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
+    
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
@@ -57,6 +60,8 @@ const prime_implicant_implementation implementations[] = {
 #ifdef __aarch64__
     {"neon", prime_implicants_neon, 30},
     {"neon_sp", prime_implicants_neon_sp, 30},
+    {"neon_sp_load", prime_implicants_neon_sp_load, 30},
+    {"neon_sp_dfs_load", prime_implicants_neon_sp_dfs_load, 30}
 #endif
 };
 

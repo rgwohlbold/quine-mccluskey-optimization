@@ -1,0 +1,8 @@
+# rem_bits first_diff input_index output_index
+3 0 0 8
+2 0 8 20
+1 0 20 26
+1 1 22 27
+2 1 12 24
+1 1 24 27
+2 2 16 26
