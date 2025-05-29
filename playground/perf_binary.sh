@@ -3,6 +3,7 @@
 METRICS=(
     "cycles"
     "L1-dcache-load-misses"
+    "L1-dcache-loads"
     "LLC-load-misses"
     "LLC-store-misses"
 )
@@ -12,6 +13,7 @@ IMPLEMENTATIONS=(
     "native_dfsb_sp"
 )
 NUM_BITS=(
+    16
     17
     18
     19
@@ -20,7 +22,7 @@ NUM_BITS=(
 )
 BASE_CMD="sudo perf stat --cpu 9 -e 'cycles,L1-dcache-load-misses,LLC-load-misses,LLC-store-misses' -- ../prime_implicants measure"
 
-NUM_ITER=8
+NUM_ITER=12
 outfile="perf_results_$(date +%s).csv"
 # Measure all of them 10 times, write into csv
 echo -n "cmd,repetition,nbits" >$outfile

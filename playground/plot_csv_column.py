@@ -12,6 +12,8 @@ print(df)
 col_name = sys.argv[2]
 # Group by "cmd", take its median, show 1std for all the runs
 
+df["L1_relative_misses"] = df["L1-dcache-load-misses"] / df["L1-dcache-loads"]
+
 if col_name not in df.columns:
     print(f"Column '{col_name}' not found in the CSV file.")
     sys.exit(1)
