@@ -1,3 +1,0 @@
-# rem_bits first_diff input_index output_index
-1 0 0 2
-0 0 2 3

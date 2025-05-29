@@ -52,7 +52,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
     int section_index = 0;
 
     while (section_index >= 0) {
-        ITT_START_TASK_SECTION(section_index);
+        // ITT_START_TASK_SECTION(section_index);
 
         // 1. Check if current layer needs developing.
         size_t layer_input_idx = input_chunk_index[section_index];
@@ -101,7 +101,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
                 section_index++;
             }
         }
-        ITT_END_TASK();
+        // ITT_END_TASK();
     }
 
     // mark last implicant prime if it is true
