@@ -59,35 +59,35 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
         size_t layer_output_idx = output_chunk_index[section_index];
         size_t layer_total_chunks = total_chunks[section_index];
 
-        LOG_DEBUG("Section IN  %2zu; [inp=%d/out=%d/all=%d]", section_index, layer_input_idx, layer_output_idx,
-                  layer_total_chunks);
+        // LOG_DEBUG("Section IN  %2zu; [inp=%d/out=%d/all=%d]", section_index, layer_input_idx, layer_output_idx,
+        //           layer_total_chunks);
 
         bool finished = (layer_input_idx >= layer_total_chunks);
         bool underdeveloped = layer_output_idx <= layer_input_idx;
 
         // 1. a) Finished: Reduce current layer. pop.
-        if (underdeveloped || finished) {
+        if (num_bits == section_index || underdeveloped || finished) {
+            // LOG_DEBUG("undeveloped");
             section_index--;
         }
         // 1. b) Not finished: Develop current layer.
         else {
-            LOG_DEBUG("Developing chunk S=%zu/C=%zu", section_index, layer_input_idx);
+            // LOG_DEBUG("Developing chunk S=%zu/C=%zu", section_index, layer_input_idx);
 
             size_t input_index =
                 base_section_offset[section_index] + (layer_input_idx * (1 << (num_bits - section_index)));
-
             size_t output_index = base_section_offset[section_index + 1] +
                                   (output_chunk_index[section_index + 1] * (1 << (num_bits - section_index - 1)));
-
             int remaining_bits = num_bits - section_index;
             int leading_value = leading_stars(num_bits, section_index, layer_input_idx);
             int first_difference = remaining_bits - leading_value;
-
+            LOG_DEBUG("Section %2zu; [inp=%zu/out=%zu/rem=%d/first_diff=%d]",
+                      section_index, input_index, output_index, remaining_bits, first_difference);
             MERGE_FUNCTION(implicants, primes, input_index, output_index, remaining_bits, first_difference);
 
             input_chunk_index[section_index]++;
             output_chunk_index[section_index + 1] += leading_value;
-
+            
             /*
              * if (input_chunk_index[section_index] == total_chunks[section_index]) {
              *     LOG_DEBUG("Section %2zu finished.", section_index);
