@@ -5,6 +5,7 @@
 #include <functional>
 #include <assert.h>
 #include <cstdint>
+#include <cstring> 
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
@@ -98,6 +99,12 @@ extern "C" {
             n_h = n - h;
             n_blocks = pow3(n-h);
             S.resize(n_blocks);
+            for (size_t i = 0; i < n_blocks; i++) {
+                for (size_t j = 0; j < 1ull << BITSET3_LOG2; j++) {
+                    S[i][j] = 0;
+                }
+            }
+            // memset(S.data(), 0, S.size() * sizeof(BITSET3));
             total_ops = 0;
         }
 
