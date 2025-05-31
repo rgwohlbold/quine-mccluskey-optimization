@@ -11,10 +11,12 @@
 #include "vtune.h"
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
+#include "implementations/avx2_sp_aleksa.h"
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 
 #include "implementations/merge/avx2_sp.h"
+#include "implementations/merge/avx2_sp_aleksa.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
 
@@ -34,10 +36,13 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
+#include "implementations/bits_sp.h"
+// #include "implementations/bits_sp_aleksa.h"
 
 #include "implementations/native_dfs_sp.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
+// #include "implementations/merge/bits_sp_aleksa.h"
 #include "system.h"
 #include "util.h"
 
@@ -47,6 +52,7 @@ const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
     {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
+    // {"bits_sp_aleksa", prime_implicants_bits_sp_aleksa, 30},
     {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
     
 #ifdef __BMI2__
@@ -56,6 +62,7 @@ const prime_implicant_implementation implementations[] = {
     {"hellman", prime_implicants_hellman, 23},
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_sp", prime_implicants_avx2_sp, 30},
+    {"avx2_sp_aleksa", prime_implicants_avx2_sp_aleksa, 30},
 #endif
 #ifdef __aarch64__
     {"neon", prime_implicants_neon, 30},
@@ -74,12 +81,14 @@ typedef struct {
 merge_implementation merge_implementations[] = {
     {"merge_bits", merge_bits},
     {"merge_bits_sp", merge_bits_sp},
+    // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
 #ifdef __BMI2__
     {"merge_pext", merge_pext},
 #endif
 #ifdef __AVX2__
     {"merge_avx2", merge_avx2},
     {"merge_avx2_sp", merge_avx2_sp},
+    {"merge_avx2_sp_aleksa", merge_avx2_sp_aleksa},
 #endif
 #ifdef __aarch64__
     {"merge_neon", merge_neon},
@@ -213,6 +222,7 @@ void from_testfile(const char *filename, test_case *dest) {
     fclose(f);
 }
 
+// test all implementations on one test file
 void test_implementations(char **testfiles, int num_testfiles) {
     test_case test_cases[num_testfiles];
     for (int i = 0; i < num_testfiles; i++) {
@@ -250,6 +260,69 @@ void test_implementations(char **testfiles, int num_testfiles) {
             }
             bitmap_free(result.primes);
         }
+    }
+    for (int i = 0; i < num_testfiles; i++) {
+        free_test(test_cases[i]);
+    }
+}
+
+// test a single implementation on a signle test file
+void test_implementation_single(const char *implementation_name, char **testfiles, int num_testfiles) {
+    test_case test_cases[num_testfiles];
+    for (int i = 0; i < num_testfiles; i++) {
+        from_testfile(testfiles[i], &test_cases[i]);
+    }
+
+    prime_implicant_implementation impl;
+    bool implementation_found = false;
+    for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
+        impl = implementations[k];
+        if (strcmp(impl.name, implementation_name) == 0) {
+            implementation_found = true;
+            break;
+        }
+    }
+    if (!implementation_found) {
+        LOG_INFO("could not find implementation %s", implementation_name);
+        return;
+    }
+
+
+    for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
+        test_case test = test_cases[i];
+            
+        if (test.num_bits > impl.max_bits) {
+            LOG_INFO("skipping '%s' -> '%s'", test.name, impl.name);
+            continue;
+        }
+        LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
+
+        prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+        bool ok = true;
+        if (!bitmap_cmp(result.primes, test.prime_implicants)) {
+            for (size_t i = 0; i < result.primes.num_bits; i++) {
+                if (BITMAP_CHECK(result.primes, i) && !BITMAP_CHECK(test.prime_implicants, i)) {
+                    char s[test.num_bits + 1];
+                    s[test.num_bits] = '\0';
+                    bitmap_index_to_implicant(test.num_bits, i, s);
+                    LOG_WARN("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                    ok = false;
+                }
+                if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
+                    char s[test.num_bits + 1];
+                    s[test.num_bits] = '\0';
+                    bitmap_index_to_implicant(test.num_bits, i, s);
+                    LOG_WARN(
+                        "test case expected implicant %s (bitmap index %d) which was not returned by "
+                        "implementation",
+                        s, i);
+                    ok = false;
+                }
+            }
+        }
+        if (ok)
+            LOG_INFO("implementation '%s' passed test case '%s'", impl.name, test.name);
+        bitmap_free(result.primes);
     }
     for (int i = 0; i < num_testfiles; i++) {
         free_test(test_cases[i]);
