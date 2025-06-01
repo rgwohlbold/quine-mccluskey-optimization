@@ -3,7 +3,7 @@ set -e
 
 min_bits=1
 max_bits=22
-num_measurements=50
+num_measurements=100
 compilers="/usr/bin/gcc"
 #compilers="/usr/bin/gcc /usr/bin/clang"
 measurements_file="measurements_merge.csv"
@@ -20,10 +20,10 @@ for compiler in $compilers; do
     make clean
     make -j $(nproc)
     implementations="$(./prime_implicants merge_implementations)"
-    for k in $(seq 1 "$num_measurements"); do
-        for i in $(seq $min_bits $max_bits); do
+    for i in $(seq $min_bits $max_bits); do
+        for k in $(seq 1 "$num_measurements"); do
             for implementation in $implementations; do
-                ./prime_implicants measure_merge "$implementation" "$i"
+                taskset --cpu-list 9 ./prime_implicants measure_merge "$implementation" "$i"
             done
         done
     done
