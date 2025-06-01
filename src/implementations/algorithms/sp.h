@@ -34,7 +34,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
     uint64_t counter_start = start_tsc();
 
     size_t input_index = 0;
-    for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
+    for (int num_dashes = 0; num_dashes < num_bits; num_dashes++) {
         ITT_START_TASK_SECTION(num_dashes);
         int remaining_bits = num_bits - num_dashes;
         int iterations = binomial_coefficient(num_bits, num_dashes);
