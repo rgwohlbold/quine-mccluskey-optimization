@@ -453,27 +453,61 @@ static void merge_avx2_sp_richard(bitmap implicants, bitmap primes, size_t input
     size_t o_idx = output_index;
 
     int num_registers = (1 << num_bits) / 256;
-    for (int register_index = 0; register_index < num_registers; register_index += 1) {
-        size_t idx1 = input_index + 256 * register_index;
-        size_t o_idx1 = o_idx + 128 * register_index;
+    if (num_registers == 1) {
+        for (int register_index = 0; register_index < num_registers; register_index += 1) {
+            size_t idx1 = input_index + 256 * register_index;
+            size_t o_idx1 = o_idx + 128 * register_index;
 
-        __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
-        __m256i primes1 = impl1;
-        for (int i = 0; i < 8; i++) {
-            __m128i impl_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
-            __m256i primes_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+            __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
+            __m256i primes1 = impl1;
+            for (int i = 0; i < 8; i++) {
+                __m128i impl_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
+                __m256i primes_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
 
-            merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl_result, &primes_result);
-            primes1 = primes_result;
-            if (i >= first_difference) {
-                _mm_store_si128((__m128i*)(implicants.bits + o_idx1 / 8), impl_result);
-                o_idx1 += 128 * num_registers;
+                merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl_result, &primes_result);
+                primes1 = primes_result;
+                if (i >= first_difference) {
+                    _mm_store_si128((__m128i*)(implicants.bits + o_idx1 / 8), impl_result);
+                    o_idx1 += 128 * num_registers;
+                }
             }
+            _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes1);
         }
-        _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes1);
-    }
-    if (first_difference <= 8) {
-        o_idx += (8 - first_difference) * num_registers * 128;
+        if (first_difference <= 8) {
+            o_idx += (8 - first_difference) * num_registers * 128;
+        }
+    } else {
+        for (int register_index = 0; register_index < num_registers; register_index += 2) {
+            size_t idx1 = input_index + 256 * register_index;
+            size_t o_idx1 = o_idx + 128 * register_index;
+
+            __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
+            __m256i primes1 = impl1;
+            __m256i impl2 = _mm256_load_si256((__m256i*)(implicants.bits + (idx1+256) / 8));
+            __m256i primes2 = impl2;
+            for (int i = 0; i < 8; i++) {
+                __m128i impl1_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
+                __m256i primes1_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+                __m128i impl2_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
+                __m256i primes2_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+
+                merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl1_result, &primes1_result);
+                merge_avx2_sp_single_register_richard(i, impl2, primes2, &impl2_result, &primes2_result);
+                primes1 = primes1_result;
+                primes2 = primes2_result;
+                if (i >= first_difference) {
+                    _mm_store_si128((__m128i*)(implicants.bits + o_idx1 / 8), impl1_result);
+                    _mm_store_si128((__m128i*)(implicants.bits + (o_idx1+128) / 8), impl2_result);
+                    o_idx1 += 128 * num_registers;
+                }
+            }
+            _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes1);
+            _mm256_store_si256((__m256i*)(primes.bits + (idx1+256) / 8), primes2);
+        }
+        if (first_difference <= 8) {
+            o_idx += (8 - first_difference) * num_registers * 128;
+        }
+
     }
 
 
