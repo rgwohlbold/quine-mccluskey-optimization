@@ -12,11 +12,13 @@
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
 #include "implementations/avx2_sp_aleksa.h"
+#include "implementations/avx512_sp_old_loop.h"
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/avx2_sp_aleksa.h"
+#include "implementations/merge/avx512_sp_old_loop.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
 
@@ -37,12 +39,10 @@
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
 #include "implementations/bits_sp.h"
-// #include "implementations/bits_sp_aleksa.h"
 
 #include "implementations/native_dfs_sp.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
-// #include "implementations/merge/bits_sp_aleksa.h"
 #include "system.h"
 #include "util.h"
 
@@ -63,6 +63,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_sp", prime_implicants_avx2_sp, 30},
     {"avx2_sp_aleksa", prime_implicants_avx2_sp_aleksa, 30},
+#endif
+#ifdef __AVX512F__
+    {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 30},
 #endif
 #ifdef __aarch64__
     {"neon", prime_implicants_neon, 30},
@@ -89,6 +92,9 @@ merge_implementation merge_implementations[] = {
     {"merge_avx2", merge_avx2},
     {"merge_avx2_sp", merge_avx2_sp},
     {"merge_avx2_sp_aleksa", merge_avx2_sp_aleksa},
+#endif
+#ifdef __AVX512F__
+    {"merge_avx512_sp_old_loop", merge_avx512_sp_old_loop},
 #endif
 #ifdef __aarch64__
     {"merge_neon", merge_neon},
