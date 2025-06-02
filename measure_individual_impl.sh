@@ -33,5 +33,7 @@ for compiler in $compilers; do
         echo " === Measurement $k done ===\n"
     done
 
+    cp "measurements.csv" "m_${implementation}.csv"
+
 done
 # python3 plot.py
