@@ -453,7 +453,7 @@ static void merge_avx2_sp_richard(bitmap implicants, bitmap primes, size_t input
     size_t o_idx = output_index;
 
     int num_registers = (1 << num_bits) / 256;
-    if (num_registers == 1) {
+    if (num_registers < 4) {
         for (int register_index = 0; register_index < num_registers; register_index += 1) {
             size_t idx1 = input_index + 256 * register_index;
             size_t o_idx1 = o_idx + 128 * register_index;
@@ -477,7 +477,7 @@ static void merge_avx2_sp_richard(bitmap implicants, bitmap primes, size_t input
             o_idx += (8 - first_difference) * num_registers * 128;
         }
     } else {
-        for (int register_index = 0; register_index < num_registers; register_index += 2) {
+        for (int register_index = 0; register_index < num_registers; register_index += 4) {
             size_t idx1 = input_index + 256 * register_index;
             size_t o_idx1 = o_idx + 128 * register_index;
 
@@ -485,31 +485,45 @@ static void merge_avx2_sp_richard(bitmap implicants, bitmap primes, size_t input
             __m256i primes1 = impl1;
             __m256i impl2 = _mm256_load_si256((__m256i*)(implicants.bits + (idx1+256) / 8));
             __m256i primes2 = impl2;
+            __m256i impl3 = _mm256_load_si256((__m256i*)(implicants.bits + (idx1+512) / 8));
+            __m256i primes3 = impl3;
+            __m256i impl4 = _mm256_load_si256((__m256i*)(implicants.bits + (idx1+768) / 8));
+            __m256i primes4 = impl4;
             for (int i = 0; i < 8; i++) {
                 __m128i impl1_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
                 __m256i primes1_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
                 __m128i impl2_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
                 __m256i primes2_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+                __m128i impl3_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
+                __m256i primes3_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+                __m128i impl4_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
+                __m256i primes4_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
 
                 merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl1_result, &primes1_result);
                 merge_avx2_sp_single_register_richard(i, impl2, primes2, &impl2_result, &primes2_result);
+                merge_avx2_sp_single_register_richard(i, impl3, primes3, &impl3_result, &primes3_result);
+                merge_avx2_sp_single_register_richard(i, impl4, primes4, &impl4_result, &primes4_result);
                 primes1 = primes1_result;
                 primes2 = primes2_result;
+                primes3 = primes3_result;
+                primes4 = primes4_result;
                 if (i >= first_difference) {
                     _mm_store_si128((__m128i*)(implicants.bits + o_idx1 / 8), impl1_result);
                     _mm_store_si128((__m128i*)(implicants.bits + (o_idx1+128) / 8), impl2_result);
+                    _mm_store_si128((__m128i*)(implicants.bits + (o_idx1+256) / 8), impl3_result);
+                    _mm_store_si128((__m128i*)(implicants.bits + (o_idx1+384) / 8), impl4_result);
                     o_idx1 += 128 * num_registers;
                 }
             }
             _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes1);
             _mm256_store_si256((__m256i*)(primes.bits + (idx1+256) / 8), primes2);
+            _mm256_store_si256((__m256i*)(primes.bits + (idx1+512) / 8), primes3);
+            _mm256_store_si256((__m256i*)(primes.bits + (idx1+768) / 8), primes4);
         }
         if (first_difference <= 8) {
             o_idx += (8 - first_difference) * num_registers * 128;
         }
-
     }
-
 
     for (int i = 8; i < num_bits; i++) {
         int block_len = 1 << i;
