@@ -12,12 +12,14 @@
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
 #include "implementations/avx2_sp_aleksa.h"
+#include "implementations/avx2_sp_richard.h"
 #include "implementations/avx512_sp_old_loop.h"
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/avx2_sp_aleksa.h"
+#include "implementations/merge/avx2_sp_richard.h"
 #include "implementations/merge/avx512_sp_old_loop.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
@@ -54,7 +56,7 @@ const prime_implicant_implementation implementations[] = {
     {"bits_sp", prime_implicants_bits_sp, 30},
     // {"bits_sp_aleksa", prime_implicants_bits_sp_aleksa, 30},
     {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
-    
+
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
 #endif
@@ -63,6 +65,7 @@ const prime_implicant_implementation implementations[] = {
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_sp", prime_implicants_avx2_sp, 30},
     {"avx2_sp_aleksa", prime_implicants_avx2_sp_aleksa, 30},
+    {"avx2_sp_richard", prime_implicants_avx2_sp_richard, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 30},
@@ -92,6 +95,7 @@ merge_implementation merge_implementations[] = {
     {"merge_avx2", merge_avx2},
     {"merge_avx2_sp", merge_avx2_sp},
     {"merge_avx2_sp_aleksa", merge_avx2_sp_aleksa},
+    {"merge_avx2_sp_richard", merge_avx2_sp_richard},
 #endif
 #ifdef __AVX512F__
     {"merge_avx512_sp_old_loop", merge_avx512_sp_old_loop},
@@ -296,7 +300,7 @@ void test_implementation_single(const char *implementation_name, char **testfile
 
     for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
         test_case test = test_cases[i];
-            
+
         if (test.num_bits > impl.max_bits) {
             LOG_INFO("skipping '%s' -> '%s'", test.name, impl.name);
             continue;
