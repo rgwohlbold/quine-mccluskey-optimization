@@ -2,7 +2,7 @@
 set -e
 
 min_bits=1
-max_bits=20
+max_bits=22
 num_measurements=10
 compilers="/usr/bin/gcc"
 #compilers="/usr/bin/gcc /usr/bin/clang"

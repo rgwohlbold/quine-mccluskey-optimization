@@ -40,22 +40,28 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
-#include "implementations/bits_sp.h"
+#include "implementations/bits_sp_block.h"
+#include "implementations/bits_sp_load.h"
+#include "implementations/bits_sp_load_block.h"
 
 #include "implementations/native_dfs_sp.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
+#include "implementations/merge/bits_sp_block.h"
 #include "system.h"
 #include "util.h"
 
 
 
 const prime_implicant_implementation implementations[] = {
-    {"baseline", prime_implicants_baseline, 19},
-    {"bits", prime_implicants_bits, 30},
+    // {"baseline", prime_implicants_baseline, 19},
+    // {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
     // {"bits_sp_aleksa", prime_implicants_bits_sp_aleksa, 30},
-    {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
+    // {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
+    {"bits_sp_block", prime_implicants_bits_sp_block, 30},
+    {"bits_sp_load", prime_implicants_bits_sp_load, 30},
+    {"bits_sp_load_block", prime_implicants_bits_sp_load_block, 30},
 
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
@@ -71,10 +77,10 @@ const prime_implicant_implementation implementations[] = {
     {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 30},
 #endif
 #ifdef __aarch64__
-    {"neon", prime_implicants_neon, 30},
-    {"neon_sp", prime_implicants_neon_sp, 30},
-    {"neon_sp_load", prime_implicants_neon_sp_load, 30},
-    {"neon_sp_dfs_load", prime_implicants_neon_sp_dfs_load, 30}
+    // {"neon", prime_implicants_neon, 30},
+    // {"neon_sp", prime_implicants_neon_sp, 30},
+    // {"neon_sp_load", prime_implicants_neon_sp_load, 30},
+    // {"neon_sp_dfs_load", prime_implicants_neon_sp_dfs_load, 30}
 #endif
 };
 
