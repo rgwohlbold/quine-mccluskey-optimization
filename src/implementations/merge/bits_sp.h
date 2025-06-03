@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../bitmap.h"
+#include "../../debug.h"
 
 static inline void merge_bits_sp1(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int first_difference) {
     bool impl1 = BITMAP_CHECK(implicants, input_index);
@@ -495,12 +496,12 @@ static inline void merge_bits_sp(bitmap implicants, bitmap primes, size_t input_
                 uint64_t primes2 = primes & ~(initial_result | (initial_result << block_len));
 
                 primes_ptr[idx1 / 64] = primes2;
+                if (i == 0 || i == 1) LOG_DEBUG("Block: %d, block_len: %d, idx1: %zu, idx2: %zu, o_idx: %zu, FD: %zu", block, block_len, idx1, idx1 + block_len, o_idx, first_difference);
                 if (i >= first_difference) {
                     output_ptr[o_idx / 32] = (uint32_t) aggregated;
                     o_idx += 32;
                 }
 
-                idx1 += 64;
 
             }
         }
