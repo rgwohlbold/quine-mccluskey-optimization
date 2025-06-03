@@ -111,14 +111,25 @@ static void merge_avx512_sp_small_n_old_loop(bitmap implicants, bitmap primes, s
     }
 }
 
-// static void print_m512i_epi64(__m512i v) {
+// static void print_m512i_epi64(__m512i v, char* msg) {
 //     __attribute__((aligned(64))) uint64_t val[8];
 //     _mm512_store_si512(val, v);  // or _mm512_storeu_si512 for unaligned
 
+//     LOG_DEBUG("%s", msg);
 //     for (int i = 0; i < 8; ++i) {
-//         LOG_INFO("val[%d] = 0x%016llx", i, (unsigned long long)val[i]);
+//         LOG_DEBUG("val[%d] = 0x%016llx", i, (unsigned long long)val[i]);
 //     }
-//     LOG_INFO("");
+//     LOG_DEBUG("");
+// }
+// static void print_m256i_epi64_(__m256i v, char* msg) {
+//     __attribute__((aligned(32))) uint64_t val[4];
+//     _mm256_store_epi64(val, v);
+
+//     LOG_DEBUG("%s", msg);
+//     for (int i = 0; i < 4; ++i) {
+//         LOG_DEBUG("val[%d] = 0x%016llx", i, (unsigned long long)val[i]);
+//     }
+//     LOG_DEBUG("");
 // }
 
 static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, __m512i impl1, __m512i primes1, __m256i *result, __m512i *primes_result) {
@@ -126,7 +137,6 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
 
     int block_len = 1 << bit_difference;
 
-    LOG_DEBUG("merge_avx512_sp_single_register_old_loop: block_len=%d", block_len);
 
     if (block_len == 256) {
         __m512i indices = _mm512_set_epi64(7, 6, 5, 4, 7, 6, 5, 4);
@@ -148,28 +158,18 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
     __m512i impl2;
     if (block_len < 64) {
         impl2 = _mm512_srli_epi64(impl1, block_len);
-        // print_m512i_epi64(impl2);
     } else if (block_len == 64) {
         // "shift" across 64-bit boundaries
-        // LOG_INFO("impl1 64:");
-        // print_m512i_epi64(impl1);
         __m512i indices = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1); 
-        impl2 = _mm512_permutexvar_epi64(indices, impl1); 
-        // LOG_INFO("impl2 64:");
-        // print_m512i_epi64(impl2);
+        impl2 = _mm512_permutexvar_epi64(indices, impl1);
 
     } else { //if (block_len == 128) 
-        // "shift" across 128-bit boundaries
         __m512i indices = _mm512_set_epi64(7, 6, 7, 6, 3, 2, 3, 2); 
         impl2 = _mm512_permutexvar_epi64(indices, impl1);
-        // LOG_INFO("impl2 128:");
-        // print_m512i_epi64(impl2);
     }
 
 
     __m512i aggregated = _mm512_and_si512(impl1, impl2);
-    LOG_DEBUG("aggregated:");
-    // print_m512i_epi64(aggregated);
     __m512i initial_result = _mm512_setzero_si512(); // prevent unitialized warnings
     __m512i shifted = _mm512_setzero_si512();
     if (block_len == 1) {
@@ -210,7 +210,7 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         if (block_len == 32) {
             initial_result = aggregated;
         }
-        shifted = _mm512_srli_epi64(aggregated, 32);
+        shifted = _mm512_alignr_epi8(_mm512_setzero_si512(), aggregated, 4);
     }
     
     if (block_len <= 64) {
@@ -218,9 +218,8 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         if (block_len == 64) {
             initial_result = aggregated;
         }
-        // "shift" across 64-bit boundaries
-        __m512i indices = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1); 
-        shifted = _mm512_permutexvar_epi64(indices, impl1); 
+        __m512i indices = _mm512_set_epi64(7, 7, 6, 5, 4, 3, 2, 1);
+        shifted = _mm512_permutexvar_epi64(indices, aggregated);
     }
 
     aggregated = _mm512_and_si512(_mm512_or_si512(aggregated, shifted), _mm512_set_epi64(0x0, 0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0x0, 0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
@@ -232,8 +231,6 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
     // move aggregated[5, 4] to result[1, 0] so the whole result is in lower half
     __m512i indices2 = _mm512_set_epi64(7, 6, 5, 4, 5, 4, 1, 0); 
     __m512i result512 = _mm512_permutexvar_epi64(indices2, aggregated);
-    LOG_DEBUG("result512:");
-    // print_m512i_epi64(result512);
     *result = _mm512_castsi512_si256(result512);
 
     // shift initial_result left by block_len
@@ -252,16 +249,6 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         merged = _mm512_permutexvar_epi64(indices, initial_result);
     }
 
-    // LOG_INFO("merge_avx512_sp_single_register_old_loop: shifted_initial_result calc COMPLETE");
-
-    // LOG_INFO("initial_result:");
-    // print_m512i_epi64(initial_result);
-    // LOG_INFO("shifted_initial_result:");
-    // print_m512i_epi64(shifted_initial_result);
-
-    // __m512i merged = _mm512_or_si512(shifted_initial_result, initial_result);
-    LOG_DEBUG("merged:");
-    // print_m512i_epi64(merged);
     __m512i r_ = _mm512_andnot_si512(merged, primes1);
     *primes_result = r_;
 }
@@ -302,7 +289,7 @@ static void merge_avx512_sp_old_loop(bitmap implicants, bitmap primes, size_t in
         } else { // implicants that are compared fit into one 512-bit register, i.e. block_len <= 256
             for (int block = 0; block < num_blocks; block += 256 / block_len) {
 
-                // LOG_INFO("block_len=%d, block=%d, num_blocks=%d, i=%d", block_len, block, num_blocks, i);
+                // LOG_DEBUG("block_len=%d, block=%d, num_blocks=%d, i=%d", block_len, block, num_blocks, i);
 
                 size_t idx1 = input_index + 2 * block * block_len;
 
@@ -318,9 +305,7 @@ static void merge_avx512_sp_old_loop(bitmap implicants, bitmap primes, size_t in
                 __m256i impl_result;
                 __m512i primes_result;
                 merge_avx512_sp_single_register_old_loop(i, impl1, primes1, &impl_result, &primes_result);
-                // LOG_INFO("merge_avx512_sp_old_loop: merge_avx512_sp_single_register_old_loop COMPLETE");
                 _mm512_store_si512((__m512i*)(primes.bits + idx1 / 8), primes_result);
-                // LOG_INFO("merge_avx512_sp_old_loop: STORE COMPLETE");
                 if (i >= first_difference) {
                     _mm256_store_si256((__m256i*)(implicants.bits + o_idx / 8), impl_result);
                     o_idx += 256;

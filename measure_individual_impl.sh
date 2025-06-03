@@ -17,6 +17,7 @@ measurements_file="measurements.csv"
 
 
 [ -e "$measurements_file" ] && rm "$measurements_file"
+[ -e "m_${implementation}.csv" ] && rm "m_${implementation}.csv"
 echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,ops" > "$measurements_file"
 
 for compiler in $compilers; do
