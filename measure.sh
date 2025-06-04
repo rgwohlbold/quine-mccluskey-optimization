@@ -18,12 +18,12 @@ for compiler in $compilers; do
     make clean
     make -j $(nproc)
     implementations="$(./prime_implicants implementations)"
-    for implementation in $implementations; do
-        if [ "$implementation" = "baseline" ]; then
-            continue
-        fi
-        for k in $(seq 1 "$num_measurements"); do
-            for i in $(seq $min_bits $max_bits); do
+    for k in $(seq 1 "$num_measurements"); do
+        for i in $(seq $min_bits $max_bits); do
+            for implementation in $implementations; do
+                if [ "$implementation" = "baseline" ]; then
+                    continue
+                fi
                 ./prime_implicants measure "$implementation" "$i"
             done
         done

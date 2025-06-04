@@ -20,6 +20,9 @@
 #error "need to define MERGE_FUNCTION"
 #endif
 
+#define XSTR(x) STR(x)
+#define STR(x) #x
+
 prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int *trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
@@ -28,9 +31,9 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
     for (int i = 0; i < num_trues; i++) {
         BITMAP_SET_TRUE(implicants, trues[i]);
     }
-
-
+    init_itt_handles(XSTR(IMPLEMENTATION_FUNCTION));
     init_tsc();
+    ITT_START_FRAME()
     uint64_t counter_start = start_tsc();
 
     size_t input_index = 0;
@@ -49,13 +52,12 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int 
             input_index += input_elements;
         }
         ITT_END_TASK();
-
     }
     // mark last implicant prime if it is true
-    BITMAP_SET(primes, num_implicants-1, BITMAP_CHECK(implicants, num_implicants-1));
+    BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
     uint64_t cycles = stop_tsc(counter_start);
-
+    ITT_END_FRAME()
     bitmap_free(implicants);
 
     prime_implicant_result result = {
