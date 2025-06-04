@@ -11,7 +11,7 @@
 #include "vtune.h"
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
-#include "implementations/avx2_sp_aleksa.h"
+#include "implementations/avx2_sp_ssa.h"
 #include "implementations/avx2_sp_aljaz.h"
 #include "implementations/avx2_sp_richard.h"
 #include "implementations/avx512_sp_old_loop.h"
@@ -19,7 +19,7 @@
 #include "implementations/pext.h"
 
 #include "implementations/merge/avx2_sp.h"
-#include "implementations/merge/avx2_sp_aleksa.h"
+#include "implementations/merge/avx2_sp_ssa.h"
 #include "implementations/merge/avx2_sp_aljaz.h"
 #include "implementations/merge/avx2_sp_richard.h"
 #include "implementations/merge/avx512_sp_old_loop.h"
@@ -72,7 +72,7 @@ const prime_implicant_implementation implementations[] = {
     {"hellman", prime_implicants_hellman, 23},
     {"avx2", prime_implicants_avx2, 30},
     {"avx2_sp", prime_implicants_avx2_sp, 30},
-    {"avx2_sp_aleksa", prime_implicants_avx2_sp_aleksa, 30},
+    {"avx2_sp_ssa", prime_implicants_avx2_sp_ssa, 30},
     {"avx2_sp_richard", prime_implicants_avx2_sp_richard, 30},
     {"avx2_sp_aljaz", prime_implicants_avx2_sp_aljaz, 30},
 #endif
@@ -103,7 +103,7 @@ merge_implementation merge_implementations[] = {
 #ifdef __AVX2__
     {"merge_avx2", merge_avx2},
     {"merge_avx2_sp", merge_avx2_sp},
-    {"merge_avx2_sp_aleksa", merge_avx2_sp_aleksa},
+    {"merge_avx2_sp_ssa", merge_avx2_sp_ssa},
     {"merge_avx2_sp_richard", merge_avx2_sp_richard},
     {"merge_avx2_sp_aljaz", merge_avx2_sp_aljaz},
 #endif
