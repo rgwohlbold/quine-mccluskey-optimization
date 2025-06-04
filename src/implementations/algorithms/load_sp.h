@@ -22,8 +22,8 @@
 typedef struct {
     uint8_t  rem_bits;   // remaining bits
     uint8_t  first_diff; // first difference
-    uint32_t in_idx;     // input_index
-    uint32_t out_idx;    // output_index
+    uint64_t in_idx;     // input_index
+    uint64_t out_idx;    // output_index
 } MergeOp;
 
 /*
@@ -56,8 +56,8 @@ static MergeOp *load_schedule(int num_bits, size_t *out_count) {
     size_t idx = 0;
     while (idx < total) {
         int rem, diff;
-        uint32_t in, out;
-        int r = fscanf(f, "%d %d %u %u\n", &rem, &diff, &in, &out);
+        uint64_t in, out;
+        int r = fscanf(f, "%d %d %llu %llu\n", &rem, &diff, &in, &out);
         if (r == EOF) break;
         if (r != 4) {
             // skip malformed/blank/comment lines
@@ -96,7 +96,6 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits,
     // load our precomputed schedule
     size_t op_count;
     MergeOp *ops = load_schedule(num_bits, &op_count);
-
     init_tsc();
     uint64_t counter_start = start_tsc();
 

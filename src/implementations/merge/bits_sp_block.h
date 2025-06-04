@@ -43,12 +43,13 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 
 
     size_t num_registers = (1 << num_bits) / 64;
-    for (int regist = 0; regist < num_registers; regist++) {
+    uint64_t *input_ptr = (uint64_t *) implicants.bits;
+    uint32_t *output_ptr = (uint32_t *) implicants.bits;
+    uint64_t *primes_ptr = (uint64_t *) primes.bits;
+    for (size_t regist = 0; regist < num_registers; regist++) {
         // LOG_DEBUG("Block: %d, block_len: %d", block, block_len);
         size_t idx1 = input_index + regist * 64;
-        uint64_t *input_ptr = (uint64_t *) implicants.bits;
-        uint32_t *output_ptr = (uint32_t *) implicants.bits;
-        uint64_t *primes_ptr = (uint64_t *) primes.bits;
+
         uint64_t original_implicant = input_ptr[idx1 / 64];
         uint64_t primes = original_implicant;
         
@@ -134,24 +135,54 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
         if (0 >= first_difference) {
             output_ptr[o_idx1 / 32] = (uint32_t) aggregated1;
             o_idx1 += 32;
-        }
-        if (1 >= first_difference) {
             output_ptr[o_idx2 / 32] = (uint32_t) aggregated2;
             o_idx2 += 32;
-        }
-        if (2 >= first_difference) {
             output_ptr[o_idx4 / 32] = (uint32_t) aggregated4;
             o_idx4 += 32;
-        }
-        if (3 >= first_difference) {
             output_ptr[o_idx8 / 32] = (uint32_t) aggregated8;
             o_idx8 += 32;
-        }
-        if (4 >= first_difference) {
             output_ptr[o_idx16 / 32] = (uint32_t) aggregated16;
             o_idx16 += 32;
+            output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
+            o_idx32 += 32;
+        } 
+        else if (1 >= first_difference) {
+            output_ptr[o_idx2 / 32] = (uint32_t) aggregated2;
+            o_idx2 += 32;
+            output_ptr[o_idx4 / 32] = (uint32_t) aggregated4;
+            o_idx4 += 32;
+            output_ptr[o_idx8 / 32] = (uint32_t) aggregated8;
+            o_idx8 += 32;
+            output_ptr[o_idx16 / 32] = (uint32_t) aggregated16;
+            o_idx16 += 32;
+            output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
+            o_idx32 += 32;
         }
-        if (5 >= first_difference) {
+        else if (2 >= first_difference) {
+            output_ptr[o_idx4 / 32] = (uint32_t) aggregated4;
+            o_idx4 += 32;
+            output_ptr[o_idx8 / 32] = (uint32_t) aggregated8;
+            o_idx8 += 32;
+            output_ptr[o_idx16 / 32] = (uint32_t) aggregated16;
+            o_idx16 += 32;
+            output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
+            o_idx32 += 32;
+        }
+        else if (3 >= first_difference) {
+            output_ptr[o_idx8 / 32] = (uint32_t) aggregated8;
+            o_idx8 += 32;
+            output_ptr[o_idx16 / 32] = (uint32_t) aggregated16;
+            o_idx16 += 32;
+            output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
+            o_idx32 += 32;
+        }
+        else if (4 >= first_difference) {
+            output_ptr[o_idx16 / 32] = (uint32_t) aggregated16;
+            o_idx16 += 32;
+            output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
+            o_idx32 += 32;
+        }
+        else if (5 >= first_difference) {
             output_ptr[o_idx32 / 32] = (uint32_t) aggregated32;
             o_idx32 += 32;
         }
@@ -163,105 +194,32 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
     for (int i = 6; i < num_bits; i++) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
+        for (int block = 0; block < num_blocks; block++) {
+            size_t idx1 = input_index + 2 * block * block_len;
+            size_t idx2 = input_index + 2 * block * block_len + block_len;
 
-        if (block_len >= 64) { // implicants do not fit into one register, and we use the largest register size
-            for (int block = 0; block < num_blocks; block++) {
-                size_t idx1 = input_index + 2 * block * block_len;
-                size_t idx2 = input_index + 2 * block * block_len + block_len;
+            for (int k = 0; k < block_len; k += 64) {
+                uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
+                uint64_t *primes_ptr = (uint64_t*) primes.bits;
 
-                for (int k = 0; k < block_len; k += 64) {
-                    uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
-                    uint64_t *primes_ptr = (uint64_t*) primes.bits;
+                uint64_t impl1 = implicant_ptr[idx1 / 64];
+                uint64_t impl2 = implicant_ptr[idx2 / 64];
+                uint64_t primes1 = primes_ptr[idx1 / 64];
+                uint64_t primes2 = primes_ptr[idx2 / 64];
+                uint64_t res = impl1 & impl2;
+                uint64_t primes1_ = primes1 & ~res;
+                uint64_t primes2_ = primes2 & ~res;
 
-                    uint64_t impl1 = implicant_ptr[idx1 / 64];
-                    uint64_t impl2 = implicant_ptr[idx2 / 64];
-                    uint64_t primes1 = primes_ptr[idx1 / 64];
-                    uint64_t primes2 = primes_ptr[idx2 / 64];
-                    uint64_t res = impl1 & impl2;
-                    uint64_t primes1_ = primes1 & ~res;
-                    uint64_t primes2_ = primes2 & ~res;
-
-                    primes_ptr[idx1 / 64] = primes1_;
-                    primes_ptr[idx2 / 64] = primes2_;
-                    if (i >= first_difference) {
-                        implicant_ptr[o_idx / 64] = res;
-                        o_idx += 64;
-                    }
-                    idx1 += 64;
-                    idx2 += 64;
-                }
-            }
-        } else { // implicants that are compared fit into one 64-bit register
-            for (int block = 0; block < num_blocks; block += 32 / block_len) {
-                // LOG_DEBUG("Block: %d, block_len: %d", block, block_len);
-                size_t idx1 = input_index + 2 * block * block_len;
-
-                uint64_t *input_ptr = (uint64_t *) implicants.bits;
-                uint32_t *output_ptr = (uint32_t *) implicants.bits;
-                uint64_t *primes_ptr = (uint64_t *) primes.bits;
-                uint64_t impl1 = input_ptr[idx1 / 64];
-                uint64_t primes;
-                if (block_len == 1) {
-                    primes = impl1;
-                }
-                else {
-                    primes = primes_ptr[idx1 / 64];
-                }
-                uint64_t impl2 = impl1 >> block_len;
-                uint64_t aggregated = impl1 & impl2;
-                uint64_t initial_result = 0;
-
-                uint64_t shifted = 0;
-                if (block_len == 1) {
-                    aggregated = aggregated & 0b0101010101010101010101010101010101010101010101010101010101010101;
-                    initial_result = aggregated;
-                    shifted = aggregated >> 1;
-                }
-                if (block_len <= 2) {
-                    aggregated = (aggregated | shifted) & 0b0011001100110011001100110011001100110011001100110011001100110011;
-                    if (block_len == 2) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 2;
-                }
-
-                if (block_len <= 4) {
-                    aggregated = (aggregated | shifted) & 0x0F0F0F0F0F0F0F0F;
-                    if (block_len == 4) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 4;
-                }
-                if (block_len <= 8) {
-                    aggregated = (aggregated | shifted) & 0x00FF00FF00FF00FF;
-                    if (block_len == 8) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 8;
-                }
-                if (block_len <= 16) {
-                    aggregated = (aggregated | shifted) & 0x0000FFFF0000FFFF;
-                    if (block_len == 16) {
-                        initial_result = aggregated;
-                    }
-                    shifted = aggregated >> 16;
-                }
-                aggregated = (aggregated | shifted) & 0x00000000FFFFFFFF;
-                if (block_len == 32) {
-                    initial_result = aggregated;
-                }
-
-                uint64_t primes2 = primes & ~(initial_result | (initial_result << block_len));
-
-                primes_ptr[idx1 / 64] = primes2;
+                primes_ptr[idx1 / 64] = primes1_;
+                primes_ptr[idx2 / 64] = primes2_;
                 if (i >= first_difference) {
-                    output_ptr[o_idx / 32] = (uint32_t) aggregated;
-                    o_idx += 32;
+                    implicant_ptr[o_idx / 64] = res;
+                    o_idx += 64;
                 }
-
-
+                idx1 += 64;
+                idx2 += 64;
             }
-        }
+        } 
     }
 }
 
