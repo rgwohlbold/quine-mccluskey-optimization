@@ -14,6 +14,8 @@
 #include "implementations/avx2_sp_aleksa.h"
 #include "implementations/avx2_sp_richard.h"
 #include "implementations/avx512_sp_old_loop.h"
+#include "implementations/avx512_sp_unroll.h"
+#include "implementations/avx512_sp_unroll_compress.h"
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 
@@ -21,6 +23,8 @@
 #include "implementations/merge/avx2_sp_aleksa.h"
 #include "implementations/merge/avx2_sp_richard.h"
 #include "implementations/merge/avx512_sp_old_loop.h"
+#include "implementations/merge/avx512_sp_unroll.h"
+#include "implementations/merge/avx512_sp_unroll_compress.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
 
@@ -74,7 +78,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_richard", prime_implicants_avx2_sp_richard, 30},
 #endif
 #ifdef __AVX512F__
-    {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 30},
+    {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 22},
+    {"avx512_sp_unroll", prime_implicants_avx512_sp_unroll, 22},
+    {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
@@ -105,6 +111,8 @@ merge_implementation merge_implementations[] = {
 #endif
 #ifdef __AVX512F__
     {"merge_avx512_sp_old_loop", merge_avx512_sp_old_loop},
+    {"merge_avx512_sp_unroll", merge_avx512_sp_unroll},
+    {"merge_avx512_sp_unroll_compress", merge_avx512_sp_unroll_compress},
 #endif
 #ifdef __aarch64__
     {"merge_neon", merge_neon},
