@@ -72,7 +72,6 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
         uint64_t shifted4 = 0;
         uint64_t shifted8 = 0;
         uint64_t shifted16 = 0;
-        uint64_t shifted32 = 0;
 
         aggregated1 = aggregated1 & 0b0101010101010101010101010101010101010101010101010101010101010101;
         initial_result1 = aggregated1;
@@ -131,7 +130,6 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
         uint64_t primes32 = primes16 & ~(initial_result32 | (initial_result32 << 32));
 
         primes_ptr[idx1 / 64] = primes32;
-        LOG_DEBUG("Block: %d, idx1: %zu, oidx1: %zu, oidx2: %zu, first_difference: %d", regist, idx1, o_idx1, o_idx2, first_difference);
         if (0 >= first_difference) {
             output_ptr[o_idx1 / 32] = (uint32_t) aggregated1;
             o_idx1 += 32;
