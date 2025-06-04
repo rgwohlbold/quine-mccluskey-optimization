@@ -29,93 +29,22 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
     if (num_registers < 4) {
         for (int register_index = 0; register_index < num_registers; register_index += 1) {
             size_t idx1 = input_index + 256 * register_index;
-            size_t o_idx1 = o_idx + 128 * register_index;
-            size_t o_idx1_b = o_idx1 >> 3;  // Divide by 8 to get byte index
+            size_t o_idx1_b = (o_idx >> 3) + 16 * register_index;
 
             __m256i impl1 = _mm256_load_si256((__m256i *)(implicants.bits + idx1 / 8));
             __m256i primes1 = impl1;
+            for (int i = 0; i < 8; i++) {
+                __m128i impl_result;
+                __m256i primes_result;
 
-            // Expanded from for(i=0; i < 8; i++) { ...
-            // with if(i >= first_difference) { ... }}
-
-            __m128i impl_result[8];
-            __m256i primes_result[4];
-            merge_avx2_sp_single_register_richard_1(impl1, primes1, &impl_result[0], &primes_result[0]);
-            merge_avx2_sp_single_register_richard_2(impl1, primes1, &impl_result[1], &primes_result[1]);
-            merge_avx2_sp_single_register_richard_4(impl1, primes1, &impl_result[2], &primes_result[2]);
-            merge_avx2_sp_single_register_richard_8(impl1, primes1, &impl_result[3], &primes_result[3]);
-            merge_avx2_sp_single_register_richard_16(impl1, primes_result[0], &impl_result[4], &primes_result[0]);
-            merge_avx2_sp_single_register_richard_32(impl1, primes_result[1], &impl_result[5], &primes_result[1]);
-            merge_avx2_sp_single_register_richard_64(impl1, primes_result[2], &impl_result[6], &primes_result[2]);
-            merge_avx2_sp_single_register_richard_128(impl1, primes_result[3], &impl_result[7], &primes_result[3]);
-
-#define STORE_MERGED_AT_OFFSET(offset, result_idx) \
-    _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + offset * (num_registers << 4))), impl_result[result_idx])
-
-            switch (first_difference) {
-                case 0:
-                    STORE_MERGED_AT_OFFSET(0, 0);
-                    STORE_MERGED_AT_OFFSET(1, 1);
-                    STORE_MERGED_AT_OFFSET(2, 2);
-                    STORE_MERGED_AT_OFFSET(3, 3);
-                    STORE_MERGED_AT_OFFSET(4, 4);
-                    STORE_MERGED_AT_OFFSET(5, 5);
-                    STORE_MERGED_AT_OFFSET(6, 6);
-                    STORE_MERGED_AT_OFFSET(7, 7);
-                    break;
-                case 1:
-                    STORE_MERGED_AT_OFFSET(0, 1);
-                    STORE_MERGED_AT_OFFSET(1, 2);
-                    STORE_MERGED_AT_OFFSET(2, 3);
-                    STORE_MERGED_AT_OFFSET(3, 4);
-                    STORE_MERGED_AT_OFFSET(4, 5);
-                    STORE_MERGED_AT_OFFSET(5, 6);
-                    STORE_MERGED_AT_OFFSET(6, 7);
-                    break;
-                case 2:
-                    STORE_MERGED_AT_OFFSET(0, 2);
-                    STORE_MERGED_AT_OFFSET(1, 3);
-                    STORE_MERGED_AT_OFFSET(2, 4);
-                    STORE_MERGED_AT_OFFSET(3, 5);
-                    STORE_MERGED_AT_OFFSET(4, 6);
-                    STORE_MERGED_AT_OFFSET(5, 7);
-                    break;
-                case 3:
-                    STORE_MERGED_AT_OFFSET(0, 3);
-                    STORE_MERGED_AT_OFFSET(1, 4);
-                    STORE_MERGED_AT_OFFSET(2, 5);
-                    STORE_MERGED_AT_OFFSET(3, 6);
-                    STORE_MERGED_AT_OFFSET(4, 7);
-                    break;
-                case 4:
-                    STORE_MERGED_AT_OFFSET(0, 4);
-                    STORE_MERGED_AT_OFFSET(1, 5);
-                    STORE_MERGED_AT_OFFSET(2, 6);
-                    STORE_MERGED_AT_OFFSET(3, 7);
-                    break;
-                case 5:
-                    STORE_MERGED_AT_OFFSET(0, 5);
-                    STORE_MERGED_AT_OFFSET(1, 6);
-                    STORE_MERGED_AT_OFFSET(2, 7);
-                    break;
-                case 6:
-                    STORE_MERGED_AT_OFFSET(0, 6);
-                    STORE_MERGED_AT_OFFSET(1, 7);
-                    break;
-                case 7:
-                    STORE_MERGED_AT_OFFSET(0, 7);
-                    break;
-                default:
-                    // No action needed for cases beyond 7
-                    break;
+                merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl_result, &primes_result);
+                primes1 = primes_result;
+                if (i >= first_difference) {
+                    _mm_store_si128((__m128i *)(implicants.bits + o_idx1_b), impl_result);
+                    o_idx1_b += 16 * num_registers;
+                }
             }
-
-            // Tree-like gather the results
-            primes_result[0] = _mm256_and_si256(primes_result[0], primes_result[1]);
-            primes_result[2] = _mm256_and_si256(primes_result[2], primes_result[3]);
-            primes_result[0] = _mm256_and_si256(primes_result[0], primes_result[2]);
-
-            _mm256_store_si256((__m256i *)(primes.bits + idx1 / 8), primes_result[0]);
+            _mm256_store_si256((__m256i *)(primes.bits + idx1 / 8), primes1);
         }
         if (first_difference <= 8) {
             o_idx += (8 - first_difference) * num_registers * 128;
@@ -135,7 +64,6 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
             __m256i primes4 = impl4;
 
             __m128i impl1_result, impl2_result, impl3_result, impl4_result;
-            // __m256i primes1_result, primes2_result, primes3_result, primes4_result;
 
             merge_avx2_sp_single_register_richard_1(impl1, primes1, &impl1_result, &primes1);
             merge_avx2_sp_single_register_richard_1(impl2, primes2, &impl2_result, &primes2);
