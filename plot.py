@@ -122,6 +122,54 @@ def runtime_plot(df):
         safe_cpu_model_name = cpu_model.replace(' ', '_').replace('@', '')
         plt.show()
 
+
+def speedup_plot(df):
+    """
+    For each (cpu_model, n), compute speedup of each implementation relative
+    to the 'bits' implementation at that same n. Then plot speedup vs. n.
+    """
+    # We assume there is a column 'implementation' and one of them is exactly 'bits'.
+    for cpu_model, df_cpu in df.groupby('cpu_model'):
+        # pivot so that we can easily look up the 'bits' cycles for each n
+        bits_cycles = (
+            df_cpu[df_cpu['implementation'] == 'bits']
+            .set_index('bits')['cycles']
+        )
+        # some sanity check
+        if bits_cycles.empty:
+            print(f"Warning: no 'bits' implementation found for CPU={cpu_model}")
+            continue
+
+        # compute speedup column
+        df_cpu = df_cpu.copy()
+        # map each row’s n → the baseline cycles, then divide
+        df_cpu['baseline_cycles'] = df_cpu['bits'].map(bits_cycles)
+        df_cpu['speedup'] = df_cpu['baseline_cycles'] / df_cpu['cycles']
+
+        # drop any rows where baseline is missing
+        df_cpu = df_cpu.dropna(subset=['baseline_cycles'])
+
+        plt.figure(figsize=(9, 6))
+        sns.lineplot(
+            data=df_cpu,
+            x='bits',
+            y='speedup',
+            hue='implementation',
+            marker='o'
+        )
+
+        plt.xlabel('n (input bits)')
+        plt.ylabel('Speedup over “bits” impl')
+        plt.title(f"Speedup vs. n (baseline = bits) CPU: {cpu_model}", loc='left')
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        plt.xticks(sorted(df_cpu['bits'].unique()))
+        plt.ylim(bottom=0)
+
+        plt.legend(title='Implementation', bbox_to_anchor=(1.02, 1), loc='upper left')
+        plt.tight_layout()
+        plt.show()
+
+
 df = pd.read_csv("measurements.csv")
 df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
 df['ops'] = df['bits'] * 3**df['bits']
@@ -133,3 +181,4 @@ print(df)
 performance_plot(df)
 roofline_plot(df)
 runtime_plot(df)
+speedup_plot(df)
