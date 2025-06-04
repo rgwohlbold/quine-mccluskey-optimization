@@ -12,158 +12,10 @@
 #include "./avx2_sp_richard.h"
 #include "bits_sp.h"
 
-// static void merge_avx2_sp_small_n_richard(bitmap implicants, bitmap primes, size_t input_index, size_t output_index,
-//                                           int num_bits, int first_difference) {
-//     size_t o_idx;
-//     switch (num_bits) {
-//         case 1:
-//             merge_bits_sp1(implicants, primes, input_index, output_index, first_difference);
-//             return;
-//         case 2:
-//             merge_bits_sp2(implicants, primes, input_index, output_index, first_difference);
-//             return;
-//         case 3:
-//             merge_bits_sp3(implicants, primes, input_index, output_index, first_difference);
-//             return;
-//         case 4:
-//             merge_bits_sp4(implicants, primes, input_index, output_index, first_difference);
-//             return;
-//         case 5:
-//             merge_bits_sp5(implicants, primes, input_index, output_index, first_difference);
-//             return;
-//         default:
-
-//             o_idx = output_index;
-//             // LOG_INFO("Entered small_n_aleksa with num_bits=%d, first_difference=%d", num_bits, first_difference);
-
-//             for (int i = 0; i < 6; i++) {
-//                 int block_len = 1 << i;
-//                 int num_blocks = 1 << (num_bits - i - 1);
-
-//                 // LOG_INFO("i: %d, block_len: %d, num_blocks: %d", i, block_len, num_blocks);
-
-//                 for (int block = 0; block < num_blocks; block += 32 / block_len) {
-//                     size_t idx1 = input_index + 2 * block * block_len;
-
-//                     uint64_t *input_ptr = (uint64_t *)implicants.bits;
-//                     uint32_t *output_ptr = (uint32_t *)implicants.bits;
-//                     uint64_t *primes_ptr = (uint64_t *)primes.bits;
-//                     for (int k = 0; k < block_len; k += 64) {
-//                         uint64_t impl1 = input_ptr[idx1 / 64];
-//                         uint64_t prime;
-//                         if (block_len == 1) {
-//                             prime = impl1;
-//                         } else {
-//                             prime = primes_ptr[idx1 / 64];
-//                         }
-
-//                         uint64_t impl2 = impl1 >> block_len;
-//                         uint64_t aggregated = impl1 & impl2;
-
-//                         uint64_t mask;
-//                         if (block_len == 1) {
-//                             mask = 0b0101010101010101010101010101010101010101010101010101010101010101;
-//                         } else if (block_len == 2) {
-//                             mask = 0b0011001100110011001100110011001100110011001100110011001100110011;
-//                         } else if (block_len == 4) {
-//                             mask = 0x0F0F0F0F0F0F0F0F;
-//                         } else if (block_len == 8) {
-//                             mask = 0x00FF00FF00FF00FF;
-//                         } else if (block_len == 16) {
-//                             mask = 0x0000FFFF0000FFFF;
-//                         } else {  // block_len == 32
-//                             mask = 0x00000000FFFFFFFF;
-//                         }
-//                         uint64_t result = _pext_u64(aggregated, mask);
-//                         uint64_t initial_result = aggregated & mask;
-
-//                         uint64_t prime2 = prime & ~(initial_result | (initial_result << block_len));
-
-//                         primes_ptr[idx1 / 64] = prime2;
-//                         if (i >= first_difference) {
-//                             output_ptr[o_idx / 32] = (uint32_t)result;
-//                             o_idx += 32;
-//                         }
-//                         idx1 += 64;
-//                     }
-//                 }
-//             }
-
-//             for (int i = 6; i < num_bits; i++) {
-//                 int block_len = 1 << i;
-//                 int num_blocks = 1 << (num_bits - i - 1);
-
-//                 // LOG_INFO("i: %d, block_len: %d, num_blocks: %d", i, block_len, num_blocks);
-
-//                 // implicants do not fit into one register, and we use the largest register size
-//                 for (int block = 0; block < num_blocks; block++) {
-//                     size_t idx1 = input_index + 2 * block * block_len;
-//                     size_t idx2 = input_index + 2 * block * block_len + block_len;
-
-//                     for (int k = 0; k < block_len; k += 64) {
-//                         uint64_t *implicant_ptr = (uint64_t *)implicants.bits;
-//                         uint64_t *primes_ptr = (uint64_t *)primes.bits;
-
-//                         uint64_t impl1 = implicant_ptr[idx1 / 64];
-//                         uint64_t impl2 = implicant_ptr[idx2 / 64];
-//                         uint64_t prime1 = primes_ptr[idx1 / 64];
-//                         uint64_t prime2 = primes_ptr[idx2 / 64];
-//                         uint64_t res = impl1 & impl2;
-//                         uint64_t prime1_ = prime1 & ~res;
-//                         uint64_t prime2_ = prime2 & ~res;
-
-//                         primes_ptr[idx1 / 64] = prime1_;
-//                         primes_ptr[idx2 / 64] = prime2_;
-//                         if (i >= first_difference) {
-//                             implicant_ptr[o_idx / 64] = res;
-//                             o_idx += 64;
-//                         }
-//                         idx1 += 64;
-//                         idx2 += 64;
-//                     }
-//                 }
-//             }
-
-//             break;
-//     }
-// }
-
-// static inline void merge_avx2_sp_single_register_richard(int bit_difference, __m256i impl1, __m256i primes1,
-//                                                          __m128i *result, __m256i *primes_result) {
-//     assert(0 <= bit_difference && bit_difference <= 7);
-
-//     int block_len = 1 << bit_difference;
-
-//     switch (block_len) {
-//         case 1:
-//             merge_avx2_sp_single_register_richard_1(impl1, primes1, result, primes_result);
-//             break;
-//         case 2:
-//             merge_avx2_sp_single_register_richard_2(impl1, primes1, result, primes_result);
-//             break;
-//         case 4:
-//             merge_avx2_sp_single_register_richard_4(impl1, primes1, result, primes_result);
-//             break;
-//         case 8:
-//             merge_avx2_sp_single_register_richard_8(impl1, primes1, result, primes_result);
-//             break;
-//         case 16:
-//             merge_avx2_sp_single_register_richard_16(impl1, primes1, result, primes_result);
-//             break;
-//         case 32:
-//             merge_avx2_sp_single_register_richard_32(impl1, primes1, result, primes_result);
-//             break;
-//         case 64:
-//             merge_avx2_sp_single_register_richard_64(impl1, primes1, result, primes_result);
-//             break;
-//         case 128:
-//             merge_avx2_sp_single_register_richard_128(impl1, primes1, result, primes_result);
-//             break;
-//         default:
-//             break;
-//     }
-// }
-
+/**
+ * Uses Richard's single_register's implementation, but aims to achieve ILP through unrolling
+ *
+ */
 static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits,
                                 int first_difference) {
     if (num_bits <= 7) {
@@ -175,6 +27,7 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
 
     int num_registers = (1 << num_bits) / 256;
     if (num_registers < 4) {
+        // Less than 4 registers case, we do each register in a single pass
         for (int register_index = 0; register_index < num_registers; register_index += 1) {
             size_t idx1 = input_index + 256 * register_index;
             size_t o_idx1 = o_idx + 128 * register_index;
@@ -276,6 +129,7 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
             o_idx += (8 - first_difference) * num_registers * 128;
         }
     } else {
+        // More than or equal 4 registers case
         for (int register_index = 0; register_index < num_registers; register_index += 4) {
             size_t idx1 = input_index + 256 * register_index;
             size_t o_idx1 = o_idx + 128 * register_index;
