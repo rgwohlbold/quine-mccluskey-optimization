@@ -507,6 +507,7 @@ static inline void merge_bits_sp(bitmap implicants, bitmap primes, size_t input_
         }
     }
 }
+#ifdef __x86_64__
 
 static void merge_small_loop(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits == 1) {
@@ -606,3 +607,4 @@ static void merge_small_loop(bitmap implicants, bitmap primes, size_t input_inde
         }
     }
 }
+#endif
