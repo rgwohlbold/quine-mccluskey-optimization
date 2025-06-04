@@ -15,6 +15,7 @@
 #include "implementations/avx2_sp_ilp.h"
 #include "implementations/avx2_sp_unroll.h"
 #include "implementations/avx2_sp_shuffle.h"
+#include "implementations/avx2_sp_load_shuffle.h"
 #include "implementations/avx512_sp_old_loop.h"
 #include "implementations/avx512_sp_unroll.h"
 #include "implementations/avx512_sp_unroll_compress.h"
@@ -82,6 +83,7 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_ilp", prime_implicants_avx2_sp_ilp, 30},
     {"avx2_sp_unroll", prime_implicants_avx2_sp_unroll, 30},
     {"avx2_sp_shuffle", prime_implicants_avx2_sp_shuffle, 30},
+    {"avx2_sp_load_shuffle", prime_implicants_avx2_sp_load_shuffle, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 22},
