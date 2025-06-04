@@ -11,9 +11,10 @@
 #include "avx2_sp.h"
 
 static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
-
     size_t o_idx;
     switch(num_bits) {
+        case 0:
+            return;
         case 1:
             merge_bits_sp1(implicants, primes, input_index, output_index, first_difference);
             return;
@@ -447,7 +448,7 @@ static inline void merge_avx2_sp_single_register_ssa(int bit_difference, __m256i
 
 static void merge_avx2_sp_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 7) {
-        merge_avx2_sp_small_n(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_small_loop(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
 
