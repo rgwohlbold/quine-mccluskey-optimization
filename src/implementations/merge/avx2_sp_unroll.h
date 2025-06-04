@@ -9,17 +9,13 @@
 
 #include "../../bitmap.h"
 #include "../../debug.h"
-#include "./avx2_sp_richard.h"
+#include "./avx2_sp_ssa.h"
 #include "bits_sp.h"
 
-/**
- * Uses Richard's single_register's implementation, but aims to achieve ILP through unrolling
- *
- */
-static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits,
+static void merge_avx2_sp_unroll(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits,
                                 int first_difference) {
     if (num_bits <= 7) {
-        merge_avx2_sp_small_n_richard(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_avx2_sp_small_n_ssa(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
 
@@ -37,7 +33,7 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 __m128i impl_result;
                 __m256i primes_result;
 
-                merge_avx2_sp_single_register_richard(i, impl1, primes1, &impl_result, &primes_result);
+                merge_avx2_sp_single_register_ssa(i, impl1, primes1, &impl_result, &primes_result);
                 primes1 = primes_result;
                 if (i >= first_difference) {
                     _mm_store_si128((__m128i *)(implicants.bits + o_idx1_b), impl_result);
@@ -65,10 +61,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
 
             __m128i impl1_result, impl2_result, impl3_result, impl4_result;
 
-            merge_avx2_sp_single_register_richard_1(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_1(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_1(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_1(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_1(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_1(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_1(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_1(impl4, primes4, &impl4_result, &primes4);
             if (0 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -77,10 +73,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_2(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_2(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_2(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_2(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_2(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_2(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_2(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_2(impl4, primes4, &impl4_result, &primes4);
             if (1 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -89,10 +85,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_4(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_4(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_4(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_4(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_4(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_4(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_4(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_4(impl4, primes4, &impl4_result, &primes4);
             if (2 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -101,10 +97,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_8(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_8(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_8(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_8(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_8(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_8(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_8(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_8(impl4, primes4, &impl4_result, &primes4);
             if (3 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -113,10 +109,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_16(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_16(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_16(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_16(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_16(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_16(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_16(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_16(impl4, primes4, &impl4_result, &primes4);
             if (4 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -125,10 +121,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_32(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_32(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_32(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_32(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_32(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_32(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_32(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_32(impl4, primes4, &impl4_result, &primes4);
             if (5 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -137,10 +133,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_64(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_64(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_64(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_64(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_64(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_64(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_64(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_64(impl4, primes4, &impl4_result, &primes4);
             if (6 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
@@ -149,10 +145,10 @@ static void merge_avx2_sp_aljaz(bitmap implicants, bitmap primes, size_t input_i
                 o_idx1_b += 16 * num_registers;
             }
 
-            merge_avx2_sp_single_register_richard_128(impl1, primes1, &impl1_result, &primes1);
-            merge_avx2_sp_single_register_richard_128(impl2, primes2, &impl2_result, &primes2);
-            merge_avx2_sp_single_register_richard_128(impl3, primes3, &impl3_result, &primes3);
-            merge_avx2_sp_single_register_richard_128(impl4, primes4, &impl4_result, &primes4);
+            merge_avx2_sp_single_register_ssa_128(impl1, primes1, &impl1_result, &primes1);
+            merge_avx2_sp_single_register_ssa_128(impl2, primes2, &impl2_result, &primes2);
+            merge_avx2_sp_single_register_ssa_128(impl3, primes3, &impl3_result, &primes3);
+            merge_avx2_sp_single_register_ssa_128(impl4, primes4, &impl4_result, &primes4);
             if (7 >= first_difference) {
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b)), impl1_result);
                 _mm_store_si128((__m128i *)(implicants.bits + (o_idx1_b + 16)), impl2_result);
