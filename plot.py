@@ -173,7 +173,7 @@ def speedup_plot(df):
 df = pd.read_csv("measurements.csv")
 df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
 df['ops'] = df['bits'] * 3**df['bits']
-df['memory'] = (3**df['bits']) / 8
+df['memory'] = (3**df['bits']) / 4
 df['operational_intensity'] = df['ops'] / df['memory']
 df['performance'] = df['ops'] / df['cycles']
 df['function'] = df['implementation'] + ', ' + df['compiler_version'] + ', ' + df['compiler_flags']
