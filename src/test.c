@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "debug.h"
 #include "implicant.h"
@@ -456,5 +457,55 @@ void measure_merge(const char *s, int num_bits) {
 
     FILE *f = fopen("measurements_merge.csv", "a");
     fprintf(f, "%s,%s,%s,%s,%d,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles);
+    fclose(f);
+}
+
+void generate_testfile(int num_bits, int density) {
+    // allocate full 2**n ints in case we are a bit above density
+    int max_implicants = 1 << num_bits;
+    int *trues = calloc(max_implicants, sizeof(int));
+    if (trues == NULL) {
+        LOG_ERROR("could not allocate trues array");
+        exit(EXIT_FAILURE);
+    }
+
+    int num_trues = 0;
+    srand(time(NULL));
+    for (int i = 0; i < max_implicants; i++) {
+        double ratio = ((double)rand()) / RAND_MAX * 100;
+        if (ratio < density) {
+            trues[num_trues++] = i;
+        }
+    }
+
+    prime_implicant_result result = prime_implicants_bits(num_bits, num_trues, trues);
+    bitmap primes = result.primes;
+
+    char filename[100];
+    snprintf(filename, sizeof(filename), "tests/gen_tests/rnd-%d-%d.txt", num_bits, density);
+    FILE *f = fopen(filename, "w");
+    if (f == NULL) {
+        perror("could not open test file");
+        exit(EXIT_FAILURE);
+    }
+    int num_primes = 0;
+    for (size_t i = 0; i < primes.num_bits; i++) {
+        if (BITMAP_CHECK(primes, i)) {
+            num_primes++;
+        }
+    }
+    fprintf(f, "rnd-%d-%dpct-dense\n", num_bits, density);
+    fprintf(f, "%d %d %d\n", num_bits, num_trues, num_primes);
+    for (int i = 0; i < num_trues; i++) {
+        fprintf(f, "%d\n", trues[i]);
+    }
+    for (size_t i = 0; i < primes.num_bits; i++) {
+        if (BITMAP_CHECK(primes, i)) {
+            char s[num_bits+1];
+            s[num_bits] = '\0';
+            bitmap_index_to_implicant(num_bits, i, s);
+            fprintf(f, "%s\n", s);
+        }
+    }
     fclose(f);
 }
