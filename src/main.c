@@ -5,7 +5,7 @@
 #include "debug.h"
 #include "test.h"
 
-void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help|implementations|merge_implementations]", argv[0]); }
+void print_usage(char *argv[]) { LOG_INFO("usage: %s [test|measure|help|implementations|merge_implementations|gentest]", argv[0]); }
 void print_test_usage(char *argv[]) {
     LOG_INFO("usage: %s test <testfile1> <testfile2> ...", argv[0]);
 }
@@ -13,6 +13,8 @@ void print_test_single_usage(char *argv[]) {
     LOG_INFO("usage: %s test_single <implementation> <testfile1> <testfile2> ...", argv[0]);
 }
 void print_measure_usage(char *argv[]) { LOG_INFO("usage: %s measure <implementation> <num_bits>", argv[0]); }
+
+void print_gentest_usage(char *argv[]) { LOG_INFO("usage: %s gentest <num_bits> <density>", argv[0]); }
 
 int parse_int(const char *s) {
     int x = 0;
@@ -60,6 +62,14 @@ int main(int argc, char *argv[]) {
             const char *implementation = argv[2];
             int num_bits = parse_int(argv[3]);
             measure_merge(implementation, num_bits);
+        }
+    } else if (strcmp(argv[1], "gentest") == 0) {
+        if (argc <= 3) {
+            print_gentest_usage(argv);
+        } else {
+            int num_bits = parse_int(argv[2]);
+            int density = parse_int(argv[3]);
+            generate_testfile(num_bits, density);
         }
 
     } else {
