@@ -39,10 +39,10 @@ bool bitmap_cmp(bitmap map1, bitmap map2) {
     return true;
 }
 
-int bitmap_implicant_to_index(int num_bits, const char *s) {
+uint64_t bitmap_implicant_to_index(int num_bits, const char *s) {
     // count number of dashes to get section index
-    int num_dashes = 0;
-    int section_offset = 0;
+    uint64_t num_dashes = 0;
+    uint64_t section_offset = 0;
     for (int i = 0; i < num_bits; i++) {
         if (s[i] == '-') {
             section_offset += binomial_coefficient(num_bits, num_dashes) * (1 << (num_bits - num_dashes));
@@ -51,8 +51,8 @@ int bitmap_implicant_to_index(int num_bits, const char *s) {
     }
 
     // look at dash pattern to get chunk offset
-    int chunk_offset = 0;
-    int dashes_remaining = num_dashes;
+    uint64_t chunk_offset = 0;
+    uint64_t dashes_remaining = num_dashes;
     for (int i = num_bits-1; i >= 0; i--) {
         if (s[i] == '-') {
             dashes_remaining -= 1;
@@ -63,8 +63,8 @@ int bitmap_implicant_to_index(int num_bits, const char *s) {
     chunk_offset *= 1 << (num_bits - num_dashes);
 
     // look at pattern of 0s and 1s to get offset within chunk
-    int offset_within_chunk = 0;
-    for (int i = 0; i < num_bits; i++) {
+    uint64_t offset_within_chunk = 0;
+    for (uint64_t i = 0; i < num_bits; i++) {
         if (s[i] == '0') {
             offset_within_chunk *= 2;
         } else if (s[i] == '1') {
@@ -77,29 +77,29 @@ int bitmap_implicant_to_index(int num_bits, const char *s) {
     return section_offset + chunk_offset + offset_within_chunk;
 }
 
-void bitmap_index_to_implicant(int num_bits, int bitset_index, char *s) {
-    int num_dashes = 0;
-    int section_offset = 0; 
-    for (int remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
-        int new_section_offset = section_offset + (1 << remaining_bits) * binomial_coefficient(num_bits, num_dashes);
+void bitmap_index_to_implicant(int num_bits, size_t bitset_index, char *s) {
+    size_t num_dashes = 0;
+    size_t section_offset = 0; 
+    for (size_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
+        size_t new_section_offset = section_offset + (1 << remaining_bits) * binomial_coefficient(num_bits, num_dashes);
         if (new_section_offset > bitset_index) {
             break;
         }
         section_offset = new_section_offset;
         num_dashes++;
     }
-    int remaining_bits = num_bits - num_dashes;
-    int chunk_index = (bitset_index - section_offset) / (1 << remaining_bits);
-    int offset_within_chunk = (bitset_index - section_offset) % (1 << remaining_bits);
+    size_t remaining_bits = num_bits - num_dashes;
+    size_t chunk_index = (bitset_index - section_offset) / (1 << remaining_bits);
+    size_t offset_within_chunk = (bitset_index - section_offset) % (1 << remaining_bits);
     //LOG_DEBUG("bitset_index %d section_offset=%d chunk_index=%d offset_within_chunk=%d", bitset_index, section_offset, chunk_index, offset_within_chunk);
 
-    int dashes_set = 0;
+    size_t dashes_set = 0;
     for (int i = 0; i < num_bits; i++) {
-        int dashes_remaining = num_dashes - dashes_set;
+        size_t dashes_remaining = num_dashes - dashes_set;
         if (dashes_remaining == 0) {
             s[num_bits-i-1] = '.';
         } else {
-            int possibilities_if_dash_is_set = binomial_coefficient(num_bits-i-1, dashes_remaining-1);
+            size_t possibilities_if_dash_is_set = binomial_coefficient(num_bits-i-1, dashes_remaining-1);
             if (chunk_index < possibilities_if_dash_is_set) {
                 s[num_bits-i-1] = '-';
                 dashes_set++;
@@ -110,9 +110,9 @@ void bitmap_index_to_implicant(int num_bits, int bitset_index, char *s) {
         }
     }
     // put in value of implicant except for dashes
-    int bit = 0;
+    size_t bit = 0;
     for (int k = 0; k < num_bits; k++) {
-        int bitmask = 1 << bit;
+        size_t bitmask = 1 << bit;
         if (s[num_bits - k - 1] == '.') {
             if ((offset_within_chunk & bitmask) != 0) {
                 s[num_bits - k - 1] = '1';
@@ -170,7 +170,7 @@ static void test_implicant_bitmap_index() {
     struct {
         int num_bits;
         const char *implicant;
-        int index;
+        uint64_t index;
     } tests[] = {
         {4, "0000", 0},
         {4, "0001", 1},
