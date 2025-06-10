@@ -136,36 +136,9 @@ typedef struct {
     int num_bits;
     int num_trues;
     int *trues;  // malloc'd
-    int num_prime_implicants;
+    uint64_t num_prime_implicants;
     bitmap prime_implicants;
 } test_case;
-
-test_case make_test(const char *name, int num_bits, int num_trues, int *trues, int num_prime_implicants,
-                    char **prime_implicants) {
-    char *name_copy = malloc(strlen(name) + 1);
-    if (name_copy == NULL) {
-        perror("could not allocate name");
-        exit(EXIT_FAILURE);
-    }
-    strncpy(name_copy, name, strlen(name) + 1);
-    name_copy[strlen(name)] = '\0';  // null terminate
-    size_t num_implicants = calculate_num_implicants(num_bits);
-    int *new_trues = calloc(num_trues, sizeof(int));
-    if (new_trues == NULL) {
-        perror("could not allocate test case array");
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < num_trues; i++) {
-        new_trues[i] = trues[i];
-    }
-    bitmap new_prime_implicants = bitmap_allocate(num_implicants);
-    for (int i = 0; i < num_prime_implicants; i++) {
-        int bitset_index = bitmap_implicant_to_index(num_bits, prime_implicants[i]);
-        BITMAP_SET_TRUE(new_prime_implicants, bitset_index);
-    }
-    test_case result = {name_copy, num_bits, num_trues, new_trues, num_prime_implicants, new_prime_implicants};
-    return result;
-}
 
 void free_test(test_case test) {
     free(test.name);
@@ -202,10 +175,7 @@ void from_testfile(const char *filename, test_case *dest) {
     char line[1024];
     int num_bits = 0;
     int num_trues = 0;
-    int num_prime_implicants = 0;
-    int *trues = NULL;
-    char **prime_implicants = NULL;
-    char *name = NULL;
+    uint64_t num_prime_implicants = 0;
     if (fgets_comments(line, sizeof(line), f) == NULL) {
         perror("could not read test file");
         fclose(f);
@@ -213,7 +183,7 @@ void from_testfile(const char *filename, test_case *dest) {
     }
 
     line[strcspn(line, "\n")] = 0;  // remove newline
-    name = malloc(strlen(line) + 1);
+    char *name = malloc(strlen(line) + 1);
     if (name == NULL) {
         perror("could not allocate name");
         exit(EXIT_FAILURE);
@@ -226,35 +196,26 @@ void from_testfile(const char *filename, test_case *dest) {
         free(name);
         exit(EXIT_FAILURE);
     }
-    sscanf(line, "%d %d %d", &num_bits, &num_trues, &num_prime_implicants);
+    sscanf(line, "%d %d %lu", &num_bits, &num_trues, &num_prime_implicants);
     LOG_DEBUG("num_bits=%d num_trues=%d num_prime_implicants=%d", num_bits, num_trues, num_prime_implicants);
-    trues = malloc(num_trues * sizeof(int));
-    prime_implicants = malloc(num_prime_implicants * sizeof(char *));
+
+    uint64_t num_implicants = calculate_num_implicants(num_bits);
+    int *trues = malloc(num_trues * sizeof(int));
+    bitmap prime_implicants = bitmap_allocate(num_implicants);
     for (int i = 0; i < num_trues; i++) {
         fgets_comments(line, sizeof(line), f);
         sscanf(line, "%d", &trues[i]);
     }
-    for (int i = 0; i < num_prime_implicants; i++) {
+    for (uint64_t i = 0; i < num_prime_implicants; i++) {
         fgets_comments(line, sizeof(line), f);
         line[strcspn(line, "\n")] = 0;  // remove newline
-        prime_implicants[i] = malloc(num_bits + 1);
-        if (prime_implicants[i] == NULL) {
-            perror("could not allocate prime implicant");
-            exit(EXIT_FAILURE);
-        }
-        strncpy(prime_implicants[i], line, num_bits);
-        prime_implicants[i][num_bits] = '\0';  // null terminate
+        uint64_t bitset_index = bitmap_implicant_to_index(num_bits, line);
+        BITMAP_SET_TRUE(prime_implicants, bitset_index);
     }
-
-    *dest = make_test(name, num_bits, num_trues, trues, num_prime_implicants, prime_implicants);
-
-    free(trues);
-    for (int i = 0; i < num_prime_implicants; i++) {
-        free(prime_implicants[i]);
-    }
-    free(prime_implicants);
-    free(name);
     fclose(f);
+
+    test_case result = {name, num_bits, num_trues, trues, num_prime_implicants, prime_implicants};
+    *dest = result;
 }
 
 // test all implementations on one test file
@@ -494,14 +455,14 @@ void generate_testfile(int num_bits, int density) {
         perror("could not open test file");
         exit(EXIT_FAILURE);
     }
-    int num_primes = 0;
+    size_t num_primes = 0;
     for (size_t i = 0; i < primes.num_bits; i++) {
         if (BITMAP_CHECK(primes, i)) {
             num_primes++;
         }
     }
     fprintf(f, "rnd-%d-%dpct-dense\n", num_bits, density);
-    fprintf(f, "%d %d %d\n", num_bits, num_trues, num_primes);
+    fprintf(f, "%d %d %lu\n", num_bits, num_trues, num_primes);
     for (int i = 0; i < num_trues; i++) {
         fprintf(f, "%d\n", trues[i]);
     }
