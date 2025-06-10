@@ -281,7 +281,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
                         char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
-                        LOG_ERROR("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                        LOG_ERROR("returned implicant %s (bitmap index %lu) which was not expected by test case", s, i);
                         success = false;
                     }
                     if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
@@ -289,7 +289,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
                         LOG_ERROR(
-                            "test case expected implicant %s (bitmap index %d) which was not returned by "
+                            "test case expected implicant %s (bitmap index %lu) which was not returned by "
                             "implementation",
                             s, i);
                         success = false;
