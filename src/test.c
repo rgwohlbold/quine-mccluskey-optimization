@@ -274,26 +274,32 @@ void test_implementations(char **testfiles, int num_testfiles) {
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
             prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+            bool success = true;
             if (!bitmap_cmp(result.primes, test.prime_implicants)) {
                 for (size_t i = 0; i < result.primes.num_bits; i++) {
                     if (BITMAP_CHECK(result.primes, i) && !BITMAP_CHECK(test.prime_implicants, i)) {
                         char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
-                        LOG_WARN("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                        LOG_ERROR("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                        success = false;
                     }
                     if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
                         char s[test.num_bits + 1];
                         s[test.num_bits] = '\0';
                         bitmap_index_to_implicant(test.num_bits, i, s);
-                        LOG_WARN(
+                        LOG_ERROR(
                             "test case expected implicant %s (bitmap index %d) which was not returned by "
                             "implementation",
                             s, i);
+                        success = false;
                     }
                 }
             }
             bitmap_free(result.primes);
+            if (!success) {
+                exit(EXIT_FAILURE);
+            }
         }
     }
     for (int i = 0; i < num_testfiles; i++) {
