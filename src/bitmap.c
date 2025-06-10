@@ -31,7 +31,12 @@ bool bitmap_cmp(bitmap map1, bitmap map2) {
     if (map1.num_bits != map2.num_bits) {
         return false;
     }
-    for (size_t i = 0; i < map1.num_bits; i++) {
+    for (size_t i = 0; i < map1.num_bits - map1.num_bits % 64; i += 64) {
+        if (((uint64_t *)(map1.bits))[i/64] != ((uint64_t *)(map2.bits))[i/64]) {
+            return false;
+        }
+    }
+    for (size_t i = map1.num_bits - map1.num_bits % 64; i < map1.num_bits; i++) {
         if (BITMAP_CHECK(map1, i) ^ BITMAP_CHECK(map2, i)) {
             return false;
         }
@@ -79,7 +84,7 @@ uint64_t bitmap_implicant_to_index(int num_bits, const char *s) {
 
 void bitmap_index_to_implicant(int num_bits, size_t bitset_index, char *s) {
     size_t num_dashes = 0;
-    size_t section_offset = 0; 
+    size_t section_offset = 0;
     for (size_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
         size_t new_section_offset = section_offset + (1 << remaining_bits) * binomial_coefficient(num_bits, num_dashes);
         if (new_section_offset > bitset_index) {
