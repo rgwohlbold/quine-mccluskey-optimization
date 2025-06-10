@@ -66,8 +66,8 @@
 
 
 const prime_implicant_implementation implementations[] = {
-    // {"baseline", prime_implicants_baseline, 19},
-    // {"bits", prime_implicants_bits, 30},
+    {"baseline", prime_implicants_baseline, 19},
+    {"bits", prime_implicants_bits, 30},
     {"bits_sp", prime_implicants_bits_sp, 30},
     // {"bits_sp_aleksa", prime_implicants_bits_sp_aleksa, 30},
     // {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
@@ -92,7 +92,7 @@ const prime_implicant_implementation implementations[] = {
 #ifdef __AVX512F__
     {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 22},
     {"avx512_sp_unroll", prime_implicants_avx512_sp_unroll, 22},
-    {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
+    //{"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
@@ -122,6 +122,7 @@ merge_implementation merge_implementations[] = {
     {"merge_avx2_sp_ilp", merge_avx2_sp_ilp},
     {"merge_avx2_sp_unroll", merge_avx2_sp_unroll},
     {"merge_avx2_sp_shuffle", merge_avx2_sp_shuffle},
+    {"merge_avx2_sp_block", merge_avx2_sp_block},
 #endif
 #ifdef __AVX512F__
     {"merge_avx512_sp_old_loop", merge_avx512_sp_old_loop},
