@@ -167,37 +167,38 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
         }
     }
 
-    size_t input_index_b = input_index / 8;
-    size_t output_index_b = output_index / 8;
     int i = 8;
+    const size_t input_index_b = input_index / 8;
+    const size_t output_index_b = output_index / 8;
+
     for (; i+2 < num_bits; i += 3) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
 
         // implicants do not fit into one register, and we use the largest register size
         for (int block = 0; block < num_blocks; block += 4) {
-            size_t idx0 = input_index_b + 2 * block * block_len_b + 8 * block;
-            uint8_t *implicants_ptr = implicants.bits + idx0;
-            uint8_t *primes_ptr = primes.bits + idx0;
+            uint8_t *impl_index0 = &implicants.bits[input_index_b + 2 * block * block_len_b];
+            uint8_t *primes_index0 = &primes.bits[input_index_b + 2 * block * block_len_b];
 
             for (int k = 0; k < block_len_b; k += 32) {
-                __m256i impl0 = _mm256_load_si256((__m256i *)(implicants_ptr));
-                __m256i impl1 = _mm256_load_si256((__m256i *)(implicants_ptr + block_len_b));
-                __m256i impl2 = _mm256_load_si256((__m256i *)(implicants_ptr + 2 * block_len_b));
-                __m256i impl3 = _mm256_load_si256((__m256i *)(implicants_ptr + 3 * block_len_b));
-                __m256i impl4 = _mm256_load_si256((__m256i *)(implicants_ptr + 4 * block_len_b));
-                __m256i impl5 = _mm256_load_si256((__m256i *)(implicants_ptr + 5 * block_len_b));
-                __m256i impl6 = _mm256_load_si256((__m256i *)(implicants_ptr + 6 * block_len_b));
-                __m256i impl7 = _mm256_load_si256((__m256i *)(implicants_ptr + 7 * block_len_b));
+                __m256i impl0 = _mm256_load_si256((__m256i *)(impl_index0));
+                __m256i impl1 = _mm256_load_si256((__m256i *)(impl_index0 + block_len_b));
+                __m256i impl2 = _mm256_load_si256((__m256i *)(impl_index0 + 2*block_len_b));
+                __m256i impl3 = _mm256_load_si256((__m256i *)(impl_index0 + 3*block_len_b));
+                __m256i impl4 = _mm256_load_si256((__m256i *)(impl_index0 + 4*block_len_b));
+                __m256i impl5 = _mm256_load_si256((__m256i *)(impl_index0 + 5*block_len_b));
+                __m256i impl6 = _mm256_load_si256((__m256i *)(impl_index0 + 6*block_len_b));
+                __m256i impl7 = _mm256_load_si256((__m256i *)(impl_index0 + 7*block_len_b));
 
-                __m256i primes0 = _mm256_load_si256((__m256i *)(primes_ptr));
-                __m256i primes1 = _mm256_load_si256((__m256i *)(primes_ptr + block_len_b));
-                __m256i primes2 = _mm256_load_si256((__m256i *)(primes_ptr + 2 * block_len_b));
-                __m256i primes3 = _mm256_load_si256((__m256i *)(primes_ptr + 3 * block_len_b));
-                __m256i primes4 = _mm256_load_si256((__m256i *)(primes_ptr + 4 * block_len_b));
-                __m256i primes5 = _mm256_load_si256((__m256i *)(primes_ptr + 5 * block_len_b));
-                __m256i primes6 = _mm256_load_si256((__m256i *)(primes_ptr + 6 * block_len_b));
-                __m256i primes7 = _mm256_load_si256((__m256i *)(primes_ptr + 7 * block_len_b));
+
+                __m256i primes0 = _mm256_load_si256((__m256i *)(primes_index0));
+                __m256i primes1 = _mm256_load_si256((__m256i *)(primes_index0 + block_len_b));
+                __m256i primes2 = _mm256_load_si256((__m256i *)(primes_index0 + 2*block_len_b));
+                __m256i primes3 = _mm256_load_si256((__m256i *)(primes_index0 + 3*block_len_b));
+                __m256i primes4 = _mm256_load_si256((__m256i *)(primes_index0 + 4*block_len_b));
+                __m256i primes5 = _mm256_load_si256((__m256i *)(primes_index0 + 5*block_len_b));
+                __m256i primes6 = _mm256_load_si256((__m256i *)(primes_index0 + 6*block_len_b));
+                __m256i primes7 = _mm256_load_si256((__m256i *)(primes_index0 + 7*block_len_b));
 
                 __m256i res01 = _mm256_and_si256(impl0, impl1);
                 __m256i res23 = _mm256_and_si256(impl2, impl3);
@@ -239,14 +240,14 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
                 __m256i primes6___ = _mm256_andnot_si256(res26, primes6__);
                 __m256i primes7___ = _mm256_andnot_si256(res37, primes7__);
 
-                _mm256_store_si256((__m256i *)(primes_ptr), primes0___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 1 * block_len_b), primes1___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 2 * block_len_b), primes2___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 3 * block_len_b), primes3___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 4 * block_len_b), primes4___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 5 * block_len_b), primes5___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 6 * block_len_b), primes6___);
-                _mm256_store_si256((__m256i *)(primes_ptr + 7 * block_len_b), primes7___);
+                _mm256_store_si256((__m256i *)(primes_index0), primes0___);
+                _mm256_store_si256((__m256i *)(primes_index0 + block_len_b), primes1___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 2*block_len_b), primes2___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 3*block_len_b), primes3___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 4*block_len_b), primes4___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 5*block_len_b), primes5___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 6*block_len_b), primes6___);
+                _mm256_store_si256((__m256i *)(primes_index0 + 7*block_len_b), primes7___);
                 if (i >= first_difference) {
                     o_idx = output_index_b + ((i - first_difference) << (num_bits - 4)) + block * block_len_b + k;
                     _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res01);
@@ -277,30 +278,31 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
                     o_idx = output_index_b + ((i+2 - first_difference) << (num_bits - 4)) + (block+3) * block_len_b + k;
                     _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res37);
                 }
+                impl_index0 += 32;
+                primes_index0 += 32;
             }
         }
     }
+
     for (; i+1 < num_bits; i += 2) {
-        int block_len = 1 << i;
+        int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
 
         // implicants do not fit into one register, and we use the largest register size
         for (int block = 0; block < num_blocks; block += 2) {
-            size_t idx0 = input_index + 2 * block * block_len;
-            size_t idx1 = input_index + 2 * block * block_len + block_len;
-            size_t idx2 = input_index + 2 * block * block_len + 2 * block_len;
-            size_t idx3 = input_index + 2 * block * block_len + 3 * block_len;
+            uint8_t *impl_index0 = &implicants.bits[input_index_b + 2 * block * block_len_b];
+            uint8_t *primes_index0 = &primes.bits[input_index_b + 2 * block * block_len_b];
 
-            for (int k = 0; k < block_len; k += 256) {
-                __m256i impl0 = _mm256_load_si256((__m256i *)(implicants.bits + idx0 / 8));
-                __m256i impl1 = _mm256_load_si256((__m256i *)(implicants.bits + idx1 / 8));
-                __m256i impl2 = _mm256_load_si256((__m256i *)(implicants.bits + idx2 / 8));
-                __m256i impl3 = _mm256_load_si256((__m256i *)(implicants.bits + idx3 / 8));
+            for (int k = 0; k < block_len_b; k += 32) {
+                __m256i impl0 = _mm256_load_si256((__m256i *)(impl_index0));
+                __m256i impl1 = _mm256_load_si256((__m256i *)(impl_index0 + block_len_b));
+                __m256i impl2 = _mm256_load_si256((__m256i *)(impl_index0 + 2*block_len_b));
+                __m256i impl3 = _mm256_load_si256((__m256i *)(impl_index0 + 3*block_len_b));
 
-                __m256i primes0 = _mm256_load_si256((__m256i *)(primes.bits + idx0 / 8));
-                __m256i primes1 = _mm256_load_si256((__m256i *)(primes.bits + idx1 / 8));
-                __m256i primes2 = _mm256_load_si256((__m256i *)(primes.bits + idx2 / 8));
-                __m256i primes3 = _mm256_load_si256((__m256i *)(primes.bits + idx3 / 8));
+                __m256i primes0 = _mm256_load_si256((__m256i *)(primes_index0));
+                __m256i primes1 = _mm256_load_si256((__m256i *)(primes_index0 + block_len_b));
+                __m256i primes2 = _mm256_load_si256((__m256i *)(primes_index0 + 2*block_len_b));
+                __m256i primes3 = _mm256_load_si256((__m256i *)(primes_index0 + 3*block_len_b));
 
                 __m256i res01 = _mm256_and_si256(impl0, impl1);
                 __m256i res23 = _mm256_and_si256(impl2, impl3);
@@ -317,26 +319,24 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
                 __m256i primes2__ = _mm256_andnot_si256(res02, primes2_);
                 __m256i primes3__ = _mm256_andnot_si256(res13, primes3_);
 
-                _mm256_store_si256((__m256i *)(primes.bits + idx0 / 8), primes0__);
-                _mm256_store_si256((__m256i *)(primes.bits + idx1 / 8), primes1__);
-                _mm256_store_si256((__m256i *)(primes.bits + idx2 / 8), primes2__);
-                _mm256_store_si256((__m256i *)(primes.bits + idx3 / 8), primes3__);
+                _mm256_store_si256((__m256i *)(primes_index0), primes0__);
+                _mm256_store_si256((__m256i *)(primes_index0 + block_len_b), primes1__);
+                _mm256_store_si256((__m256i *)(primes_index0 + 2*block_len_b), primes2__);
+                _mm256_store_si256((__m256i *)(primes_index0 + 3*block_len_b), primes3__);
                 if (i >= first_difference) {
-                    o_idx = output_index + ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
-                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx / 8), res01);
-                    o_idx = output_index + ((i - first_difference) << (num_bits - 1)) + (block+1) * block_len + k;
-                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx / 8), res23);
+                    o_idx = output_index_b + ((i - first_difference) << (num_bits - 4)) + block * block_len_b + k;
+                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res01);
+                    o_idx = output_index_b + ((i - first_difference) << (num_bits - 4)) + (block+1) * block_len_b+ k;
+                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res23);
                 }
                 if (i+1 >= first_difference) {
-                    o_idx = output_index + ((i+1 - first_difference) << (num_bits - 1)) + block * block_len + k;
-                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx / 8), res02);
-                    o_idx = output_index + ((i+1 - first_difference) << (num_bits - 1)) + (block+1) * block_len + k;
-                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx / 8), res13);
+                    o_idx = output_index_b + ((i+1 - first_difference) << (num_bits - 4)) + block * block_len_b + k;
+                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res02);
+                    o_idx = output_index_b + ((i+1 - first_difference) << (num_bits - 4)) + (block+1) * block_len_b + k;
+                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx), res13);
                 }
-                idx0 += 256;
-                idx1 += 256;
-                idx2 += 256;
-                idx3 += 256;
+                impl_index0 += 32;
+                primes_index0 += 32;
             }
         }
     }
