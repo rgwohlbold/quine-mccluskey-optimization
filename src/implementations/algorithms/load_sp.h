@@ -25,7 +25,7 @@ typedef struct {
     uint8_t  first_diff; // first difference
     uint64_t in_idx;     // input_index
     uint64_t out_idx;    // output_index
-} MergeOp;
+} __attribute__((packed, aligned(1))) MergeOp;
 
 /*
  * Compute total number of ops = sum_{d=0..num_bits} C(num_bits,d)*(num_bits-d)
@@ -34,9 +34,9 @@ typedef struct {
  */
 static MergeOp *load_schedule(int num_bits, size_t *out_count) {
     // 1) compute total
-    
+
     size_t total = (1 << num_bits);
-    
+
 
     MergeOp *ops = (MergeOp *)malloc(sizeof *ops * total);
     if (!ops) {
@@ -47,38 +47,35 @@ static MergeOp *load_schedule(int num_bits, size_t *out_count) {
     // 2) open file
     char fname[64];
     snprintf(fname, sizeof(fname), "traversals/flat/merge_schedule_n%d_flat.txt", num_bits);
-    FILE *f = fopen(fname, "r");
+    FILE *f = fopen(fname, "rb");
     if (!f) {
         perror(fname);
         exit(EXIT_FAILURE);
     }
 
     // 3) read lines
-    size_t idx = 0;
-    while (idx < total) {
-        int rem, diff;
-        uint64_t in, out;
-        int r = fscanf(f, "%d %d %llu %llu\n", &rem, &diff, &in, &out);
-        if (r == EOF) break;
-        if (r != 4) {
-            // skip malformed/blank/comment lines
-            char buf[256];
-            if (!fgets(buf, sizeof buf, f)) break;
-            continue;
+    size_t ops_read = 0;
+    while (ops_read < total) {
+        size_t r = fread(&ops[ops_read], 18, total - ops_read, f);
+        if (r == 0) {
+            if (feof(f)) {
+                break; // end of file reached
+            } else {
+                perror("fread");
+                fclose(f);
+                free(ops);
+                exit(EXIT_FAILURE);
+            }
         }
-        ops[idx].rem_bits   = (uint8_t)rem;
-        ops[idx].first_diff = (uint8_t)diff;
-        ops[idx].in_idx     = in;
-        ops[idx].out_idx    = out;
-        idx++;
+        ops_read += r;
     }
     fclose(f);
 
-    if (idx != total) {
+    if (ops_read != total) {
         fprintf(stderr,
-           "warning: expected %zu ops, but read only %zu\n", total, idx);
+           "warning: expected %zu ops, but read only %zu\n", total, ops_read);
     }
-    *out_count = idx;
+    *out_count = ops_read;
     return ops;
 }
 
