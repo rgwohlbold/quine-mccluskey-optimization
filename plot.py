@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv("measurements.csv")
+df = pd.read_csv("bits.csv")
 df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
 df['ops'] = df['bits'] * 3**df['bits']
 df['performance'] = df['ops'] / df['cycles']
