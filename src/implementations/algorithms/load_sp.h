@@ -11,7 +11,7 @@
 #  include "../../kperf.h"
 // #  include "../../vct_arm.h"
 #endif
-#include "../../my_signpost.h"
+#include "../../signpost.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #  error "need to define IMPLEMENTATION_FUNCTION"

@@ -1,4 +1,4 @@
-// my_signpost.h
+// signpost.h
 #pragma once
 
 #ifdef __aarch64__
