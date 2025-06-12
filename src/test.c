@@ -30,6 +30,8 @@
 #include "implementations/avx512_sp_load_block.h"
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
+#include "implementations/pext_sp.h"
+#include "implementations/pext_sp_load.h"
 
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/avx2_sp_ssa.h"
@@ -85,6 +87,8 @@ const prime_implicant_implementation implementations[] = {
 
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
+    {"pext_sp", prime_implicants_pext_sp, 30},
+    {"pext_sp_load", prime_implicants_pext_sp_load, 30},
 #endif
 #ifdef __AVX2__
     {"hellman", prime_implicants_hellman, 23},

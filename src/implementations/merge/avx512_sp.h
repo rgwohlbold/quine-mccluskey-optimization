@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <immintrin.h>
 #include "../../bitmap.h"
-#include "bits_sp.h"
+#include "pext_sp.h"
 #include "../../debug.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -138,7 +138,7 @@ static inline void merge_avx512_sp_single_register(int bit_difference, __m512i i
 
 static void merge_avx512_sp(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 8) {
-        merge_small_loop(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_pext_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
     size_t o_idx = output_index;
