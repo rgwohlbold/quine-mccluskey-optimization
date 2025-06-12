@@ -18,7 +18,10 @@
 #include "implementations/avx2_sp_load_unroll.h"
 #include "implementations/avx2_sp_shuffle.h"
 #include "implementations/avx2_sp_load_shuffle.h"
-#include "implementations/avx2_sp_load_block.h"
+#include "implementations/avx2_sp_load_block2.h"
+#include "implementations/avx2_sp_load_block4.h"
+#include "implementations/avx2_sp_load_block8.h"
+#include "implementations/avx2_sp_load_block16.h"
 #include "implementations/avx512_sp_old_loop.h"
 #include "implementations/avx512_sp_unroll.h"
 #include "implementations/avx512_sp_unroll_compress.h"
@@ -32,7 +35,7 @@
 #include "implementations/merge/avx2_sp_ssa.h"
 #include "implementations/merge/avx2_sp_ilp.h"
 #include "implementations/merge/avx2_sp_unroll.h"
-#include "implementations/merge/avx2_sp_shuffle.h"
+#define LOG_BLOCK_SIZE 4
 #include "implementations/merge/avx2_sp_block.h"
 #include "implementations/merge/avx512_sp_old_loop.h"
 #include "implementations/merge/avx512_sp_unroll.h"
@@ -93,7 +96,10 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_load_unroll", prime_implicants_avx2_sp_load_unroll, 30},
     {"avx2_sp_shuffle", prime_implicants_avx2_sp_shuffle, 30},
     {"avx2_sp_load_shuffle", prime_implicants_avx2_sp_load_shuffle, 30},
-    {"avx2_sp_load_block", prime_implicants_avx2_sp_load_block, 30},
+    {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block2, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp_old_loop", prime_implicants_avx512_sp_old_loop, 22},
@@ -131,8 +137,7 @@ merge_implementation merge_implementations[] = {
     {"merge_avx2_sp_ssa", merge_avx2_sp_ssa},
     {"merge_avx2_sp_ilp", merge_avx2_sp_ilp},
     {"merge_avx2_sp_unroll", merge_avx2_sp_unroll},
-    {"merge_avx2_sp_shuffle", merge_avx2_sp_shuffle},
-    {"merge_avx2_sp_block", merge_avx2_sp_block},
+    {"merge_avx2_sp_block4", merge_avx2_sp_block},
 #endif
 #ifdef __AVX512F__
     {"merge_avx512_sp_old_loop", merge_avx512_sp_old_loop},
