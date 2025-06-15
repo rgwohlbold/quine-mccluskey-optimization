@@ -3,7 +3,6 @@
 #include "../../bitmap.h"
 #include "../../debug.h"
 #include "bits_sp.h"
-#define LOG_BLOCK_SIZE 3
 #ifndef LOG_BLOCK_SIZE
 #error "need to define LOG_BLOCK_SIZE"
 #endif
@@ -194,7 +193,6 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 
     // normal
     int i = 6;
-    const size_t o_idx_first_dw = o_idx32 / 2;
     const size_t output_index_dw = output_index / 64;  // output_index is in bits, convert to 64-bit words
 
     uint64_t *implicant_bits = (uint64_t *)implicants.bits;
@@ -214,48 +212,48 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 
     for (; i + 3 < num_bits; i += 4) {
         // Length of block in double words
-        int block_len = (1 << i);
+        int block_len = (1 << (i - 6));
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block += 8) {
-            size_t idx1 = (input_index_dw + 2 * block * block_len / 64);
+            size_t idx1 = (input_index_dw + 2 * block * block_len);
 
-            for (int k = 0; k < block_len; k += 64) {
+            for (int k = 0; k < block_len; k += 1) {
                 uint64_t *implicant_ptr = implicant_bits;
                 uint64_t *primes_ptr = primes_bits;
 
-                uint64_t impl0 = implicant_ptr[idx1 + 0 * block_len / 64];
-                uint64_t impl1 = implicant_ptr[idx1 + 1 * block_len / 64];
-                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len / 64];
-                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len / 64];
-                uint64_t impl4 = implicant_ptr[idx1 + 4 * block_len / 64];
-                uint64_t impl5 = implicant_ptr[idx1 + 5 * block_len / 64];
-                uint64_t impl6 = implicant_ptr[idx1 + 6 * block_len / 64];
-                uint64_t impl7 = implicant_ptr[idx1 + 7 * block_len / 64];
-                uint64_t impl8 = implicant_ptr[idx1 + 8 * block_len / 64];
-                uint64_t impl9 = implicant_ptr[idx1 + 9 * block_len / 64];
-                uint64_t impl10 = implicant_ptr[idx1 + 10 * block_len / 64];
-                uint64_t impl11 = implicant_ptr[idx1 + 11 * block_len / 64];
-                uint64_t impl12 = implicant_ptr[idx1 + 12 * block_len / 64];
-                uint64_t impl13 = implicant_ptr[idx1 + 13 * block_len / 64];
-                uint64_t impl14 = implicant_ptr[idx1 + 14 * block_len / 64];
-                uint64_t impl15 = implicant_ptr[idx1 + 15 * block_len / 64];
+                uint64_t impl0 = implicant_ptr[idx1 + 0 * block_len];
+                uint64_t impl1 = implicant_ptr[idx1 + 1 * block_len];
+                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len];
+                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len];
+                uint64_t impl4 = implicant_ptr[idx1 + 4 * block_len];
+                uint64_t impl5 = implicant_ptr[idx1 + 5 * block_len];
+                uint64_t impl6 = implicant_ptr[idx1 + 6 * block_len];
+                uint64_t impl7 = implicant_ptr[idx1 + 7 * block_len];
+                uint64_t impl8 = implicant_ptr[idx1 + 8 * block_len];
+                uint64_t impl9 = implicant_ptr[idx1 + 9 * block_len];
+                uint64_t impl10 = implicant_ptr[idx1 + 10 * block_len];
+                uint64_t impl11 = implicant_ptr[idx1 + 11 * block_len];
+                uint64_t impl12 = implicant_ptr[idx1 + 12 * block_len];
+                uint64_t impl13 = implicant_ptr[idx1 + 13 * block_len];
+                uint64_t impl14 = implicant_ptr[idx1 + 14 * block_len];
+                uint64_t impl15 = implicant_ptr[idx1 + 15 * block_len];
 
-                uint64_t primes0 = primes_ptr[idx1 + 0 * block_len / 64];
-                uint64_t primes1 = primes_ptr[idx1 + 1 * block_len / 64];
-                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len / 64];
-                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len / 64];
-                uint64_t primes4 = primes_ptr[idx1 + 4 * block_len / 64];
-                uint64_t primes5 = primes_ptr[idx1 + 5 * block_len / 64];
-                uint64_t primes6 = primes_ptr[idx1 + 6 * block_len / 64];
-                uint64_t primes7 = primes_ptr[idx1 + 7 * block_len / 64];
-                uint64_t primes8 = primes_ptr[idx1 + 8 * block_len / 64];
-                uint64_t primes9 = primes_ptr[idx1 + 9 * block_len / 64];
-                uint64_t primes10 = primes_ptr[idx1 + 10 * block_len / 64];
-                uint64_t primes11 = primes_ptr[idx1 + 11 * block_len / 64];
-                uint64_t primes12 = primes_ptr[idx1 + 12 * block_len / 64];
-                uint64_t primes13 = primes_ptr[idx1 + 13 * block_len / 64];
-                uint64_t primes14 = primes_ptr[idx1 + 14 * block_len / 64];
-                uint64_t primes15 = primes_ptr[idx1 + 15 * block_len / 64];
+                uint64_t primes0 = primes_ptr[idx1 + 0 * block_len];
+                uint64_t primes1 = primes_ptr[idx1 + 1 * block_len];
+                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len];
+                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len];
+                uint64_t primes4 = primes_ptr[idx1 + 4 * block_len];
+                uint64_t primes5 = primes_ptr[idx1 + 5 * block_len];
+                uint64_t primes6 = primes_ptr[idx1 + 6 * block_len];
+                uint64_t primes7 = primes_ptr[idx1 + 7 * block_len];
+                uint64_t primes8 = primes_ptr[idx1 + 8 * block_len];
+                uint64_t primes9 = primes_ptr[idx1 + 9 * block_len];
+                uint64_t primes10 = primes_ptr[idx1 + 10 * block_len];
+                uint64_t primes11 = primes_ptr[idx1 + 11 * block_len];
+                uint64_t primes12 = primes_ptr[idx1 + 12 * block_len];
+                uint64_t primes13 = primes_ptr[idx1 + 13 * block_len];
+                uint64_t primes14 = primes_ptr[idx1 + 14 * block_len];
+                uint64_t primes15 = primes_ptr[idx1 + 15 * block_len];
 
                 // Compute results for all 4 levels
                 // Level i (distance 1)
@@ -371,98 +369,69 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
                 p4_14 = (~res_i3_614) & p3_14;
                 p4_15 = (~res_i3_715) & p3_15;
 
-                primes_ptr[idx1 + 0 * block_len / 64] = p4_0;
-                primes_ptr[idx1 + 1 * block_len / 64] = p4_1;
-                primes_ptr[idx1 + 2 * block_len / 64] = p4_2;
-                primes_ptr[idx1 + 3 * block_len / 64] = p4_3;
-                primes_ptr[idx1 + 4 * block_len / 64] = p4_4;
-                primes_ptr[idx1 + 5 * block_len / 64] = p4_5;
-                primes_ptr[idx1 + 6 * block_len / 64] = p4_6;
-                primes_ptr[idx1 + 7 * block_len / 64] = p4_7;
-                primes_ptr[idx1 + 8 * block_len / 64] = p4_8;
-                primes_ptr[idx1 + 9 * block_len / 64] = p4_9;
-                primes_ptr[idx1 + 10 * block_len / 64] = p4_10;
-                primes_ptr[idx1 + 11 * block_len / 64] = p4_11;
-                primes_ptr[idx1 + 12 * block_len / 64] = p4_12;
-                primes_ptr[idx1 + 13 * block_len / 64] = p4_13;
-                primes_ptr[idx1 + 14 * block_len / 64] = p4_14;
-                primes_ptr[idx1 + 15 * block_len / 64] = p4_15;
+                primes_ptr[idx1 + 0 * block_len] = p4_0;
+                primes_ptr[idx1 + 1 * block_len] = p4_1;
+                primes_ptr[idx1 + 2 * block_len] = p4_2;
+                primes_ptr[idx1 + 3 * block_len] = p4_3;
+                primes_ptr[idx1 + 4 * block_len] = p4_4;
+                primes_ptr[idx1 + 5 * block_len] = p4_5;
+                primes_ptr[idx1 + 6 * block_len] = p4_6;
+                primes_ptr[idx1 + 7 * block_len] = p4_7;
+                primes_ptr[idx1 + 8 * block_len] = p4_8;
+                primes_ptr[idx1 + 9 * block_len] = p4_9;
+                primes_ptr[idx1 + 10 * block_len] = p4_10;
+                primes_ptr[idx1 + 11 * block_len] = p4_11;
+                primes_ptr[idx1 + 12 * block_len] = p4_12;
+                primes_ptr[idx1 + 13 * block_len] = p4_13;
+                primes_ptr[idx1 + 14 * block_len] = p4_14;
+                primes_ptr[idx1 + 15 * block_len] = p4_15;
 
                 if (i >= first_difference) {
-                    size_t o =
-                        output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res_i_01;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_23;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_45;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_67;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_89;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_1011;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_1213;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i_1415;
+                    size_t o = output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res_i_01;
+                    implicant_bits[o + 1 * block_len] = res_i_23;
+                    implicant_bits[o + 2 * block_len] = res_i_45;
+                    implicant_bits[o + 3 * block_len] = res_i_67;
+                    implicant_bits[o + 4 * block_len] = res_i_89;
+                    implicant_bits[o + 5 * block_len] = res_i_1011;
+                    implicant_bits[o + 6 * block_len] = res_i_1213;
+                    implicant_bits[o + 7 * block_len] = res_i_1415;
                 }
                 if (i + 1 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res_i1_02;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_13;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_46;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_57;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_810;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_911;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_1214;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i1_1315;
+                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res_i1_02;
+                    implicant_bits[o + 1 * block_len] = res_i1_13;
+                    implicant_bits[o + 2 * block_len] = res_i1_46;
+                    implicant_bits[o + 3 * block_len] = res_i1_57;
+                    implicant_bits[o + 4 * block_len] = res_i1_810;
+                    implicant_bits[o + 5 * block_len] = res_i1_911;
+                    implicant_bits[o + 6 * block_len] = res_i1_1214;
+                    implicant_bits[o + 7 * block_len] = res_i1_1315;
                 }
                 if (i + 2 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 2 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res_i2_04;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_15;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_26;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_37;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_812;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_913;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_1014;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i2_1115;
+                        output_index_dw + ((i + 2 - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res_i2_04;
+                    implicant_bits[o + 1 * block_len] = res_i2_15;
+                    implicant_bits[o + 2 * block_len] = res_i2_26;
+                    implicant_bits[o + 3 * block_len] = res_i2_37;
+                    implicant_bits[o + 4 * block_len] = res_i2_812;
+                    implicant_bits[o + 5 * block_len] = res_i2_913;
+                    implicant_bits[o + 6 * block_len] = res_i2_1014;
+                    implicant_bits[o + 7 * block_len] = res_i2_1115;
                 }
                 if (i + 3 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 3 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res_i3_08;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_19;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_210;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_311;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_412;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_513;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_614;
-                    o += block_len / 64;
-                    implicant_bits[o] = res_i3_715;
+                        output_index_dw + ((i + 3 - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res_i3_08;
+                    implicant_bits[o + 1 * block_len] = res_i3_19;
+                    implicant_bits[o + 2 * block_len] = res_i3_210;
+                    implicant_bits[o + 3 * block_len] = res_i3_311;
+                    implicant_bits[o + 4 * block_len] = res_i3_412;
+                    implicant_bits[o + 5 * block_len] = res_i3_513;
+                    implicant_bits[o + 6 * block_len] = res_i3_614;
+                    implicant_bits[o + 7 * block_len] = res_i3_715;
                 }
                 idx1 += 1;
             }
@@ -473,32 +442,32 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 #if LOG_BLOCK_SIZE >= 2
     for (; i + 2 < num_bits; i += 3) {
         // Length of block in double words
-        int block_len = (1 << i);
+        int block_len = (1 << (i - 6));
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block += 4) {
-            size_t idx1 = (input_index_dw + 2 * block * block_len / 64);
+            size_t idx1 = (input_index_dw + 2 * block * block_len);
 
-            for (int k = 0; k < block_len; k += 64) {
+            for (int k = 0; k < block_len; k += 1) {
                 uint64_t *implicant_ptr = implicant_bits;
                 uint64_t *primes_ptr = primes_bits;
 
-                uint64_t impl0 = implicant_ptr[idx1 + 0 * block_len / 64];
-                uint64_t impl1 = implicant_ptr[idx1 + 1 * block_len / 64];
-                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len / 64];
-                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len / 64];
-                uint64_t impl4 = implicant_ptr[idx1 + 4 * block_len / 64];
-                uint64_t impl5 = implicant_ptr[idx1 + 5 * block_len / 64];
-                uint64_t impl6 = implicant_ptr[idx1 + 6 * block_len / 64];
-                uint64_t impl7 = implicant_ptr[idx1 + 7 * block_len / 64];
+                uint64_t impl0 = implicant_ptr[idx1 + 0 * block_len];
+                uint64_t impl1 = implicant_ptr[idx1 + 1 * block_len];
+                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len];
+                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len];
+                uint64_t impl4 = implicant_ptr[idx1 + 4 * block_len];
+                uint64_t impl5 = implicant_ptr[idx1 + 5 * block_len];
+                uint64_t impl6 = implicant_ptr[idx1 + 6 * block_len];
+                uint64_t impl7 = implicant_ptr[idx1 + 7 * block_len];
 
-                uint64_t primes0 = primes_ptr[idx1 + 0 * block_len / 64];
-                uint64_t primes1 = primes_ptr[idx1 + 1 * block_len / 64];
-                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len / 64];
-                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len / 64];
-                uint64_t primes4 = primes_ptr[idx1 + 4 * block_len / 64];
-                uint64_t primes5 = primes_ptr[idx1 + 5 * block_len / 64];
-                uint64_t primes6 = primes_ptr[idx1 + 6 * block_len / 64];
-                uint64_t primes7 = primes_ptr[idx1 + 7 * block_len / 64];
+                uint64_t primes0 = primes_ptr[idx1 + 0 * block_len];
+                uint64_t primes1 = primes_ptr[idx1 + 1 * block_len];
+                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len];
+                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len];
+                uint64_t primes4 = primes_ptr[idx1 + 4 * block_len];
+                uint64_t primes5 = primes_ptr[idx1 + 5 * block_len];
+                uint64_t primes6 = primes_ptr[idx1 + 6 * block_len];
+                uint64_t primes7 = primes_ptr[idx1 + 7 * block_len];
 
                 uint64_t res01 = impl0 & impl1;
                 uint64_t res23 = impl2 & impl3;
@@ -543,47 +512,37 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
                 uint64_t primes6___ = primes6__ & ~res26;
                 uint64_t primes7___ = primes7__ & ~res37;
 
-                primes_ptr[idx1 + 0 * block_len / 64] = primes0___;
-                primes_ptr[idx1 + 1 * block_len / 64] = primes1___;
-                primes_ptr[idx1 + 2 * block_len / 64] = primes2___;
-                primes_ptr[idx1 + 3 * block_len / 64] = primes3___;
-                primes_ptr[idx1 + 4 * block_len / 64] = primes4___;
-                primes_ptr[idx1 + 5 * block_len / 64] = primes5___;
-                primes_ptr[idx1 + 6 * block_len / 64] = primes6___;
-                primes_ptr[idx1 + 7 * block_len / 64] = primes7___;
+                primes_ptr[idx1 + 0 * block_len] = primes0___;
+                primes_ptr[idx1 + 1 * block_len] = primes1___;
+                primes_ptr[idx1 + 2 * block_len] = primes2___;
+                primes_ptr[idx1 + 3 * block_len] = primes3___;
+                primes_ptr[idx1 + 4 * block_len] = primes4___;
+                primes_ptr[idx1 + 5 * block_len] = primes5___;
+                primes_ptr[idx1 + 6 * block_len] = primes6___;
+                primes_ptr[idx1 + 7 * block_len] = primes7___;
 
                 if (i >= first_difference) {
-                    size_t o =
-                        output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res01;
-                    o += block_len / 64;
-                    implicant_bits[o] = res23;
-                    o += block_len / 64;
-                    implicant_bits[o] = res45;
-                    o += block_len / 64;
-                    implicant_bits[o] = res67;
+                    size_t o = output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res01;
+                    implicant_bits[o + 1 * block_len] = res23;
+                    implicant_bits[o + 2 * block_len] = res45;
+                    implicant_bits[o + 3 * block_len] = res67;
                 }
                 if (i + 1 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res02;
-                    o += block_len / 64;
-                    implicant_bits[o] = res13;
-                    o += block_len / 64;
-                    implicant_bits[o] = res46;
-                    o += block_len / 64;
-                    implicant_bits[o] = res57;
+                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res02;
+                    implicant_bits[o + 1 * block_len] = res13;
+                    implicant_bits[o + 2 * block_len] = res46;
+                    implicant_bits[o + 3 * block_len] = res57;
                 }
                 if (i + 2 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 2 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
-                    implicant_bits[o] = res04;
-                    o += block_len / 64;
-                    implicant_bits[o] = res15;
-                    o += block_len / 64;
-                    implicant_bits[o] = res26;
-                    o += block_len / 64;
-                    implicant_bits[o] = res37;
+                        output_index_dw + ((i + 2 - first_difference) << (num_bits - 7)) + (block * block_len + k);
+                    implicant_bits[o + 0 * block_len] = res04;
+                    implicant_bits[o + 1 * block_len] = res15;
+                    implicant_bits[o + 2 * block_len] = res26;
+                    implicant_bits[o + 3 * block_len] = res37;
                 }
                 idx1 += 1;
             }
@@ -594,24 +553,24 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 #if LOG_BLOCK_SIZE >= 1
     for (; i + 1 < num_bits; i += 2) {
         // Length of block in double words
-        int block_len = (1 << i);
+        int block_len = (1 << (i - 6));
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block += 2) {
-            size_t idx1 = (input_index_dw + 2 * block * block_len / 64);
+            size_t idx1 = (input_index_dw + 2 * block * block_len);
 
-            for (int k = 0; k < block_len; k += 64) {
+            for (int k = 0; k < block_len; k += 1) {
                 uint64_t *implicant_ptr = implicant_bits;
                 uint64_t *primes_ptr = primes_bits;
 
                 uint64_t impl0 = implicant_ptr[idx1];
-                uint64_t impl1 = implicant_ptr[idx1 + block_len / 64];
-                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len / 64];
-                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len / 64];
+                uint64_t impl1 = implicant_ptr[idx1 + block_len];
+                uint64_t impl2 = implicant_ptr[idx1 + 2 * block_len];
+                uint64_t impl3 = implicant_ptr[idx1 + 3 * block_len];
 
                 uint64_t primes0 = primes_ptr[idx1];
-                uint64_t primes1 = primes_ptr[idx1 + block_len / 64];
-                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len / 64];
-                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len / 64];
+                uint64_t primes1 = primes_ptr[idx1 + block_len];
+                uint64_t primes2 = primes_ptr[idx1 + 2 * block_len];
+                uint64_t primes3 = primes_ptr[idx1 + 3 * block_len];
 
                 uint64_t res01 = impl0 & impl1;
                 uint64_t res23 = impl2 & impl3;
@@ -629,23 +588,20 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
                 uint64_t primes3__ = primes3_ & ~res13;
 
                 primes_ptr[idx1] = primes0__;
-                primes_ptr[idx1 + block_len / 64] = primes1__;
-                primes_ptr[idx1 + 2 * block_len / 64] = primes2__;
-                primes_ptr[idx1 + 3 * block_len / 64] = primes3__;
+                primes_ptr[idx1 + block_len] = primes1__;
+                primes_ptr[idx1 + 2 * block_len] = primes2__;
+                primes_ptr[idx1 + 3 * block_len] = primes3__;
 
                 if (i >= first_difference) {
-                    size_t o =
-                        output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
+                    size_t o = output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k);
                     implicant_bits[o] = res01;
-                    o += block_len / 64;
-                    implicant_bits[o] = res23;
+                    implicant_bits[o + block_len] = res23;
                 }
                 if (i + 1 >= first_difference) {
                     size_t o =
-                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
+                        output_index_dw + ((i + 1 - first_difference) << (num_bits - 7)) + (block * block_len + k);
                     implicant_bits[o] = res02;
-                    o += block_len / 64;
-                    implicant_bits[o] = res13;
+                    implicant_bits[o + block_len] = res13;
                 }
                 idx1 += 1;
             }
@@ -655,13 +611,13 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
 #endif
     for (; i < num_bits; i++) {
         // Length of block in double words
-        int block_len = (1 << i);
+        int block_len = (1 << (i - 6));
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block++) {
-            size_t idx1 = (input_index_dw + 2 * block * block_len / 64);
-            size_t idx2 = (input_index_dw + (2 * block + 1) * block_len / 64);
+            size_t idx1 = (input_index_dw + 2 * block * block_len);
+            size_t idx2 = (input_index_dw + (2 * block + 1) * block_len);
 
-            for (int k = 0; k < block_len; k += 64) {
+            for (int k = 0; k < block_len; k += 1) {
                 uint64_t *implicant_ptr = implicant_bits;
                 uint64_t *primes_ptr = primes_bits;
 
@@ -679,8 +635,7 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
                 primes_ptr[idx1] = primes1_;
                 primes_ptr[idx2] = primes2_;
                 if (i >= first_difference) {
-                    size_t o =
-                        output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k) / 64;
+                    size_t o = output_index_dw + ((i - first_difference) << (num_bits - 7)) + (block * block_len + k);
                     implicant_bits[o] = res;
                 }
                 idx1 += 1;
