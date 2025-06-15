@@ -25,39 +25,41 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
         merge_bits_sp6(implicants, primes, input_index, output_index, first_difference);
         return;
     }
-
-    size_t o_idx1 = output_index;
-    size_t o_idx2 = output_index;
-    size_t next_layer_size = (1 << (num_bits - 1));
+    size_t input_index_dw = input_index / 64;   // input_index is in bits, convert to 64-bit words
+    size_t output_index_w = output_index / 32;  // output_index is in bits, convert to 32-bit words
+    size_t o_idx1 = output_index_w;
+    size_t o_idx2 = output_index_w;
+    // Layer size: 2^(num_bits - 1) /32 // Divided by 32 for index in 32-bit word writing
+    size_t next_layer_size_w = (1 << (num_bits - 1 - 5));
     if (0 >= first_difference) {
-        o_idx2 += next_layer_size;
+        o_idx2 += next_layer_size_w;
     }
     size_t o_idx4 = o_idx2;
     if (1 >= first_difference) {
-        o_idx4 += next_layer_size;
+        o_idx4 += next_layer_size_w;
     }
     size_t o_idx8 = o_idx4;
     if (2 >= first_difference) {
-        o_idx8 += next_layer_size;
+        o_idx8 += next_layer_size_w;
     }
     size_t o_idx16 = o_idx8;
     if (3 >= first_difference) {
-        o_idx16 += next_layer_size;
+        o_idx16 += next_layer_size_w;
     }
     size_t o_idx32 = o_idx16;
     if (4 >= first_difference) {
-        o_idx32 += next_layer_size;
+        o_idx32 += next_layer_size_w;
     }
 
-    size_t num_registers = (1 << num_bits) / 64;
+    size_t num_registers = (1 << num_bits) / 64;  // Number of 64-bit registers needed for the block
     uint64_t *input_ptr = (uint64_t *)implicants.bits;
     uint32_t *output_ptr = (uint32_t *)implicants.bits;
     uint64_t *primes_ptr = (uint64_t *)primes.bits;
     for (size_t regist = 0; regist < num_registers; regist++) {
-        // LOG_DEBUG("Block: %d, block_len: %d", block, block_len);
-        size_t idx1 = input_index + regist * 64;
+        // LOG_DEBUG("Block: %d, block_len_dw: %d", block, block_len_dw);
+        size_t idx1 = (input_index_dw + regist);
 
-        uint64_t original_implicant = input_ptr[idx1 / 64];
+        uint64_t original_implicant = input_ptr[idx1];
         uint64_t primes = original_implicant;
 
         uint64_t aggregated1 = original_implicant & (original_implicant >> 1);
@@ -135,87 +137,88 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
         uint64_t primes16 = primes8 & ~(initial_result16 | (initial_result16 << 16));
         uint64_t primes32 = primes16 & ~(initial_result32 | (initial_result32 << 32));
 
-        primes_ptr[idx1 / 64] = primes32;
+        primes_ptr[idx1] = primes32;
         if (0 >= first_difference) {
-            output_ptr[o_idx1 / 32] = (uint32_t)aggregated1;
-            o_idx1 += 32;
-            output_ptr[o_idx2 / 32] = (uint32_t)aggregated2;
-            o_idx2 += 32;
-            output_ptr[o_idx4 / 32] = (uint32_t)aggregated4;
-            o_idx4 += 32;
-            output_ptr[o_idx8 / 32] = (uint32_t)aggregated8;
-            o_idx8 += 32;
-            output_ptr[o_idx16 / 32] = (uint32_t)aggregated16;
-            o_idx16 += 32;
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx1] = (uint32_t)aggregated1;
+            o_idx1 += 1;
+            output_ptr[o_idx2] = (uint32_t)aggregated2;
+            o_idx2 += 1;
+            output_ptr[o_idx4] = (uint32_t)aggregated4;
+            o_idx4 += 1;
+            output_ptr[o_idx8] = (uint32_t)aggregated8;
+            o_idx8 += 1;
+            output_ptr[o_idx16] = (uint32_t)aggregated16;
+            o_idx16 += 1;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         } else if (1 >= first_difference) {
-            output_ptr[o_idx2 / 32] = (uint32_t)aggregated2;
-            o_idx2 += 32;
-            output_ptr[o_idx4 / 32] = (uint32_t)aggregated4;
-            o_idx4 += 32;
-            output_ptr[o_idx8 / 32] = (uint32_t)aggregated8;
-            o_idx8 += 32;
-            output_ptr[o_idx16 / 32] = (uint32_t)aggregated16;
-            o_idx16 += 32;
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx2] = (uint32_t)aggregated2;
+            o_idx2 += 1;
+            output_ptr[o_idx4] = (uint32_t)aggregated4;
+            o_idx4 += 1;
+            output_ptr[o_idx8] = (uint32_t)aggregated8;
+            o_idx8 += 1;
+            output_ptr[o_idx16] = (uint32_t)aggregated16;
+            o_idx16 += 1;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         } else if (2 >= first_difference) {
-            output_ptr[o_idx4 / 32] = (uint32_t)aggregated4;
-            o_idx4 += 32;
-            output_ptr[o_idx8 / 32] = (uint32_t)aggregated8;
-            o_idx8 += 32;
-            output_ptr[o_idx16 / 32] = (uint32_t)aggregated16;
-            o_idx16 += 32;
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx4] = (uint32_t)aggregated4;
+            o_idx4 += 1;
+            output_ptr[o_idx8] = (uint32_t)aggregated8;
+            o_idx8 += 1;
+            output_ptr[o_idx16] = (uint32_t)aggregated16;
+            o_idx16 += 1;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         } else if (3 >= first_difference) {
-            output_ptr[o_idx8 / 32] = (uint32_t)aggregated8;
-            o_idx8 += 32;
-            output_ptr[o_idx16 / 32] = (uint32_t)aggregated16;
-            o_idx16 += 32;
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx8] = (uint32_t)aggregated8;
+            o_idx8 += 1;
+            output_ptr[o_idx16] = (uint32_t)aggregated16;
+            o_idx16 += 1;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         } else if (4 >= first_difference) {
-            output_ptr[o_idx16 / 32] = (uint32_t)aggregated16;
-            o_idx16 += 32;
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx16] = (uint32_t)aggregated16;
+            o_idx16 += 1;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         } else if (5 >= first_difference) {
-            output_ptr[o_idx32 / 32] = (uint32_t)aggregated32;
-            o_idx32 += 32;
+            output_ptr[o_idx32] = (uint32_t)aggregated32;
+            o_idx32 += 1;
         }
     }
 
     // normal
-    size_t o_idx = o_idx32;
+    size_t o_idx = o_idx32 / 2;
     for (int i = 6; i < num_bits; i++) {
-        int block_len = 1 << i;
+        // Length of block in double words
+        int block_len_dw = (1 << (i - 6));
         int num_blocks = 1 << (num_bits - i - 1);
         for (int block = 0; block < num_blocks; block++) {
-            size_t idx1 = input_index + 2 * block * block_len;
-            size_t idx2 = input_index + 2 * block * block_len + block_len;
+            size_t idx1 = (input_index_dw + 2 * block * block_len_dw);
+            size_t idx2 = (input_index_dw + 2 * block * block_len_dw + block_len_dw);
 
-            for (int k = 0; k < block_len; k += 64) {
+            for (int k = 0; k < block_len_dw; k += 1) {
                 uint64_t *implicant_ptr = (uint64_t *)implicants.bits;
                 uint64_t *primes_ptr = (uint64_t *)primes.bits;
 
-                uint64_t impl1 = implicant_ptr[idx1 / 64];
-                uint64_t impl2 = implicant_ptr[idx2 / 64];
-                uint64_t primes1 = primes_ptr[idx1 / 64];
-                uint64_t primes2 = primes_ptr[idx2 / 64];
+                uint64_t impl1 = implicant_ptr[idx1];
+                uint64_t impl2 = implicant_ptr[idx2];
+                uint64_t primes1 = primes_ptr[idx1];
+                uint64_t primes2 = primes_ptr[idx2];
                 uint64_t res = impl1 & impl2;
                 uint64_t primes1_ = primes1 & ~res;
                 uint64_t primes2_ = primes2 & ~res;
 
-                primes_ptr[idx1 / 64] = primes1_;
-                primes_ptr[idx2 / 64] = primes2_;
+                primes_ptr[idx1] = primes1_;
+                primes_ptr[idx2] = primes2_;
                 if (i >= first_difference) {
-                    implicant_ptr[o_idx / 64] = res;
-                    o_idx += 64;
+                    implicant_ptr[o_idx] = res;
+                    o_idx += 1;
                 }
-                idx1 += 64;
-                idx2 += 64;
+                idx1 += 1;
+                idx2 += 1;
             }
         }
     }
