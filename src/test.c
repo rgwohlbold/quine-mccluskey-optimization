@@ -22,12 +22,7 @@
 #include "implementations/avx2_sp_load_block4.h"
 #include "implementations/avx2_sp_load_block8.h"
 #include "implementations/avx2_sp_load_block16.h"
-#include "implementations/avx512_sp.h"
-#include "implementations/avx512_sp_unroll.h"
-#include "implementations/avx512_sp_unroll_compress.h"
-#include "implementations/avx512_sp_load_unroll_compress.h"
-#include "implementations/avx512_sp_block.h"
-#include "implementations/avx512_sp_load_block.h"
+
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 #include "implementations/pext_sp.h"
@@ -39,14 +34,25 @@
 #include "implementations/merge/avx2_sp_unroll.h"
 #define LOG_BLOCK_SIZE 4
 #include "implementations/merge/avx2_sp_block.h"
-#include "implementations/merge/avx512_sp.h"
-#include "implementations/merge/avx512_sp_unroll.h"
-#include "implementations/merge/avx512_sp_unroll_compress.h"
-#include "implementations/merge/avx512_sp_block.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
 
-
+#ifdef __AVX512F__
+#include "implementations/avx512_sp.h"
+#include "implementations/avx512_sp_unroll.h"
+#include "implementations/avx512_sp_unroll_compress.h"
+#include "implementations/avx512_sp_load_unroll_compress.h"
+#include "implementations/avx512_sp_load_block_old.h"
+#include "implementations/avx512_sp_load_block2.h"
+#include "implementations/avx512_sp_load_block4.h"
+#include "implementations/avx512_sp_load_block8.h"
+#include "implementations/avx512_sp_load_block16.h"
+#include "implementations/merge/avx512_sp.h"
+#include "implementations/merge/avx512_sp_unroll.h"
+#include "implementations/merge/avx512_sp_unroll_compress.h"
+#include "implementations/merge/avx512_sp_block_old.h"
+#include "implementations/merge/avx512_sp_block.h"
+#endif
 
 #endif
 #ifdef __aarch64__
@@ -101,9 +107,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_shuffle", prime_implicants_avx2_sp_shuffle, 30},
     {"avx2_sp_load_shuffle", prime_implicants_avx2_sp_load_shuffle, 30},
     {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block4, 30},
+    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
+    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block16, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp", prime_implicants_avx512_sp, 22},
@@ -111,8 +117,11 @@ const prime_implicant_implementation implementations[] = {
     //{"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
     {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
     {"avx512_sp_load_unroll_compress", prime_implicants_avx512_sp_load_unroll_compress, 22},
-    {"avx512_sp_block", prime_implicants_avx512_sp_block, 22},
-    {"avx512_sp_load_block", prime_implicants_avx512_sp_load_block, 22},
+    {"avx512_sp_load_block_old", prime_implicants_avx512_sp_load_block_old, 22},
+    {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 22},
+    {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 22},
+    {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 22},
+    {"avx512_sp_load_block16", prime_implicants_avx512_sp_load_block16, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
@@ -147,6 +156,7 @@ merge_implementation merge_implementations[] = {
     {"merge_avx512_sp", merge_avx512_sp},
     {"merge_avx512_sp_unroll", merge_avx512_sp_unroll},
     {"merge_avx512_sp_unroll_compress", merge_avx512_sp_unroll_compress},
+    {"merge_avx512_sp_block_old", merge_avx512_sp_block_old},
     {"merge_avx512_sp_block", merge_avx512_sp_block},
 #endif
 #ifdef __aarch64__
