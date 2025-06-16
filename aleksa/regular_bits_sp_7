@@ -1,0 +1,43 @@
+++++++ ENTERED merge_bits_sp_aleksa: num_bits (stars): 7, first_difference: 0 ++++++ 
+ ====== i: 0, block_len: 1, num_blocks: 64 ====== 
+Block: 0, block_len: 1, idx1: 0
+Block: 32, block_len: 1, idx1: 64
+ ====== i: 1, block_len: 2, num_blocks: 32 ====== 
+Block: 0, block_len: 2, idx1: 0
+Block: 16, block_len: 2, idx1: 64
+ ====== i: 2, block_len: 4, num_blocks: 16 ====== 
+Block: 0, block_len: 4, idx1: 0
+Block: 8, block_len: 4, idx1: 64
+ ====== i: 3, block_len: 8, num_blocks: 8 ====== 
+Block: 0, block_len: 8, idx1: 0
+Block: 4, block_len: 8, idx1: 64
+ ====== i: 4, block_len: 16, num_blocks: 4 ====== 
+Block: 0, block_len: 16, idx1: 0
+Block: 2, block_len: 16, idx1: 64
+ ====== i: 5, block_len: 32, num_blocks: 2 ====== 
+Block: 0, block_len: 32, idx1: 0
+Block: 1, block_len: 32, idx1: 64
+ ====== i: 6, block_len: 64, num_blocks: 1 ====== 
+++++++ ENTERED merge_bits_sp_aleksa: num_bits (stars): 0, first_difference: 0 ++++++ 
+[[36mINFO[39m ] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/test.c:298: measuring 'bits_sp_aleksa' bits=7
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:404: ++++++ ENTERED merge_bits_sp_aleksa: num_bits (stars): 7, first_difference: 0 ++++++ 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 0, block_len: 1, num_blocks: 64 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 1, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 32, block_len: 1, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 1, block_len: 2, num_blocks: 32 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 2, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 16, block_len: 2, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 2, block_len: 4, num_blocks: 16 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 4, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 8, block_len: 4, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 3, block_len: 8, num_blocks: 8 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 8, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 4, block_len: 8, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 4, block_len: 16, num_blocks: 4 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 16, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 2, block_len: 16, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 5, block_len: 32, num_blocks: 2 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 0, block_len: 32, idx1: 0
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:441: Block: 1, block_len: 32, idx1: 64
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:409:  ====== i: 6, block_len: 64, num_blocks: 1 ====== 
+[[32mDEBUG[39m] /home/akili/ETH/Advanced Systems Lab/Project/team58/src/implementations/bits_sp_aleksa.c:404: ++++++ ENTERED merge_bits_sp_aleksa: num_bits (stars): 0, first_difference: 0 ++++++ 

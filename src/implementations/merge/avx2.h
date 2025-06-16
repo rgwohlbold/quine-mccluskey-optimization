@@ -4,11 +4,11 @@
 #include <assert.h>
 #include <immintrin.h>
 
-#ifdef __BMI2__
-#include "pext.h"
-#else
-#include "bits.h"
+#ifndef __BMI2__
+#error "need BMI2 as a base case"
 #endif
+
+#include "pext.h"
 
 static inline void merge_avx2_single_register(int bit_difference, __m256i impl1, __m256i merged1, __m128i *result, __m256i *merged_result) {
     assert(0 <= bit_difference && bit_difference <= 7);
@@ -99,11 +99,7 @@ static inline void merge_avx2_single_register(int bit_difference, __m256i impl1,
 
 static inline void merge_avx2(bitmap implicants, bitmap merged, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 7) {
-#ifdef __BMI2__
         merge_pext(implicants, merged, input_index, output_index, num_bits, first_difference);
-#else
-        merge_implicants_bits(implicants, merged, input_index, output_index, num_bits, first_difference);
-#endif
         return;
     }
     size_t o_idx = output_index;

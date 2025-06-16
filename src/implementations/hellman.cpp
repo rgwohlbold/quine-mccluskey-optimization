@@ -5,7 +5,7 @@
 #include <functional>
 #include <assert.h>
 #include <cstdint>
-#include <cstring> 
+#include <cstring>
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
@@ -300,7 +300,7 @@ extern "C" {
             }
             buf[num_bits] = '\0';
 
-            int bitset_index = bitmap_implicant_to_index(num_bits, buf);
+            uint64_t bitset_index = bitmap_implicant_to_index(num_bits, buf);
             BITMAP_SET_TRUE(primes, bitset_index);
         });
 

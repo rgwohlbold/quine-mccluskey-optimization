@@ -10,12 +10,12 @@
 #include <assert.h>
 #include <immintrin.h>
 #include "../../bitmap.h"
-#include "bits_sp.h"
+#include "pext_sp.h"
 #include "../../debug.h"
 #include <stdio.h>
 #include <stdint.h>
 
-static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, __m512i impl1, __m512i primes1, __m256i *result, __m512i *primes_result) {
+static inline void merge_avx512_sp_single_register(int bit_difference, __m512i impl1, __m512i primes1, __m256i *result, __m512i *primes_result) {
     assert(0 <= bit_difference && bit_difference <= 8);
 
     int block_len = 1 << bit_difference;
@@ -24,13 +24,13 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
     if (block_len == 256) {
         __m512i indices = _mm512_set_epi64(7, 6, 5, 4, 7, 6, 5, 4);
         __m512i indices2 = _mm512_set_epi64(3, 2, 1, 0, 3, 2, 1, 0);
-        
+
         // upper half -> lower half of impl1 (NOT set upper half to zero)
         __m512i impl1_shuffled = _mm512_permutexvar_epi64(indices, impl1);
         __m512i aggregated = _mm512_and_si512(impl1, impl1_shuffled);
         // set upper and lower halves to lower half of aggregated
         __m512i merged = _mm512_permutexvar_epi64(indices2, aggregated); //_mm256_permute2x128_si256(aggregated, aggregated, 0x00);
-        
+
         // use lower half of aggregated
         *result = _mm512_castsi512_si256(aggregated);
         *primes_result = _mm512_andnot_si512(merged, primes1);
@@ -43,11 +43,11 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         impl2 = _mm512_srli_epi64(impl1, block_len);
     } else if (block_len == 64) {
         // "shift" across 64-bit boundaries
-        __m512i indices = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1); 
+        __m512i indices = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1);
         impl2 = _mm512_permutexvar_epi64(indices, impl1);
 
-    } else { //if (block_len == 128) 
-        __m512i indices = _mm512_set_epi64(7, 6, 7, 6, 3, 2, 3, 2); 
+    } else { //if (block_len == 128)
+        __m512i indices = _mm512_set_epi64(7, 6, 7, 6, 3, 2, 3, 2);
         impl2 = _mm512_permutexvar_epi64(indices, impl1);
     }
 
@@ -59,7 +59,7 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         aggregated = _mm512_and_si512(aggregated, _mm512_set1_epi8(0b01010101));
         initial_result = aggregated;
         shifted = _mm512_srli_epi64(aggregated, 1);
-    } 
+    }
     if (block_len <= 2) {
         aggregated = _mm512_and_si512(_mm512_or_si512(aggregated, shifted), _mm512_set1_epi8(0b00110011));
         if (block_len == 2) {
@@ -95,7 +95,7 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         }
         shifted = _mm512_alignr_epi8(_mm512_setzero_si512(), aggregated, 4);
     }
-    
+
     if (block_len <= 64) {
         aggregated = _mm512_and_si512(_mm512_or_si512(aggregated, shifted), _mm512_set_epi64(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
         if (block_len == 64) {
@@ -110,9 +110,9 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         initial_result = aggregated;
     }
 
-    
+
     // move aggregated[5, 4] to result[1, 0] so the whole result is in lower half
-    __m512i indices2 = _mm512_set_epi64(7, 6, 5, 4, 5, 4, 1, 0); 
+    __m512i indices2 = _mm512_set_epi64(7, 6, 5, 4, 5, 4, 1, 0);
     __m512i result512 = _mm512_permutexvar_epi64(indices2, aggregated);
     *result = _mm512_castsi512_si256(result512);
 
@@ -124,11 +124,11 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
         merged = _mm512_or_si512(shifted_initial_result, initial_result);
     } else if (block_len == 64) {
         __m512i indices = _mm512_set_epi64(6, 6, 4, 4, 2, 2, 0, 0);
-        merged = _mm512_permutexvar_epi64(indices, initial_result); 
+        merged = _mm512_permutexvar_epi64(indices, initial_result);
 
     } else {
         // shift across 128-bit boundaries
-        __m512i indices = _mm512_set_epi64(5, 4, 5, 4, 1, 0, 1, 0); 
+        __m512i indices = _mm512_set_epi64(5, 4, 5, 4, 1, 0, 1, 0);
         merged = _mm512_permutexvar_epi64(indices, initial_result);
     }
 
@@ -136,9 +136,9 @@ static inline void merge_avx512_sp_single_register_old_loop(int bit_difference, 
     *primes_result = r_;
 }
 
-static void merge_avx512_sp_old_loop(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
+static void merge_avx512_sp(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 8) {
-        merge_small_loop(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_pext_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
     size_t o_idx = output_index;
@@ -187,7 +187,7 @@ static void merge_avx512_sp_old_loop(bitmap implicants, bitmap primes, size_t in
                 }
                 __m256i impl_result;
                 __m512i primes_result;
-                merge_avx512_sp_single_register_old_loop(i, impl1, primes1, &impl_result, &primes_result);
+                merge_avx512_sp_single_register(i, impl1, primes1, &impl_result, &primes_result);
                 _mm512_store_si512((__m512i*)(primes.bits + idx1 / 8), primes_result);
                 if (i >= first_difference) {
                     _mm256_store_si256((__m256i*)(implicants.bits + o_idx / 8), impl_result);

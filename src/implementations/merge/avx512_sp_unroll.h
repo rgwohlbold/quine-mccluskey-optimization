@@ -10,22 +10,21 @@
 #include <assert.h>
 #include <immintrin.h>
 #include "../../bitmap.h"
-#include "bits_sp.h"
-#include "../../debug.h"
+#include "pext_sp.h"
 #include <stdio.h>
 #include <stdint.h>
 
 
 static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
-    
+
     // LOG_INFO("first_difference=%d, num_bits=%d, input_index=%zu, output_index=%zu", first_difference, num_bits, input_index, output_index);
-    
+
     // TODO: unroll this -> call merge_bits_spX directly
     if (num_bits <= 8) {
-        merge_small_loop(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_pext_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
-    
+
     size_t chunk_offset = (1 << (num_bits - 1));
 
 
@@ -34,10 +33,10 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
     size_t o_idx4 = output_index;
     size_t o_idx8 = output_index;
     size_t o_idx16 = output_index;
-    size_t o_idx32 = output_index;  
+    size_t o_idx32 = output_index;
     size_t o_idx64 = output_index;
     size_t o_idx128 = output_index;
-    size_t o_idx256 = output_index; 
+    size_t o_idx256 = output_index;
 
     switch(first_difference){
         case 0:
@@ -92,7 +91,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         case 7:
             o_idx256 += chunk_offset;
             break;
-         
+
         default:
             break;
     }
@@ -101,15 +100,15 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
     size_t num_registers = (1 << num_bits) / 512;
     size_t idx1 = input_index;
 
-    __m512i indices_sr_64_lane = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1); 
+    __m512i indices_sr_64_lane = _mm512_set_epi64(7, 7, 5, 5, 3, 3, 1, 1);
     __m512i indices_sr_128_lane = _mm512_set_epi64(7, 6, 7, 6, 3, 2, 3, 2);
     __m512i indices_sr_64_reg =  _mm512_set_epi64(7, 7, 6, 5, 4, 3, 2, 1);
     __m512i indices_sr_128_reg =  _mm512_set_epi64(7, 7, 7, 6, 5, 4, 3, 2);
     __m512i indices_sr_256_reg =  _mm512_set_epi64(7, 6, 5, 4, 7, 6, 5, 4);
     __m512i indices_lower_and_lower =  _mm512_set_epi64(3, 2, 1, 0, 3, 2, 1, 0);
 
-    __m512i indices_sl_64_lane = _mm512_set_epi64(6, 6, 4, 4, 2, 2, 0, 0); 
-    __m512i indices_sl_128_lane = _mm512_set_epi64(5, 4, 5, 4, 1, 0, 1, 0); 
+    __m512i indices_sl_64_lane = _mm512_set_epi64(6, 6, 4, 4, 2, 2, 0, 0);
+    __m512i indices_sl_128_lane = _mm512_set_epi64(5, 4, 5, 4, 1, 0, 1, 0);
 
     __m512i and_mask_1 = _mm512_set1_epi8(0b01010101);
     __m512i and_mask_2 = _mm512_set1_epi8(0b00110011);
@@ -120,7 +119,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
     __m512i and_mask_64 = _mm512_set_epi64(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF);
     __m512i and_mask_128 = _mm512_set_epi64(0x0, 0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0x0, 0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
     __m512i and_mask_256 = _mm512_set_epi64(0x0, 0x0, 0x0, 0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
-    
+
     __m512i zero = _mm512_setzero_si512();
 
     for (size_t regist = 0; regist < num_registers; regist++) {
@@ -167,7 +166,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         __m512i shifted_64 = _mm512_setzero_si512();
         __m512i shifted_128 = _mm512_setzero_si512();
 
-        
+
         aggregated_1 = _mm512_and_si512(aggregated_1, and_mask_1);
         initial_result_1 = aggregated_1;
         shifted_1 = _mm512_srli_epi64(aggregated_1, 1);
@@ -185,7 +184,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         shifted_1 = _mm512_srli_epi64(aggregated_1, 4);
         shifted_2 = _mm512_srli_epi64(aggregated_2, 4);
         shifted_4 = _mm512_srli_epi64(aggregated_4, 4);
-        
+
         aggregated_1 = _mm512_and_si512(_mm512_or_si512(aggregated_1, shifted_1), and_mask_8);
         aggregated_2 = _mm512_and_si512(_mm512_or_si512(aggregated_2, shifted_2), and_mask_8);
         aggregated_4 = _mm512_and_si512(_mm512_or_si512(aggregated_4, shifted_4), and_mask_8);
@@ -207,7 +206,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         shifted_4 = _mm512_srli_epi64(aggregated_4, 16);
         shifted_8 = _mm512_srli_epi64(aggregated_8, 16);
         shifted_16 = _mm512_srli_epi64(aggregated_16, 16);
-        
+
         aggregated_1 = _mm512_and_si512(_mm512_or_si512(aggregated_1, shifted_1), and_mask_32);
         aggregated_2 = _mm512_and_si512(_mm512_or_si512(aggregated_2, shifted_2), and_mask_32);
         aggregated_4 = _mm512_and_si512(_mm512_or_si512(aggregated_4, shifted_4), and_mask_32);
@@ -221,7 +220,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         shifted_8 = _mm512_alignr_epi8(zero, aggregated_8, 4);
         shifted_16 = _mm512_alignr_epi8(zero, aggregated_16, 4);
         shifted_32 = _mm512_alignr_epi8(zero, aggregated_32, 4);
-        
+
         aggregated_1 = _mm512_and_si512(_mm512_or_si512(aggregated_1, shifted_1), and_mask_64);
         aggregated_2 = _mm512_and_si512(_mm512_or_si512(aggregated_2, shifted_2), and_mask_64);
         aggregated_4 = _mm512_and_si512(_mm512_or_si512(aggregated_4, shifted_4), and_mask_64);
@@ -279,7 +278,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         case 1:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx2 / 8), _mm512_castsi512_si256(aggregated_2));
             o_idx2 += 256;
-            
+
         case 2:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx4 / 8), _mm512_castsi512_si256(aggregated_4));
             o_idx4 += 256;
@@ -291,19 +290,19 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         case 4:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx16 / 8), _mm512_castsi512_si256(aggregated_16));
             o_idx16 += 256;
-            
+
         case 5:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx32 / 8), _mm512_castsi512_si256(aggregated_32));
             o_idx32 += 256;
-            
+
         case 6:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx64 / 8), _mm512_castsi512_si256(aggregated_64));
             o_idx64 += 256;
-    
+
         case 7:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx128 / 8), _mm512_castsi512_si256(aggregated_128));
             o_idx128 += 256;
-            
+
         case 8:
             _mm256_store_si256((__m256i*)(implicants.bits + o_idx256 / 8), _mm512_castsi512_si256(aggregated_256));
             o_idx256 += 256;
@@ -311,7 +310,7 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         default:
             break;
         }
-        
+
         // merged = initial_result_X | (initial_result_X << block_len)
         __m512i merged_1 = _mm512_or_si512(initial_result_1, _mm512_slli_epi64(initial_result_1, 1));
         __m512i merged_2 = _mm512_or_si512(initial_result_2, _mm512_slli_epi64(initial_result_2, 2));
@@ -322,8 +321,8 @@ static void merge_avx512_sp_unroll(bitmap implicants, bitmap primes, size_t inpu
         __m512i merged_64 = _mm512_permutexvar_epi64(indices_sl_64_lane, initial_result_64);
         __m512i merged_128 = _mm512_permutexvar_epi64(indices_sl_128_lane, initial_result_128);
         __m512i merged_256 = _mm512_permutexvar_epi64(indices_lower_and_lower, initial_result_256);
-        
-        
+
+
         __m512i primes_1 = _mm512_andnot_si512(merged_1, primes_0);
         __m512i primes_2 = _mm512_andnot_si512(merged_2, primes_1);
         __m512i primes_4 = _mm512_andnot_si512(merged_4, primes_2);
