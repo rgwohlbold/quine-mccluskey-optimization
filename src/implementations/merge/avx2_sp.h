@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <immintrin.h>
 #include "../../bitmap.h"
-#include "bits_sp.h"
+#include "pext_sp.h"
 
 static inline void merge_avx2_sp_single_register(int bit_difference, __m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
     assert(0 <= bit_difference && bit_difference <= 7);
@@ -99,7 +99,7 @@ static inline void merge_avx2_sp_single_register(int bit_difference, __m256i imp
 
 static void merge_avx2_sp(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
     if (num_bits <= 7) {
-        merge_small_loop(implicants, primes, input_index, output_index, num_bits, first_difference);
+        merge_pext_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
     }
     size_t o_idx = output_index;

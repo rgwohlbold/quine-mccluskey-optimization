@@ -3,6 +3,7 @@ import math
 import argparse
 import os
 import sys
+import struct
 
 def binomial_coefficient(n, k):
     return math.comb(n, k)
@@ -21,8 +22,7 @@ def leading_stars(num_bits, num_dashes, chunk_index):
     return 0
 
 def generate_flat_schedule(n, out_filename):
-    with open(out_filename, 'w') as f:
-        f.write("# rem_bits first_diff input_index output_index\n")
+    with open(out_filename, 'wb') as f:
         input_index = 0
         for num_dashes in range(0, n + 1):
             rem_bits = n - num_dashes
@@ -34,7 +34,7 @@ def generate_flat_schedule(n, out_filename):
             for chunk_idx in range(iterations):
                 ls = leading_stars(n, num_dashes, chunk_idx)
                 first_diff = rem_bits - ls
-                f.write(f"{rem_bits} {first_diff} {input_index} {output_index}\n")
+                f.write(struct.pack("<BBQQ", rem_bits, first_diff, input_index, output_index))
                 output_index += (rem_bits - first_diff) * output_elems
                 input_index += input_elems
 
@@ -55,8 +55,7 @@ def generate_dfs_schedule(n, out_filename):
 
     section = 0
     print(base_section_off)
-    with open(out_filename, 'w') as f:
-        f.write("# rem_bits first_diff input_index output_index\n")
+    with open(out_filename, 'wb') as f:
         while section >= 0:
             in_chunk  = in_stack[section]
             out_chunk = out_stack[section]
@@ -71,7 +70,7 @@ def generate_dfs_schedule(n, out_filename):
             inp_idx    = base_section_off[section]   + in_chunk  * (1 << rem_bits)
             out_idx    = base_section_off[section+1] + out_stack[section+1] * (1 << (rem_bits - 1))
 
-            f.write(f"{rem_bits} {first_diff} {inp_idx} {out_idx}\n")
+            f.write(struct.pack("<BBQQ", rem_bits, first_diff, inp_idx, out_idx))
 
             in_stack[section]      += 1
             out_stack[section + 1] += ls

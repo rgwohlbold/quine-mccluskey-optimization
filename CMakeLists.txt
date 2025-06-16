@@ -22,7 +22,7 @@ set(COMPILER_FLAGS -march=native)
 # Only clang supports AddressSanitizer
 if(SANITIZE STREQUAL ON)
     set(CMAKE_C_COMPILER "/usr/bin/clang")
-    set(COMPILER_FLAGS ${COMPILER_FLAGS} -fsanitize=address -fno-omit-frame-pointer)
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g)
     target_link_options(prime_implicants PUBLIC -fsanitize=address)
 elseif(CMAKE_C_COMPILER STREQUAL "/usr/bin/clang")
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3)
