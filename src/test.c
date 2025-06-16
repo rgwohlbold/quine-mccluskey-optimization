@@ -101,9 +101,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_shuffle", prime_implicants_avx2_sp_shuffle, 30},
     {"avx2_sp_load_shuffle", prime_implicants_avx2_sp_load_shuffle, 30},
     {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block4, 30},
+    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
+    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block16, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp", prime_implicants_avx512_sp, 22},
