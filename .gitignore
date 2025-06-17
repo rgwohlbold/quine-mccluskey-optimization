@@ -42,3 +42,6 @@ src/system.c
 *.log
 *.pdf
 *.synctex.gz
+
+traversals/*
+gen_tests/*
