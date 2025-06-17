@@ -891,7 +891,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 1
+#if LOG_BLOCK_SIZE >= 2
     for (; i+1 < num_bits; i += 2) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
