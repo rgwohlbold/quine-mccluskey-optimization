@@ -70,11 +70,16 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
+#define LOG_BLOCK_SIZE 4
 #include "implementations/bits_sp_block.h"
 #include "implementations/bits_sp_load.h"
 #include "implementations/bits_sp_load_block.h"
 
 #include "implementations/native_dfs_sp.h"
+#include "implementations/bits_sp_load_block16.h"
+#include "implementations/bits_sp_load_block2.h"
+#include "implementations/bits_sp_load_block4.h"
+#include "implementations/bits_sp_load_block8.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
 #include "implementations/merge/bits_sp_block.h"
@@ -91,8 +96,10 @@ const prime_implicant_implementation implementations[] = {
     // {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
     {"bits_sp_block", prime_implicants_bits_sp_block, 30},
     {"bits_sp_load", prime_implicants_bits_sp_load, 30},
-    {"bits_sp_load_block", prime_implicants_bits_sp_load_block, 30},
-
+    {"bits_sp_load_block2", prime_implicants_bits_sp_load_block2, 30},
+    {"bits_sp_load_block4", prime_implicants_bits_sp_load_block4, 30},
+    {"bits_sp_load_block8", prime_implicants_bits_sp_load_block8, 30},
+    {"bits_sp_load_block16", prime_implicants_bits_sp_load_block16, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
     {"pext_sp", prime_implicants_pext_sp, 30},
@@ -144,6 +151,7 @@ merge_implementation merge_implementations[] = {
     {"merge_bits", merge_bits},
     {"merge_bits_sp", merge_bits_sp},
     // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
+                                                {"merge_bits_sp_block4", merge_bits_sp_block},
 #ifdef __BMI2__
     {"merge_pext", merge_pext},
 #endif
