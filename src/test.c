@@ -59,10 +59,12 @@
 #include "vct_arm.h"
 #include "implementations/merge/neon_sp.h"
 #include "implementations/merge/neon.h"
+#include "implementations/merge/neon_sp_block.h"
 #include "implementations/neon.h"
 #include "implementations/neon_sp.h"
 #include "implementations/neon_sp_load.h"
 #include "implementations/neon_sp_dfs_load.h"
+#include "implementations/neon_sp_load_block.h"
 #endif
 
 #include "implementations/baseline.h"
@@ -126,8 +128,9 @@ const prime_implicant_implementation implementations[] = {
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
     // {"neon_sp", prime_implicants_neon_sp, 30},
-    // {"neon_sp_load", prime_implicants_neon_sp_load, 30},
+     {"neon_sp_load", prime_implicants_neon_sp_load, 30},
     // {"neon_sp_dfs_load", prime_implicants_neon_sp_dfs_load, 30}
+    {"neon_sp_load_block", prime_implicants_neon_sp_load_block, 30},
 #endif
 };
 
@@ -161,7 +164,8 @@ merge_implementation merge_implementations[] = {
 #endif
 #ifdef __aarch64__
     {"merge_neon", merge_neon},
-    {"merge_neon_sp", merge_neon_sp}
+    {"merge_neon_sp", merge_neon_sp},
+    {"merge_neon_sp_block", merge_neon_sp_block}
 #endif
 };
 

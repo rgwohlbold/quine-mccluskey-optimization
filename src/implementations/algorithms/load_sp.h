@@ -8,8 +8,7 @@
 #  include "../../tsc_x86.h"
 #endif
 #ifdef __aarch64__
-#  include "../../kperf.h"
-// #  include "../../vct_arm.h"
+#include "../../vct_arm.h"
 #endif
 #include "../../signpost.h"
 
