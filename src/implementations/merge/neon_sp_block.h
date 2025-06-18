@@ -3,7 +3,10 @@
 #include "bits_sp.h"
 #include <arm_neon.h>
 #include <assert.h>
-
+#define LOG_BLOCK_SIZE 1
+#ifndef LOG_BLOCK_SIZE
+#error "need to define LOG_BLOCK_SIZE"
+#endif
 static inline void merge_neon_sp_block(
     bitmap implicants,
     bitmap primes,
@@ -223,7 +226,6 @@ static inline void merge_neon_sp_block(
         uint64x2_t primes64 = vbicq_u64(primes32, merged64);
 
         vst1q_u64((uint64_t*)(primes.bits + idx1/8), primes64);
-
         if (0 >= first_difference) {
             output_ptr[o_idx1/64] = out_result1;
             o_idx1 += 64;
@@ -294,14 +296,223 @@ static inline void merge_neon_sp_block(
             output_ptr[o_idx64/64] = out_result64;
             o_idx64 += 64;
         }
+        LOG_DEBUG("o_idx1: %zu, o_idx2: %zu, o_idx4: %zu, o_idx8: %zu, o_idx16: %zu, o_idx32: %zu, o_idx64: %zu", o_idx1, o_idx2, o_idx4, o_idx8, o_idx16, o_idx32, o_idx64);   
+
         idx1 += 128;
     }
 
     size_t o_idx = o_idx64;
 
+    int i = 7;
+
+    #if LOG_BLOCK_SIZE >= 2
+    for (; i + 2 < num_bits; i += 3) {
 
 
-    for (int i = 7; i < num_bits; ++i) {
+        int  block_len  = 1 << i;
+        int  num_blocks = 1 << (num_bits - i - 1);
+
+        for (int block = 0; block < num_blocks; block += 4) {
+            size_t base = input_index + 2 * block * block_len;
+            // the 8 starting offsets
+            size_t idx0 = base;
+            size_t idx1 = base +   block_len;
+            size_t idx2 = base + 2*block_len;
+            size_t idx3 = base + 3*block_len;
+            size_t idx4 = base + 4*block_len;
+            size_t idx5 = base + 5*block_len;
+            size_t idx6 = base + 6*block_len;
+            size_t idx7 = base + 7*block_len;
+
+            for (int k = 0; k < block_len; k += 128) {
+                // load implicants
+                uint64x2_t impl0 = vld1q_u64((uint64_t*)(implicants.bits + (idx0)/8));
+                uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + (idx1)/8));
+                uint64x2_t impl2 = vld1q_u64((uint64_t*)(implicants.bits + (idx2)/8));
+                uint64x2_t impl3 = vld1q_u64((uint64_t*)(implicants.bits + (idx3)/8));
+                uint64x2_t impl4 = vld1q_u64((uint64_t*)(implicants.bits + (idx4)/8));
+                uint64x2_t impl5 = vld1q_u64((uint64_t*)(implicants.bits + (idx5)/8));
+                uint64x2_t impl6 = vld1q_u64((uint64_t*)(implicants.bits + (idx6)/8));
+                uint64x2_t impl7 = vld1q_u64((uint64_t*)(implicants.bits + (idx7)/8));
+
+                // compute all the pairwise ANDs we need for 3 levels of blocking
+                uint64x2_t r01 = vandq_u64(impl0, impl1);
+                uint64x2_t r23 = vandq_u64(impl2, impl3);
+                uint64x2_t r45 = vandq_u64(impl4, impl5);
+                uint64x2_t r67 = vandq_u64(impl6, impl7);
+
+                uint64x2_t r02 = vandq_u64(impl0, impl2);
+                uint64x2_t r13 = vandq_u64(impl1, impl3);
+                uint64x2_t r46 = vandq_u64(impl4, impl6);
+                uint64x2_t r57 = vandq_u64(impl5, impl7);
+
+                uint64x2_t r04 = vandq_u64(impl0, impl4);
+                uint64x2_t r15 = vandq_u64(impl1, impl5);
+                uint64x2_t r26 = vandq_u64(impl2, impl6);
+                uint64x2_t r37 = vandq_u64(impl3, impl7);
+
+                // now mask out primes in three stages
+                uint64x2_t p0 = vld1q_u64((uint64_t*)(primes.bits + (idx0)/8));
+                uint64x2_t p1 = vld1q_u64((uint64_t*)(primes.bits + (idx1)/8));
+                uint64x2_t p2 = vld1q_u64((uint64_t*)(primes.bits + (idx2)/8));
+                uint64x2_t p3 = vld1q_u64((uint64_t*)(primes.bits + (idx3)/8));
+                uint64x2_t p4 = vld1q_u64((uint64_t*)(primes.bits + (idx4)/8));
+                uint64x2_t p5 = vld1q_u64((uint64_t*)(primes.bits + (idx5)/8));
+                uint64x2_t p6 = vld1q_u64((uint64_t*)(primes.bits + (idx6)/8));
+                uint64x2_t p7 = vld1q_u64((uint64_t*)(primes.bits + (idx7)/8));
+
+                uint64x2_t m0 = vorrq_u64(r01, vorrq_u64(r02, r04));              
+                uint64x2_t m1 = vorrq_u64(r01, vorrq_u64(r13, r15));
+                uint64x2_t m2 = vorrq_u64(r23, vorrq_u64(r02, r26));
+                uint64x2_t m3 = vorrq_u64(r23, vorrq_u64(r13, r37));
+                uint64x2_t m4 = vorrq_u64(r45, vorrq_u64(r46, r04));
+                uint64x2_t m5 = vorrq_u64(r45, vorrq_u64(r57, r15));
+                uint64x2_t m6 = vorrq_u64(r67, vorrq_u64(r46, r26));
+                uint64x2_t m7 = vorrq_u64(r67, vorrq_u64(r57, r37));
+
+                p0 = vbicq_u64(p0, m0);
+                p1 = vbicq_u64(p1, m1);
+                p2 = vbicq_u64(p2, m2);
+                p3 = vbicq_u64(p3, m3);
+                p4 = vbicq_u64(p4, m4);
+                p5 = vbicq_u64(p5, m5);
+                p6 = vbicq_u64(p6, m6);
+                p7 = vbicq_u64(p7, m7);
+
+
+                // // first level
+                // p0 = vbicq_u64(p0, r01);  p1 = vbicq_u64(p1, r01);
+                // p2 = vbicq_u64(p2, r23);  p3 = vbicq_u64(p3, r23);
+                // p4 = vbicq_u64(p4, r45);  p5 = vbicq_u64(p5, r45);
+                // p6 = vbicq_u64(p6, r67);  p7 = vbicq_u64(p7, r67);
+
+                // // second level
+                // p0 = vbicq_u64(p0, r02);  p1 = vbicq_u64(p1, r13);
+                // p2 = vbicq_u64(p2, r02);  p3 = vbicq_u64(p3, r13);
+                // p4 = vbicq_u64(p4, r46);  p5 = vbicq_u64(p5, r57);
+                // p6 = vbicq_u64(p6, r46);  p7 = vbicq_u64(p7, r57);
+
+                // // third level
+                // p0 = vbicq_u64(p0, r04);  p1 = vbicq_u64(p1, r15);
+                // p2 = vbicq_u64(p2, r26);  p3 = vbicq_u64(p3, r37);
+                // p4 = vbicq_u64(p4, r04);  p5 = vbicq_u64(p5, r15);
+                // p6 = vbicq_u64(p6, r26);  p7 = vbicq_u64(p7, r37);
+
+                // store back primes
+                vst1q_u64((uint64_t*)(primes.bits + (idx0)/8), p0);
+                vst1q_u64((uint64_t*)(primes.bits + (idx1)/8), p1);
+                vst1q_u64((uint64_t*)(primes.bits + (idx2)/8), p2);
+                vst1q_u64((uint64_t*)(primes.bits + (idx3)/8), p3);
+                vst1q_u64((uint64_t*)(primes.bits + (idx4)/8), p4);
+                vst1q_u64((uint64_t*)(primes.bits + (idx5)/8), p5);
+                vst1q_u64((uint64_t*)(primes.bits + (idx6)/8), p6);
+                vst1q_u64((uint64_t*)(primes.bits + (idx7)/8), p7);
+
+                // emit up to three results
+                if (i   >= first_difference) {
+                    size_t out = output_index + ((i - first_difference) << (num_bits-1)) + (block * block_len + k);
+                    vst1q_u64((uint64_t*)(implicants.bits + out     /8), r01);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+block_len)/8), r23);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+2*block_len)/8), r45);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+3*block_len)/8), r67);
+                }
+                if (i+1 >= first_difference) {
+                    size_t out = output_index + ((i + 1 - first_difference) << (num_bits-1)) + (block * block_len + k);
+                    vst1q_u64((uint64_t*)(implicants.bits + out     /8), r02);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+block_len)/8), r13);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+2*block_len)/8), r46);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+3*block_len)/8), r57);
+                }
+                if (i+2 >= first_difference) {
+                    size_t out = output_index + ((i + 2 - first_difference) << (num_bits-1)) + (block * block_len + k);
+                    vst1q_u64((uint64_t*)(implicants.bits + out     /8), r04);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+block_len)/8), r15);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+2*block_len)/8), r26);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out+3*block_len)/8), r37);
+                }
+                idx0 += 128;
+                idx1 += 128;
+                idx2 += 128;
+                idx3 += 128;
+                idx4 += 128;
+                idx5 += 128;
+                idx6 += 128;
+                idx7 += 128;
+            
+            }
+        }
+    }
+    #endif
+
+    #if LOG_BLOCK_SIZE >= 1
+    for (; i < num_bits - 1; i += 2) {
+    
+        int block_len = 1 << i;
+        int num_blocks = 1 << (num_bits - i - 1);
+        for (int block = 0; block < num_blocks; block += 2) {
+            size_t idx0 = input_index + 2 * block * block_len;
+            size_t idx1 = idx0 + block_len;
+            size_t idx2 = idx1 + block_len;
+            size_t idx3 = idx2 + block_len;
+            
+            for (int k = 0; k < block_len; k += 128) {
+   
+                uint64x2_t impl0 = vld1q_u64((uint64_t*)(implicants.bits + idx0/8));
+                uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + idx1/8));
+                uint64x2_t impl2 = vld1q_u64((uint64_t*)(implicants.bits + idx2/8));
+                uint64x2_t impl3 = vld1q_u64((uint64_t*)(implicants.bits + idx3/8));
+            
+                
+                uint64x2_t res01 = vandq_u64(impl0, impl1);
+                uint64x2_t res23 = vandq_u64(impl2, impl3);
+                uint64x2_t res02 = vandq_u64(impl0, impl2);
+                uint64x2_t res13 = vandq_u64(impl1, impl3);
+
+                uint64x2_t primes0 = vld1q_u64((uint64_t*)(primes.bits + idx0/8));
+                uint64x2_t primes1 = vld1q_u64((uint64_t*)(primes.bits + idx1/8));
+                uint64x2_t primes2 = vld1q_u64((uint64_t*)(primes.bits + idx2/8));
+                uint64x2_t primes3 = vld1q_u64((uint64_t*)(primes.bits + idx3/8));
+
+                uint64x2_t primes0_ = vbicq_u64(primes0, res01);
+                uint64x2_t primes1_ = vbicq_u64(primes1, res01);
+                uint64x2_t primes2_ = vbicq_u64(primes2, res23);
+                uint64x2_t primes3_ = vbicq_u64(primes3, res23);
+
+                uint64x2_t primes0__ = vbicq_u64(primes0_, res02);
+                uint64x2_t primes1__ = vbicq_u64(primes1_, res13);
+                uint64x2_t primes2__ = vbicq_u64(primes2_, res02);
+                uint64x2_t primes3__ = vbicq_u64(primes3_, res13);
+
+                vst1q_u64((uint64_t*)(primes.bits + idx0/8), primes0__);
+                vst1q_u64((uint64_t*)(primes.bits + idx1/8), primes1__);
+                vst1q_u64((uint64_t*)(primes.bits + idx2/8), primes2__);
+                vst1q_u64((uint64_t*)(primes.bits + idx3/8), primes3__);
+
+                if (i >= first_difference) {
+                    size_t out = output_index + ((i - first_difference) << (num_bits-1)) + (block * block_len + k);
+                    vst1q_u64((uint64_t*)(implicants.bits + out / 8), res01);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out + block_len) / 8), res23); 
+              
+            
+                }
+                if (i + 1 >= first_difference) {
+                    size_t out = output_index + ((i + 1 - first_difference) << (num_bits - 1)) + (block * block_len + k);
+                    vst1q_u64((uint64_t*)(implicants.bits + out / 8), res02);
+                    vst1q_u64((uint64_t*)(implicants.bits + (out + block_len) / 8), res13);
+                    
+                }
+                idx0 += 128;
+                idx1 += 128;
+                idx2 += 128;
+                idx3 += 128;
+             
+            }
+        }
+    }
+    o_idx = output_index + ((i - first_difference) << (num_bits - 1));
+    #endif
+
+    for (; i < num_bits; ++i) {
         int block_len = 1 << i;
         int num_blocks = 1 << (num_bits - i - 1);
 
@@ -311,8 +522,10 @@ static inline void merge_neon_sp_block(
                 size_t idx2 = input_index + 2 * block * block_len + block_len;
 
                 for (int k = 0; k < block_len; k += 128) {
+            
                     uint64x2_t impl1 = vld1q_u64((uint64_t*)(implicants.bits + idx1/8));
                     uint64x2_t impl2 = vld1q_u64((uint64_t*)(implicants.bits + idx2/8));
+      
                     uint64x2_t primes1 = vld1q_u64((uint64_t*)(primes.bits + idx1/8));
                     uint64x2_t primes2 = vld1q_u64((uint64_t*)(primes.bits + idx2/8));
                     uint64x2_t res = vandq_u64(impl1, impl2);
@@ -322,8 +535,10 @@ static inline void merge_neon_sp_block(
                     vst1q_u64((uint64_t*)(primes.bits + idx2/8), primes2_);
                     if (i >= first_difference) {
                         vst1q_u64((uint64_t*)(implicants.bits + o_idx/8), res);
+                        log_u64x2("saved", &res);
                         o_idx += 128;
                     }
+
                     idx1 += 128;
                     idx2 += 128;
                 }
