@@ -3,6 +3,7 @@
 #include "../../bitmap.h"
 #include "../../debug.h"
 #include "bits_sp.h"
+#define LOG_BLOCK_SIZE 2
 #ifndef LOG_BLOCK_SIZE
 #error "need to define LOG_BLOCK_SIZE"
 #endif
