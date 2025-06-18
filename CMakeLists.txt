@@ -6,9 +6,41 @@ file(GLOB SRC_FILES src/*.c src/implementations/*.c)
 set(CPP_FILES src/implementations/hellman.cpp)
 
 
+# Set compiler flags early so they're used everywhere
+set(COMPILER_FLAGS -march=native -mbmi2)
+
 add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
 # set_property(SOURCE ${CPP_FILES} PROPERTY LANGUAGE CXX)
 # set_target_properties(prime_implicants PROPERTIES LINKER_LANGUAGE CXX)
+
+# Generate annotated assembly files for all sources
+set(ASM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/asm")
+file(MAKE_DIRECTORY ${ASM_OUTPUT_DIR})
+
+foreach(src_file IN LISTS SRC_FILES CPP_FILES)
+    get_filename_component(src_name ${src_file} NAME_WE)
+    get_filename_component(src_ext ${src_file} EXT)
+    if(src_ext STREQUAL ".c")
+        add_custom_command(
+            OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
+            COMMAND ${CMAKE_C_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
+            DEPENDS ${src_file}
+            COMMENT "Generating annotated assembly for ${src_file}"
+            VERBATIM
+        )
+    elseif(src_ext STREQUAL ".cpp" OR src_ext STREQUAL ".cxx" OR src_ext STREQUAL ".cc")
+        add_custom_command(
+            OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
+            COMMAND ${CMAKE_CXX_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
+            DEPENDS ${src_file}
+            COMMENT "Generating annotated assembly for ${src_file}"
+            VERBATIM
+        )
+    endif()
+    list(APPEND ASM_OUTPUTS ${ASM_OUTPUT_DIR}/${src_name}.s)
+endforeach()
+
+add_custom_target(assembly ALL DEPENDS ${ASM_OUTPUTS})
 
 
 option(SANITIZE "use sanitizers for debugging")
@@ -16,8 +48,6 @@ message(STATUS "Using SANITIZE=${SANITIZE}")
 
 option(PROFILING "use profiling flags for compilation")
 message(STATUS "Using PROFILING=${PROFILING}")
-
-set(COMPILER_FLAGS -march=native)
 
 # Only clang supports AddressSanitizer
 if(SANITIZE STREQUAL ON)
@@ -50,7 +80,8 @@ if(PROFILING STREQUAL ON)
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${VTUNE_ITT_LIB}:${VTUNE_COLLECTOR_LIB}")
 endif()
 
-target_compile_options(prime_implicants PUBLIC -Wall -Wextra ${COMPILER_FLAGS})
+# Always add -mbmi2 to compile options for the target
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra -mbmi2 ${COMPILER_FLAGS})
 
 # Apply std flags per language
 target_compile_options(prime_implicants PRIVATE

@@ -77,7 +77,7 @@
 #include "implementations/native_dfs_sp.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
-#include "implementations/merge/bits_sp_block.h"
+// #include "implementations/merge/bits_sp_block.h"
 #include "system.h"
 #include "util.h"
 
@@ -267,7 +267,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
             if (test.num_bits > impl.max_bits) {
-                LOG_INFO("skipping '%s' -> '%s'", test.name, impl.name);
+                LOG_WARN("skipping '%s' -> '%s'", test.name, impl.name);
                 continue;
             }
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);

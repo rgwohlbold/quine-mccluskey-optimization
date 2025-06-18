@@ -44,4 +44,5 @@ src/system.c
 *.synctex.gz
 
 traversals/*
-gen_tests/*
+tests/gen_tests/*
+asm/*
