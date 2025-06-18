@@ -262,6 +262,31 @@ void from_testfile(const char *filename, test_case *dest) {
     *dest = result;
 }
 
+bitmap random_trues(int num_bits, int density, size_t *trues_count) {
+    bitmap trues = bitmap_allocate(1 << num_bits);
+    *trues_count = 0;
+    for (size_t i = 0; i < trues.num_bits; i++) {
+        double ratio = ((double)rand()) / RAND_MAX * 100;
+        if (ratio < density) {
+            BITMAP_SET_TRUE(trues, i);
+            (*trues_count)++;
+        }
+    }
+    return trues;
+}
+
+bitmap sparse_trues_to_bitmap(int num_bits, int num_trues, int *trues) {
+    /**
+     * Convert a sparse list of trues to a bitmap.
+     * The trues are given as an array of integers, where each integer is a minterm.
+     */
+    bitmap result = bitmap_allocate(1 << num_bits);
+    for (int i = 0; i < num_trues; i++) {
+        BITMAP_SET_TRUE(result, trues[i]);
+    }
+    return result;
+}
+
 // test all implementations on one test file
 void test_implementations(char **testfiles, int num_testfiles) {
     test_case test_cases[num_testfiles];
@@ -270,6 +295,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
     }
     for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
         test_case test = test_cases[i];
+        bitmap trues = sparse_trues_to_bitmap(test.num_bits, test.num_trues, test.trues);
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
             if (test.num_bits > impl.max_bits) {
@@ -278,7 +304,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
             }
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
-            prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+            prime_implicant_result result = impl.implementation(test.num_bits, trues);
             bool success = true;
             if (!bitmap_cmp(result.primes, test.prime_implicants)) {
                 for (size_t i = 0; i < result.primes.num_bits; i++) {
@@ -343,7 +369,8 @@ void test_implementation_single(const char *implementation_name, char **testfile
         }
         LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
-        prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+        bitmap trues = sparse_trues_to_bitmap(test.num_bits, test.num_trues, test.trues);
+        prime_implicant_result result = impl.implementation(test.num_bits, trues);
         bool ok = true;
         if (!bitmap_cmp(result.primes, test.prime_implicants)) {
             for (size_t i = 0; i < result.primes.num_bits; i++) {
@@ -403,15 +430,17 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         return;
     }
     //init_itt_handles(implementation_name);
-
-    int trues[] = {};
+    srand(time(NULL));
+    size_t _;
+    bitmap trues1 = random_trues(num_bits, 95, &_);
+    bitmap trues2 = random_trues(num_bits, 95, &_);
 
     // warmup iteration
-    prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
+    prime_implicant_result result_warmup = impl.implementation(num_bits, trues1);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     // ITT_START_FRAME();
-    prime_implicant_result result = impl.implementation(num_bits, 0, trues);
+    prime_implicant_result result = impl.implementation(num_bits, trues2);
     // ITT_END_FRAME();
     uint64_t cycles = result.cycles;
     FILE *f = fopen("measurements.csv", "a");
@@ -473,23 +502,14 @@ void measure_merge(const char *s, int num_bits) {
 
 void generate_testfile(int num_bits, int density) {
     // allocate full 2**n ints in case we are a bit above density
-    int max_implicants = 1 << num_bits;
-    int *trues = calloc(max_implicants, sizeof(int));
-    if (trues == NULL) {
-        LOG_ERROR("could not allocate trues array");
-        exit(EXIT_FAILURE);
-    }
+    size_t max_implicants = 1 << num_bits;
+    bitmap trues = bitmap_allocate(max_implicants);
 
-    int num_trues = 0;
     srand(time(NULL));
-    for (int i = 0; i < max_implicants; i++) {
-        double ratio = ((double)rand()) / RAND_MAX * 100;
-        if (ratio < density) {
-            trues[num_trues++] = i;
-        }
-    }
+    size_t num_trues;
+    trues = random_trues(num_bits, density, &num_trues);
 
-    prime_implicant_result result = prime_implicants_bits(num_bits, num_trues, trues);
+    prime_implicant_result result = prime_implicants_bits(num_bits, trues);
     bitmap primes = result.primes;
 
     char filename[100];
@@ -506,9 +526,11 @@ void generate_testfile(int num_bits, int density) {
         }
     }
     fprintf(f, "rnd-%d-%dpct-dense\n", num_bits, density);
-    fprintf(f, "%d %d %lu\n", num_bits, num_trues, num_primes);
-    for (int i = 0; i < num_trues; i++) {
-        fprintf(f, "%d\n", trues[i]);
+    fprintf(f, "%d %lu %lu\n", num_bits, num_trues, num_primes);
+    for (size_t i = 0; i < trues.num_bits; i++) {
+        if (BITMAP_CHECK(trues, i)) {
+            fprintf(f, "%zu\n", i);
+        }
     }
     for (size_t i = 0; i < primes.num_bits; i++) {
         if (BITMAP_CHECK(primes, i)) {

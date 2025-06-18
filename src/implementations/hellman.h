@@ -10,7 +10,7 @@ extern "C" {
     #include "../bitmap.h"
     #include "../util.h"
 
-    prime_implicant_result prime_implicants_hellman(int num_bits, int num_trues, int *trues); 
+    prime_implicant_result prime_implicants_hellman(int num_bits, bitmap trues); 
 
 #ifdef __cplusplus
 }

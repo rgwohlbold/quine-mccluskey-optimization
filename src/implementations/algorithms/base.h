@@ -24,13 +24,15 @@
 #error "need to define REDUCE_FUNCTION"
 #endif
 
-prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, int num_trues, int *trues) {
+prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
     bitmap implicants = bitmap_allocate(num_implicants);
-    for (int i = 0; i < num_trues; i++) {
-        BITMAP_SET_TRUE(implicants, trues[i]);
+    // OR the trues into the implicants
+    size_t num_minterms = 1<<num_bits;
+    for (size_t i = 0; i < num_minterms; i++) {
+        BITMAP_SET(implicants, i, BITMAP_CHECK(trues, i));
     }
     bitmap merged = bitmap_allocate(num_implicants);
 
