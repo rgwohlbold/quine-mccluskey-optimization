@@ -296,8 +296,6 @@ static inline void merge_neon_sp_block(
             output_ptr[o_idx64/64] = out_result64;
             o_idx64 += 64;
         }
-        LOG_DEBUG("o_idx1: %zu, o_idx2: %zu, o_idx4: %zu, o_idx8: %zu, o_idx16: %zu, o_idx32: %zu, o_idx64: %zu", o_idx1, o_idx2, o_idx4, o_idx8, o_idx16, o_idx32, o_idx64);   
-
         idx1 += 128;
     }
 

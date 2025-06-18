@@ -14,6 +14,6 @@ static inline void merge_native_sp(bitmap implicants, bitmap primes, size_t inpu
     #elif defined(__aarch64__)
         merge_neon_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
     #else
-        merge_bits_sp(implicants, primes, input_index, output_index, bn, first_difference);
+        merge_bits_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
     #endif
 }

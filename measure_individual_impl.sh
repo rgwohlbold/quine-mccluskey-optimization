@@ -11,7 +11,7 @@ implementation="$1"
 
 min_bits=1
 max_bits=22
-num_measurements=10
+num_measurements=5
 compilers="/usr/bin/clang"
 measurements_file="measurements.csv"
 

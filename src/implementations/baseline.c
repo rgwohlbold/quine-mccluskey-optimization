@@ -3,8 +3,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "common.h"
 #include "../util.h"
+#include "common.h"
 #ifdef __x86_64__
 #include "../tsc_x86.h"
 #endif
@@ -47,13 +47,16 @@ void merge_implicants_baseline(bool *implicants, bool *output, bool *merged, int
     }
 }
 
-prime_implicant_result prime_implicants_baseline(int num_bits, int num_trues, int *trues) {
+prime_implicant_result prime_implicants_baseline(int num_bits, bitmap trues) {
     int num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
     bool *implicants = allocate_boolean_array(num_implicants);
-    for (int i = 0; i < num_trues; i++) {
-        implicants[trues[i]] = true;
+    size_t num_minterms = 1 << num_bits;
+    for (size_t i = 0; i < num_minterms; i++) {
+        if (BITMAP_CHECK(trues, i)) {
+            implicants[i] = true;
+        }
     }
 
     bool *merged_implicants = allocate_boolean_array(num_implicants);  // will initialize to false
@@ -79,11 +82,11 @@ prime_implicant_result prime_implicants_baseline(int num_bits, int num_trues, in
 
         for (int i = 0; i < iterations; i++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
-            merge_implicants_baseline(&implicants[input_index], &implicants[output_index], &merged_implicants[input_index], remaining_bits, first_difference);
+            merge_implicants_baseline(&implicants[input_index], &implicants[output_index],
+                                      &merged_implicants[input_index], remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
             input_index += input_elements;
         }
-
     }
     // Step 2: Scan for unmerged implicants
     for (int i = 0; i < num_implicants; i++) {
@@ -91,7 +94,6 @@ prime_implicant_result prime_implicants_baseline(int num_bits, int num_trues, in
             BITMAP_SET_TRUE(primes, i);
         }
     }
-
 
     uint64_t cycles = stop_tsc(counter_start);
 

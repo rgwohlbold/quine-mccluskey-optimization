@@ -246,7 +246,7 @@ extern "C" {
     };
 
 
-    prime_implicant_result prime_implicants_hellman(int num_bits, int num_trues, int *trues) {
+    prime_implicant_result prime_implicants_hellman(int num_bits, bitmap trues) {
 
         size_t num_implicants = calculate_num_implicants(num_bits);
         bitmap primes = bitmap_allocate(num_implicants);
@@ -254,15 +254,18 @@ extern "C" {
         QuineMcCluskey D(num_bits);
         size_t cnt = 0;
 
-        // instead of reading from a file, hellman now takes the trues (ints) as input
-        for (int i = 0; i < num_trues; i++) {
-            uint64_t x = trues[i];
-            if (x >= (1ull << num_bits)) {
+        // instead of reading from a file, hellman now takes the true bitmap as input
+        size_t num_minterms = trues.num_bits;
+        for (size_t i = 0; i < num_minterms; i++) {
+            if(BITMAP_CHECK(trues, i) == 0) {
+                continue; // skip false minterms
+            }
+            if (i >= (1ull << num_bits)) {
                 fprintf(stderr, "HELLMAN: input value too large\n");
                 exit(1);
             }
             cnt++;
-            D.set(x);
+            D.set(i);
         }
 
         // start the counter and perform the algorithm
