@@ -8,83 +8,91 @@
 #include "debug.h"
 #include "implicant.h"
 #ifdef __x86_64__
-#include "tsc_x86.h"
-#include "vtune.h"
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
-#include "implementations/avx2_sp_ssa.h"
 #include "implementations/avx2_sp_ilp.h"
-#include "implementations/avx2_sp_unroll.h"
-#include "implementations/avx2_sp_load_unroll.h"
-#include "implementations/avx2_sp_shuffle.h"
-#include "implementations/avx2_sp_load_shuffle.h"
+#include "implementations/avx2_sp_load_block16.h"
 #include "implementations/avx2_sp_load_block2.h"
 #include "implementations/avx2_sp_load_block4.h"
 #include "implementations/avx2_sp_load_block8.h"
-#include "implementations/avx2_sp_load_block16.h"
-
+#include "implementations/avx2_sp_load_shuffle.h"
+#include "implementations/avx2_sp_load_unroll.h"
+#include "implementations/avx2_sp_shuffle.h"
+#include "implementations/avx2_sp_ssa.h"
+#include "implementations/avx2_sp_unroll.h"
 #include "implementations/hellman.h"
+#include "implementations/merge/avx2_sp.h"
+#include "implementations/merge/avx2_sp_ilp.h"
+#include "implementations/merge/avx2_sp_ssa.h"
+#include "implementations/merge/avx2_sp_unroll.h"
 #include "implementations/pext.h"
 #include "implementations/pext_sp.h"
 #include "implementations/pext_sp_load.h"
-
-#include "implementations/merge/avx2_sp.h"
-#include "implementations/merge/avx2_sp_ssa.h"
-#include "implementations/merge/avx2_sp_ilp.h"
-#include "implementations/merge/avx2_sp_unroll.h"
+#include "implementations/pext_sp_load_block.h"
+#include "implementations/pext_sp_load_block2.h"
+#include "implementations/pext_sp_load_block4.h"
+#include "implementations/pext_sp_load_block8.h"
+#include "implementations/pext_sp_unroll.h"
+#include "implementations/pext_sp_unroll_ilp.h"
+#include "tsc_x86.h"
+#include "vtune.h"
 #define LOG_BLOCK_SIZE 4
-#include "implementations/merge/avx2_sp_block.h"
 #include "implementations/merge/avx2.h"
+#include "implementations/merge/avx2_sp_block.h"
 #include "implementations/merge/pext.h"
+#include "implementations/merge/pext_sp.h"
+#include "implementations/merge/pext_sp_unroll.h"
+#include "implementations/merge/pext_sp_unroll_ilp.h"
+#define LOG_BLOCK_SIZE_PEXT 4
+#include "implementations/merge/pext_sp_block.h"
 
 #ifdef __AVX512F__
 #include "implementations/avx512_sp.h"
-#include "implementations/avx512_sp_unroll.h"
-#include "implementations/avx512_sp_unroll_compress.h"
-#include "implementations/avx512_sp_load_unroll_compress.h"
-#include "implementations/avx512_sp_load_block_old.h"
+#include "implementations/avx512_sp_load_block16.h"
 #include "implementations/avx512_sp_load_block2.h"
 #include "implementations/avx512_sp_load_block4.h"
 #include "implementations/avx512_sp_load_block8.h"
-#include "implementations/avx512_sp_load_block16.h"
+#include "implementations/avx512_sp_load_block_old.h"
+#include "implementations/avx512_sp_load_unroll_compress.h"
+#include "implementations/avx512_sp_unroll.h"
+#include "implementations/avx512_sp_unroll_compress.h"
 #include "implementations/merge/avx512_sp.h"
+#include "implementations/merge/avx512_sp_block.h"
+#include "implementations/merge/avx512_sp_block_old.h"
 #include "implementations/merge/avx512_sp_unroll.h"
 #include "implementations/merge/avx512_sp_unroll_compress.h"
-#include "implementations/merge/avx512_sp_block_old.h"
-#include "implementations/merge/avx512_sp_block.h"
 #endif
 
 #endif
 #ifdef __aarch64__
-#include "vct_arm.h"
-#include "implementations/merge/neon_sp.h"
 #include "implementations/merge/neon.h"
+#include "implementations/merge/neon_sp.h"
 #include "implementations/merge/neon_sp_block.h"
 #include "implementations/neon.h"
 #include "implementations/neon_sp.h"
-#include "implementations/neon_sp_load.h"
 #include "implementations/neon_sp_dfs_load.h"
+#include "implementations/neon_sp_load.h"
 #include "implementations/neon_sp_load_block.h"
+#include "vct_arm.h"
 #endif
 
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
-#define LOG_BLOCK_SIZE_BITS 2 // Include for merge measurement
+#define LOG_BLOCK_SIZE_BITS 2  // Include for merge measurement
 #include "implementations/bits_sp_block.h"
 #include "implementations/bits_sp_load.h"
-#include "implementations/native_dfs_sp.h"
 #include "implementations/bits_sp_load_block16.h"
 #include "implementations/bits_sp_load_block2.h"
 #include "implementations/bits_sp_load_block4.h"
 #include "implementations/bits_sp_load_block8.h"
+#include "implementations/bits_sp_unroll.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
-// #include "implementations/merge/bits_sp_block.h"
+#include "implementations/merge/bits_sp_block.h"
+#include "implementations/native_dfs_sp.h"
 #include "system.h"
 #include "util.h"
-
-
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
@@ -92,17 +100,27 @@ const prime_implicant_implementation implementations[] = {
     {"bits_sp", prime_implicants_bits_sp, 30},
     // {"bits_sp_aleksa", prime_implicants_bits_sp_aleksa, 30},
     // {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
-    {"bits_sp_block", prime_implicants_bits_sp_block, 30},
+    // {"bits_sp_block", prime_implicants_bits_sp_block, 22},
+    // {"bits_sp_unroll", prime_implicants_bits_sp_unroll, 22},
+    // {"bits_sp_unroll_ilp", prime_implicants_bits_sp_unroll_ilp, 22},
     {"bits_sp_load", prime_implicants_bits_sp_load, 30},
     {"bits_sp_load_block2", prime_implicants_bits_sp_load_block2, 30},
     {"bits_sp_load_block4", prime_implicants_bits_sp_load_block4, 30},
     {"bits_sp_load_block8", prime_implicants_bits_sp_load_block8, 30},
     {"bits_sp_load_block16", prime_implicants_bits_sp_load_block16, 30},
+
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
     {"pext_sp", prime_implicants_pext_sp, 30},
+    {"pext_sp_unroll", prime_implicants_pext_sp_unroll, 30},
+    {"pext_sp_block", prime_implicants_pext_sp_load_block, 30},
+    {"pext_sp_block2", prime_implicants_pext_sp_load_block2, 30},
+    {"pext_sp_block4", prime_implicants_pext_sp_load_block4, 30},
+    {"pext_sp_block8", prime_implicants_pext_sp_load_block8, 30},
     {"pext_sp_load", prime_implicants_pext_sp_load, 30},
+    {"pext_sp_unroll_ilp", prime_implicants_pext_sp_unroll_ilp, 30},
 #endif
+
 #ifdef __AVX2__
     {"hellman", prime_implicants_hellman, 23},
     {"avx2", prime_implicants_avx2, 30},
@@ -133,7 +151,7 @@ const prime_implicant_implementation implementations[] = {
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
     // {"neon_sp", prime_implicants_neon_sp, 30},
-     {"neon_sp_load", prime_implicants_neon_sp_load, 30},
+    {"neon_sp_load", prime_implicants_neon_sp_load, 30},
     // {"neon_sp_dfs_load", prime_implicants_neon_sp_dfs_load, 30}
     {"neon_sp_load_block", prime_implicants_neon_sp_load_block, 30},
 #endif
@@ -145,33 +163,32 @@ typedef struct {
                  int first_difference);
 } merge_implementation;
 
-merge_implementation merge_implementations[] = {
-    {"merge_bits", merge_bits},
-    {"merge_bits_sp", merge_bits_sp},
-    // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
-    {"merge_bits_sp_block2", merge_bits_sp_block},
+merge_implementation merge_implementations[] = {{"merge_bits", merge_bits},
+                                                {"merge_bits_sp", merge_bits_sp},
+                                                // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
+                                                {"merge_bits_sp_block2", merge_bits_sp_block},
 #ifdef __BMI2__
-    {"merge_pext", merge_pext},
+                                                {"merge_pext", merge_pext},
 #endif
 #ifdef __AVX2__
-    {"merge_avx2", merge_avx2},
-    {"merge_avx2_sp", merge_avx2_sp},
-    {"merge_avx2_sp_ssa", merge_avx2_sp_ssa},
-    {"merge_avx2_sp_ilp", merge_avx2_sp_ilp},
-    {"merge_avx2_sp_unroll", merge_avx2_sp_unroll},
-    {"merge_avx2_sp_block4", merge_avx2_sp_block},
+                                                {"merge_avx2", merge_avx2},
+                                                {"merge_avx2_sp", merge_avx2_sp},
+                                                {"merge_avx2_sp_ssa", merge_avx2_sp_ssa},
+                                                {"merge_avx2_sp_ilp", merge_avx2_sp_ilp},
+                                                {"merge_avx2_sp_unroll", merge_avx2_sp_unroll},
+                                                {"merge_avx2_sp_block4", merge_avx2_sp_block},
 #endif
 #ifdef __AVX512F__
-    {"merge_avx512_sp", merge_avx512_sp},
-    {"merge_avx512_sp_unroll", merge_avx512_sp_unroll},
-    {"merge_avx512_sp_unroll_compress", merge_avx512_sp_unroll_compress},
-    {"merge_avx512_sp_block_old", merge_avx512_sp_block_old},
-    {"merge_avx512_sp_block", merge_avx512_sp_block},
+                                                {"merge_avx512_sp", merge_avx512_sp},
+                                                {"merge_avx512_sp_unroll", merge_avx512_sp_unroll},
+                                                {"merge_avx512_sp_unroll_compress", merge_avx512_sp_unroll_compress},
+                                                {"merge_avx512_sp_block_old", merge_avx512_sp_block_old},
+                                                {"merge_avx512_sp_block", merge_avx512_sp_block},
 #endif
 #ifdef __aarch64__
-    {"merge_neon", merge_neon},
-    {"merge_neon_sp", merge_neon_sp},
-    {"merge_neon_sp_block", merge_neon_sp_block}
+                                                {"merge_neon", merge_neon},
+                                                {"merge_neon_sp", merge_neon_sp},
+                                                {"merge_neon_sp_block", merge_neon_sp_block}
 #endif
 };
 
@@ -332,6 +349,7 @@ void test_implementations(char **testfiles, int num_testfiles) {
                 exit(EXIT_FAILURE);
             }
         }
+        bitmap_free(trues);
     }
     for (int i = 0; i < num_testfiles; i++) {
         free_test(test_cases[i]);
@@ -358,7 +376,6 @@ void test_implementation_single(const char *implementation_name, char **testfile
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
-
 
     for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
         test_case test = test_cases[i];
@@ -393,8 +410,8 @@ void test_implementation_single(const char *implementation_name, char **testfile
                 }
             }
         }
-        if (ok)
-            LOG_INFO("implementation '%s' passed test case '%s'", impl.name, test.name);
+        if (ok) LOG_INFO("implementation '%s' passed test case '%s'", impl.name, test.name);
+        bitmap_free(trues);
         bitmap_free(result.primes);
     }
     for (int i = 0; i < num_testfiles; i++) {
@@ -429,7 +446,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
-    //init_itt_handles(implementation_name);
+    // init_itt_handles(implementation_name);
     srand(time(NULL));
     size_t _;
     bitmap trues1 = random_trues(num_bits, 95, &_);
@@ -448,6 +465,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
+    bitmap_free(trues1);
+    bitmap_free(trues2);
     bitmap_free(result_warmup.primes);
     bitmap_free(result.primes);
 }
@@ -534,7 +553,7 @@ void generate_testfile(int num_bits, int density) {
     }
     for (size_t i = 0; i < primes.num_bits; i++) {
         if (BITMAP_CHECK(primes, i)) {
-            char s[num_bits+1];
+            char s[num_bits + 1];
             s[num_bits] = '\0';
             bitmap_index_to_implicant(num_bits, i, s);
             fprintf(f, "%s\n", s);
