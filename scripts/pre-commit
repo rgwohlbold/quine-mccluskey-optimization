@@ -1,6 +1,6 @@
 #!/bin/bash
 
-deps=("clang-format-diff" "clang-format")
+deps=("clang-format")
 # Check dependencies
 for dep in "${deps[@]}"; do
   if ! command -v "$dep" >/dev/null 2>&1; then
@@ -9,4 +9,16 @@ for dep in "${deps[@]}"; do
   fi
 done
 
-git diff --cached --name-only --diff-filter=ACM | grep '\.cpp\|\.h\|\.c\|\.hpp' | clang-format-diff -i -p1
+# Get the names of staged C/C++/H files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h|c|hpp)$')
+
+# If there are no staged C/C++/H files, exit gracefully
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+for file in $STAGED_FILES; do
+  clang-format -i "$file"
+  git add "$file"
+  echo "$file formatted."
+done

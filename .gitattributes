@@ -1,0 +1,5 @@
+# Apply the 'clangformat' filter and textconv for C/C++/H/HPP files
+*.c filter=clangformat textconv=clangformat
+*.cpp filter=clangformat textconv=clangformat
+*.h filter=clangformat textconv=clangformat
+*.hpp filter=clangformat textconv=clangformat
