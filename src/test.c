@@ -70,11 +70,9 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
-#define LOG_BLOCK_SIZE 4
+#define LOG_BLOCK_SIZE_BITS 2 // Include for merge measurement
 #include "implementations/bits_sp_block.h"
 #include "implementations/bits_sp_load.h"
-#include "implementations/bits_sp_load_block.h"
-
 #include "implementations/native_dfs_sp.h"
 #include "implementations/bits_sp_load_block16.h"
 #include "implementations/bits_sp_load_block2.h"
@@ -151,7 +149,7 @@ merge_implementation merge_implementations[] = {
     {"merge_bits", merge_bits},
     {"merge_bits_sp", merge_bits_sp},
     // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
-                                                {"merge_bits_sp_block4", merge_bits_sp_block},
+    {"merge_bits_sp_block2", merge_bits_sp_block},
 #ifdef __BMI2__
     {"merge_pext", merge_pext},
 #endif

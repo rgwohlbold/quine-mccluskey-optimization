@@ -3,8 +3,8 @@
 #include "../../bitmap.h"
 #include "../../debug.h"
 #include "bits_sp.h"
-#ifndef LOG_BLOCK_SIZE
-#error "need to define LOG_BLOCK_SIZE"
+#ifndef LOG_BLOCK_SIZE_BITS
+#error "need to define LOG_BLOCK_SIZE_BITS"
 #endif
 
 static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t input_index, size_t output_index,
@@ -198,7 +198,7 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
     uint64_t *implicant_bits = (uint64_t *)implicants.bits;
     uint64_t *primes_bits = (uint64_t *)primes.bits;
 
-#if LOG_BLOCK_SIZE >= 3
+#if LOG_BLOCK_SIZE_BITS >= 3
     // Variables to store results
     uint64_t res_i_01, res_i_23, res_i_45, res_i_67, res_i_89, res_i_1011, res_i_1213, res_i_1415;
     uint64_t res_i1_02, res_i1_13, res_i1_46, res_i1_57, res_i1_810, res_i1_911, res_i1_1214, res_i1_1315;
@@ -439,7 +439,7 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 2
+#if LOG_BLOCK_SIZE_BITS >= 2
     for (; i + 2 < num_bits; i += 3) {
         // Length of block in double words
         int block_len = (1 << (i - 6));
@@ -550,7 +550,7 @@ static inline void merge_bits_sp_block(bitmap implicants, bitmap primes, size_t 
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 1
+#if LOG_BLOCK_SIZE_BITS >= 1
     for (; i + 1 < num_bits; i += 2) {
         // Length of block in double words
         int block_len = (1 << (i - 6));
