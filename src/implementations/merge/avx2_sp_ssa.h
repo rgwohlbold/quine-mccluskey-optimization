@@ -6,12 +6,14 @@
 
 #include <assert.h>
 #include <immintrin.h>
+
 #include "../../bitmap.h"
 #include "pext_sp.h"
 
-static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
+static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index,
+                                      int num_bits, int first_difference) {
     size_t o_idx;
-    switch(num_bits) {
+    switch (num_bits) {
         case 0:
             return;
         case 1:
@@ -39,9 +41,9 @@ static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t i
         for (int block = 0; block < num_blocks; block += 32 / block_len) {
             size_t idx1 = input_index + 2 * block * block_len;
 
-            uint64_t *input_ptr = (uint64_t *) implicants.bits;
-            uint32_t *output_ptr = (uint32_t *) implicants.bits;
-            uint64_t *primes_ptr = (uint64_t *) primes.bits;
+            uint64_t *input_ptr = (uint64_t *)implicants.bits;
+            uint32_t *output_ptr = (uint32_t *)implicants.bits;
+            uint64_t *primes_ptr = (uint64_t *)primes.bits;
             for (int k = 0; k < block_len; k += 64) {
                 uint64_t impl1 = input_ptr[idx1 / 64];
                 uint64_t prime;
@@ -65,7 +67,7 @@ static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t i
                     mask = 0x00FF00FF00FF00FF;
                 } else if (block_len == 16) {
                     mask = 0x0000FFFF0000FFFF;
-                } else { // block_len == 32
+                } else {  // block_len == 32
                     mask = 0x00000000FFFFFFFF;
                 }
                 uint64_t result = _pext_u64(aggregated, mask);
@@ -75,7 +77,7 @@ static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t i
 
                 primes_ptr[idx1 / 64] = prime2;
                 if (i >= first_difference) {
-                    output_ptr[o_idx / 32] = (uint32_t) result;
+                    output_ptr[o_idx / 32] = (uint32_t)result;
                     o_idx += 32;
                 }
                 idx1 += 64;
@@ -93,8 +95,8 @@ static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t i
             size_t idx2 = input_index + 2 * block * block_len + block_len;
 
             for (int k = 0; k < block_len; k += 64) {
-                uint64_t *implicant_ptr = (uint64_t*) implicants.bits;
-                uint64_t *primes_ptr = (uint64_t*) primes.bits;
+                uint64_t *implicant_ptr = (uint64_t *)implicants.bits;
+                uint64_t *primes_ptr = (uint64_t *)primes.bits;
 
                 uint64_t impl1 = implicant_ptr[idx1 / 64];
                 uint64_t impl2 = implicant_ptr[idx2 / 64];
@@ -117,7 +119,8 @@ static void merge_avx2_sp_small_n_ssa(bitmap implicants, bitmap primes, size_t i
     }
 }
 
-static inline void merge_avx2_sp_single_register_ssa_1(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_1(__m256i impl1, __m256i primes1, __m128i *result,
+                                                       __m256i *primes_result) {
     const int block_len = 1;
 
     // block_len <= 64: we can shift and compare without crossing 128-bit boundaries
@@ -154,10 +157,11 @@ static inline void merge_avx2_sp_single_register_ssa_1(__m256i impl1, __m256i pr
     // block_len <= 32
     __m256i combined4 = _mm256_or_si256(masked4, shifted4);
     __m256i masked5 = _mm256_and_si256(combined4, _mm256_set1_epi64x(0x00000000FFFFFFFF));
-    __m256i shifted5 = _mm256_srli_si256(masked5, 4); // 4 bytes = 32 bits
+    __m256i shifted5 = _mm256_srli_si256(masked5, 4);  // 4 bytes = 32 bits
 
     __m256i combined5 = _mm256_or_si256(masked5, shifted5);
-    __m256i aggregated_final = _mm256_and_si256(combined5, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined5, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // move 64-bit value aggregated[2] to result256[1] so result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -168,10 +172,10 @@ static inline void merge_avx2_sp_single_register_ssa_1(__m256i impl1, __m256i pr
     __m256i merged = _mm256_or_si256(shifted_initial_result, initial_result);
     __m256i r_ = _mm256_andnot_si256(merged, primes1);
     *primes_result = r_;
-
 }
 
-static inline void merge_avx2_sp_single_register_ssa_2(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_2(__m256i impl1, __m256i primes1, __m128i *result,
+                                                       __m256i *primes_result) {
     const int block_len = 2;
 
     // block_len <= 64: we can shift and compare without crossing 128-bit boundaries
@@ -203,11 +207,12 @@ static inline void merge_avx2_sp_single_register_ssa_2(__m256i impl1, __m256i pr
     // Block aggregation for length <= 32
     __m256i combined3 = _mm256_or_si256(masked3, shifted3);
     __m256i masked4 = _mm256_and_si256(combined3, _mm256_set1_epi64x(0x00000000FFFFFFFF));
-    __m256i shifted4 = _mm256_srli_si256(masked4, 4); // 4 bytes = 32 bits
+    __m256i shifted4 = _mm256_srli_si256(masked4, 4);  // 4 bytes = 32 bits
 
     // Final aggregation
     __m256i combined4 = _mm256_or_si256(masked4, shifted4);
-    __m256i aggregated_final = _mm256_and_si256(combined4, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined4, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // Move 64-bit value to ensure result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -220,7 +225,8 @@ static inline void merge_avx2_sp_single_register_ssa_2(__m256i impl1, __m256i pr
     *primes_result = r_;
 }
 
-static inline void merge_avx2_sp_single_register_ssa_4(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_4(__m256i impl1, __m256i primes1, __m128i *result,
+                                                       __m256i *primes_result) {
     const int block_len = 4;
 
     // Block_len <= 64: shift and compare without crossing 128-bit boundaries
@@ -247,11 +253,12 @@ static inline void merge_avx2_sp_single_register_ssa_4(__m256i impl1, __m256i pr
     // Block aggregation for length <= 32
     __m256i combined2 = _mm256_or_si256(masked2, shifted2);
     __m256i masked3 = _mm256_and_si256(combined2, _mm256_set1_epi64x(0x00000000FFFFFFFF));
-    __m256i shifted3 = _mm256_srli_si256(masked3, 4); // 4 bytes = 32 bits
+    __m256i shifted3 = _mm256_srli_si256(masked3, 4);  // 4 bytes = 32 bits
 
     // Final aggregation
     __m256i combined3 = _mm256_or_si256(masked3, shifted3);
-    __m256i aggregated_final = _mm256_and_si256(combined3, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined3, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // Move 64-bit value to ensure result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -264,7 +271,8 @@ static inline void merge_avx2_sp_single_register_ssa_4(__m256i impl1, __m256i pr
     *primes_result = r_;
 }
 
-static inline void merge_avx2_sp_single_register_ssa_8(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_8(__m256i impl1, __m256i primes1, __m128i *result,
+                                                       __m256i *primes_result) {
     const int block_len = 8;
 
     // Block_len <= 64: shift and compare without crossing 128-bit boundaries
@@ -286,11 +294,12 @@ static inline void merge_avx2_sp_single_register_ssa_8(__m256i impl1, __m256i pr
     // Block aggregation for length <= 32
     __m256i combined1 = _mm256_or_si256(masked1, shifted1);
     __m256i masked2 = _mm256_and_si256(combined1, _mm256_set1_epi64x(0x00000000FFFFFFFF));
-    __m256i shifted2 = _mm256_srli_si256(masked2, 4); // 4 bytes = 32 bits
+    __m256i shifted2 = _mm256_srli_si256(masked2, 4);  // 4 bytes = 32 bits
 
     // Final aggregation
     __m256i combined2 = _mm256_or_si256(masked2, shifted2);
-    __m256i aggregated_final = _mm256_and_si256(combined2, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined2, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // Move 64-bit value to ensure result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -303,8 +312,8 @@ static inline void merge_avx2_sp_single_register_ssa_8(__m256i impl1, __m256i pr
     *primes_result = r_;
 }
 
-static inline void merge_avx2_sp_single_register_ssa_16(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
-
+static inline void merge_avx2_sp_single_register_ssa_16(__m256i impl1, __m256i primes1, __m128i *result,
+                                                        __m256i *primes_result) {
     const int block_len = 16;
 
     // Block_len <= 64: shift and compare without crossing 128-bit boundaries
@@ -321,11 +330,12 @@ static inline void merge_avx2_sp_single_register_ssa_16(__m256i impl1, __m256i p
     // Block aggregation for length <= 32
     __m256i combined0 = _mm256_or_si256(masked0, shifted0);
     __m256i masked1 = _mm256_and_si256(combined0, _mm256_set1_epi64x(0x00000000FFFFFFFF));
-    __m256i shifted1 = _mm256_srli_si256(masked1, 4); // 4 bytes = 32 bits
+    __m256i shifted1 = _mm256_srli_si256(masked1, 4);  // 4 bytes = 32 bits
 
     // Final aggregation
     __m256i combined1 = _mm256_or_si256(masked1, shifted1);
-    __m256i aggregated_final = _mm256_and_si256(combined1, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined1, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // Move 64-bit value to ensure result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -338,7 +348,8 @@ static inline void merge_avx2_sp_single_register_ssa_16(__m256i impl1, __m256i p
     *primes_result = r_;
 }
 
-static inline void merge_avx2_sp_single_register_ssa_32(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_32(__m256i impl1, __m256i primes1, __m128i *result,
+                                                        __m256i *primes_result) {
     const int block_len = 32;
 
     // Block_len <= 64: shift and compare without crossing 128-bit boundaries
@@ -350,11 +361,12 @@ static inline void merge_avx2_sp_single_register_ssa_32(__m256i impl1, __m256i p
     // Apply mask for block_len == 32
     __m256i masked0 = _mm256_and_si256(aggregated0, _mm256_set1_epi64x(0x00000000FFFFFFFF));
     __m256i initial_result = masked0;
-    __m256i shifted0 = _mm256_srli_si256(masked0, 4); // 4 bytes = 32 bits
+    __m256i shifted0 = _mm256_srli_si256(masked0, 4);  // 4 bytes = 32 bits
 
     // Final aggregation
     __m256i combined0 = _mm256_or_si256(masked0, shifted0);
-    __m256i aggregated_final = _mm256_and_si256(combined0, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i aggregated_final =
+        _mm256_and_si256(combined0, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
 
     // Move 64-bit value to ensure result is in lower half
     __m256i result256 = _mm256_permute4x64_epi64(aggregated_final, 0b00001000);
@@ -367,7 +379,8 @@ static inline void merge_avx2_sp_single_register_ssa_32(__m256i impl1, __m256i p
     *primes_result = r_;
 }
 
-static inline void merge_avx2_sp_single_register_ssa_64(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_64(__m256i impl1, __m256i primes1, __m128i *result,
+                                                        __m256i *primes_result) {
     // Shift by 64 bits (8 bytes)
     __m256i impl2 = _mm256_srli_si256(impl1, 8);
 
@@ -375,7 +388,8 @@ static inline void merge_avx2_sp_single_register_ssa_64(__m256i impl1, __m256i p
     __m256i aggregated0 = _mm256_and_si256(impl1, impl2);
 
     // Apply 64-bit mask
-    __m256i masked0 = _mm256_and_si256(aggregated0, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
+    __m256i masked0 =
+        _mm256_and_si256(aggregated0, _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0x0, 0xFFFFFFFFFFFFFFFF));
     __m256i initial_result = masked0;
 
     // No need for shifted0 as it would be zero
@@ -389,10 +403,10 @@ static inline void merge_avx2_sp_single_register_ssa_64(__m256i impl1, __m256i p
     __m256i merged = _mm256_or_si256(shifted_initial_result, initial_result);
     __m256i r_ = _mm256_andnot_si256(merged, primes1);
     *primes_result = r_;
-
 }
 
-static inline void merge_avx2_sp_single_register_ssa_128(__m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa_128(__m256i impl1, __m256i primes1, __m128i *result,
+                                                         __m256i *primes_result) {
     // Set upper half to zero, lower half to upper half of impl1
     __m256i impl1_shuffled = _mm256_permute2x128_si256(impl1, impl1, 0x81);
 
@@ -410,42 +424,42 @@ static inline void merge_avx2_sp_single_register_ssa_128(__m256i impl1, __m256i 
     *primes_result = primes_result_value;
 }
 
-static inline void merge_avx2_sp_single_register_ssa(int bit_difference, __m256i impl1, __m256i primes1, __m128i *result, __m256i *primes_result) {
+static inline void merge_avx2_sp_single_register_ssa(int bit_difference, __m256i impl1, __m256i primes1,
+                                                     __m128i *result, __m256i *primes_result) {
     int block_len = 1 << bit_difference;
 
-    switch (block_len)
-    {
-    case 1:
-        merge_avx2_sp_single_register_ssa_1(impl1, primes1, result, primes_result);
-        break;
-    case 2:
-        merge_avx2_sp_single_register_ssa_2(impl1, primes1, result, primes_result);
-        break;
-    case 4:
-        merge_avx2_sp_single_register_ssa_4(impl1, primes1, result, primes_result);
-        break;
-    case 8:
-        merge_avx2_sp_single_register_ssa_8(impl1, primes1, result, primes_result);
-        break;
-    case 16:
-        merge_avx2_sp_single_register_ssa_16(impl1, primes1, result, primes_result);
-        break;
-    case 32:
-        merge_avx2_sp_single_register_ssa_32(impl1, primes1, result, primes_result);
-        break;
-    case 64:
-        merge_avx2_sp_single_register_ssa_64(impl1, primes1, result, primes_result);
-        break;
-    case 128:
-        merge_avx2_sp_single_register_ssa_128(impl1, primes1, result, primes_result);
-        break;
-    default:
-        break;
+    switch (block_len) {
+        case 1:
+            merge_avx2_sp_single_register_ssa_1(impl1, primes1, result, primes_result);
+            break;
+        case 2:
+            merge_avx2_sp_single_register_ssa_2(impl1, primes1, result, primes_result);
+            break;
+        case 4:
+            merge_avx2_sp_single_register_ssa_4(impl1, primes1, result, primes_result);
+            break;
+        case 8:
+            merge_avx2_sp_single_register_ssa_8(impl1, primes1, result, primes_result);
+            break;
+        case 16:
+            merge_avx2_sp_single_register_ssa_16(impl1, primes1, result, primes_result);
+            break;
+        case 32:
+            merge_avx2_sp_single_register_ssa_32(impl1, primes1, result, primes_result);
+            break;
+        case 64:
+            merge_avx2_sp_single_register_ssa_64(impl1, primes1, result, primes_result);
+            break;
+        case 128:
+            merge_avx2_sp_single_register_ssa_128(impl1, primes1, result, primes_result);
+            break;
+        default:
+            break;
     }
-
 }
 
-static void merge_avx2_sp_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits, int first_difference) {
+static void merge_avx2_sp_ssa(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits,
+                              int first_difference) {
     if (num_bits <= 7) {
         merge_pext_sp(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
@@ -460,27 +474,26 @@ static void merge_avx2_sp_ssa(bitmap implicants, bitmap primes, size_t input_ind
         for (int block = 0; block < num_blocks; block += 128 / block_len) {
             size_t idx1 = input_index + 2 * block * block_len;
 
-            __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
+            __m256i impl1 = _mm256_load_si256((__m256i *)(implicants.bits + idx1 / 8));
             __m256i primes1;
             // assume we always run block_len=1 first and primes[idx1/8] is uninitialized at this point.
             // in that case, assume all implicants are prime
             if (block_len == 1) {
                 primes1 = impl1;
             } else {
-                primes1 = _mm256_load_si256((__m256i*)(primes.bits + idx1 / 8));
+                primes1 = _mm256_load_si256((__m256i *)(primes.bits + idx1 / 8));
             }
-            __m128i impl_result = _mm_set1_epi64x(0); // prevent uninitialized warnings
-            __m256i primes_result = _mm256_set1_epi16(0); // prevent uninitialized warnings;
+            __m128i impl_result = _mm_undefined_si128();       // prevent uninitialized warnings
+            __m256i primes_result = _mm256_undefined_si256();  // prevent uninitialized warnings;
             merge_avx2_sp_single_register_ssa(i, impl1, primes1, &impl_result, &primes_result);
-            _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes_result);
+            _mm256_store_si256((__m256i *)(primes.bits + idx1 / 8), primes_result);
             if (i >= first_difference) {
-                _mm_store_si128((__m128i*)(implicants.bits + o_idx / 8), impl_result);
+                _mm_store_si128((__m128i *)(implicants.bits + o_idx / 8), impl_result);
                 o_idx += 128;
             }
             idx1 += 256;
         }
     }
-
 
     for (int i = 8; i < num_bits; i++) {
         int block_len = 1 << i;
@@ -492,17 +505,17 @@ static void merge_avx2_sp_ssa(bitmap implicants, bitmap primes, size_t input_ind
             size_t idx2 = input_index + 2 * block * block_len + block_len;
 
             for (int k = 0; k < block_len; k += 256) {
-                __m256i impl1 = _mm256_load_si256((__m256i*)(implicants.bits + idx1 / 8));
-                __m256i impl2 = _mm256_load_si256((__m256i*)(implicants.bits + idx2 / 8));
-                __m256i primes1 = _mm256_load_si256((__m256i*)(primes.bits + idx1 / 8));
-                __m256i primes2 = _mm256_load_si256((__m256i*)(primes.bits + idx2 / 8));
+                __m256i impl1 = _mm256_load_si256((__m256i *)(implicants.bits + idx1 / 8));
+                __m256i impl2 = _mm256_load_si256((__m256i *)(implicants.bits + idx2 / 8));
+                __m256i primes1 = _mm256_load_si256((__m256i *)(primes.bits + idx1 / 8));
+                __m256i primes2 = _mm256_load_si256((__m256i *)(primes.bits + idx2 / 8));
                 __m256i res = _mm256_and_si256(impl1, impl2);
                 __m256i primes1_ = _mm256_andnot_si256(res, primes1);
                 __m256i primes2_ = _mm256_andnot_si256(res, primes2);
-                _mm256_store_si256((__m256i*)(primes.bits + idx1 / 8), primes1_);
-                _mm256_store_si256((__m256i*)(primes.bits + idx2 / 8), primes2_);
+                _mm256_store_si256((__m256i *)(primes.bits + idx1 / 8), primes1_);
+                _mm256_store_si256((__m256i *)(primes.bits + idx2 / 8), primes2_);
                 if (i >= first_difference) {
-                    _mm256_store_si256((__m256i*)(implicants.bits + o_idx / 8), res);
+                    _mm256_store_si256((__m256i *)(implicants.bits + o_idx / 8), res);
                     o_idx += 256;
                 }
                 idx1 += 256;

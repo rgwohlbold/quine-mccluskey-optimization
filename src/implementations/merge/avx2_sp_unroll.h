@@ -12,8 +12,8 @@
 #include "./avx2_sp_ssa.h"
 #include "bits_sp.h"
 
-static void merge_avx2_sp_unroll(bitmap implicants, bitmap primes, size_t input_index, size_t output_index, int num_bits,
-                                int first_difference) {
+static void merge_avx2_sp_unroll(bitmap implicants, bitmap primes, size_t input_index, size_t output_index,
+                                 int num_bits, int first_difference) {
     if (num_bits <= 7) {
         merge_avx2_sp_small_n_ssa(implicants, primes, input_index, output_index, num_bits, first_difference);
         return;
@@ -30,8 +30,8 @@ static void merge_avx2_sp_unroll(bitmap implicants, bitmap primes, size_t input_
             __m256i impl1 = _mm256_load_si256((__m256i *)(implicants.bits + idx1 / 8));
             __m256i primes1 = impl1;
             for (int i = 0; i < 8; i++) {
-                __m128i impl_result;
-                __m256i primes_result;
+                __m128i impl_result = _mm_undefined_si128();       // prevent uninitialized warnings
+                __m256i primes_result = _mm256_undefined_si256();  // prevent uninitialized warnings
 
                 merge_avx2_sp_single_register_ssa(i, impl1, primes1, &impl_result, &primes_result);
                 primes1 = primes_result;
