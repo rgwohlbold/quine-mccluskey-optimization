@@ -91,8 +91,7 @@ static void merge_avx2_sp_ilp(bitmap implicants, bitmap primes, size_t input_ind
         }
     }
     o_idx = o_idx / 8;  // convert to bytes
-    const size_t input_index_b = input_index >> 8;
-    int i = 8;
+    const size_t input_index_b = input_index >> 3;
     for (int i = 8; i < num_bits; i++) {
         int block_len_b = 1 << (i - 3);
         int num_blocks = 1 << (num_bits - i - 1);
