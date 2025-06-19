@@ -10,7 +10,7 @@ typedef struct {
     uint64_t cycles;
 } prime_implicant_result;
 
-typedef prime_implicant_result (*implementation_function)(int num_bits, int num_trues, int *trues);
+typedef prime_implicant_result (*implementation_function)(int num_bits, bitmap trues);
 
 typedef struct {
     const char *name;

@@ -11,12 +11,13 @@ implementation="$1"
 
 min_bits=1
 max_bits=22
-num_measurements=10
+num_measurements=5
 compilers="/usr/bin/clang"
 measurements_file="measurements.csv"
 
 
 [ -e "$measurements_file" ] && rm "$measurements_file"
+[ -e "m_${implementation}.csv" ] && rm "m_${implementation}.csv"
 echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,ops" > "$measurements_file"
 
 for compiler in $compilers; do
@@ -32,6 +33,8 @@ for compiler in $compilers; do
         done
         echo " === Measurement $k done ===\n"
     done
+
+    cp "measurements.csv" "m_${implementation}.csv"
 
 done
 # python3 plot.py

@@ -5,6 +5,7 @@
 #include <functional>
 #include <assert.h>
 #include <cstdint>
+#include <cstring>
 
 #ifdef __x86_64__
 #include "../tsc_x86.h"
@@ -98,6 +99,12 @@ extern "C" {
             n_h = n - h;
             n_blocks = pow3(n-h);
             S.resize(n_blocks);
+            for (size_t i = 0; i < n_blocks; i++) {
+                for (size_t j = 0; j < 1ull << BITSET3_LOG2; j++) {
+                    S[i][j] = 0;
+                }
+            }
+            // memset(S.data(), 0, S.size() * sizeof(BITSET3));
             total_ops = 0;
         }
 
@@ -239,7 +246,7 @@ extern "C" {
     };
 
 
-    prime_implicant_result prime_implicants_hellman(int num_bits, int num_trues, int *trues) {
+    prime_implicant_result prime_implicants_hellman(int num_bits, bitmap trues) {
 
         size_t num_implicants = calculate_num_implicants(num_bits);
         bitmap primes = bitmap_allocate(num_implicants);
@@ -247,15 +254,18 @@ extern "C" {
         QuineMcCluskey D(num_bits);
         size_t cnt = 0;
 
-        // instead of reading from a file, hellman now takes the trues (ints) as input
-        for (int i = 0; i < num_trues; i++) {
-            uint64_t x = trues[i];
-            if (x >= (1ull << num_bits)) {
+        // instead of reading from a file, hellman now takes the true bitmap as input
+        size_t num_minterms = trues.num_bits;
+        for (size_t i = 0; i < num_minterms; i++) {
+            if(BITMAP_CHECK(trues, i) == 0) {
+                continue; // skip false minterms
+            }
+            if (i >= (1ull << num_bits)) {
                 fprintf(stderr, "HELLMAN: input value too large\n");
                 exit(1);
             }
             cnt++;
-            D.set(x);
+            D.set(i);
         }
 
         // start the counter and perform the algorithm
@@ -293,7 +303,7 @@ extern "C" {
             }
             buf[num_bits] = '\0';
 
-            int bitset_index = bitmap_implicant_to_index(num_bits, buf);
+            uint64_t bitset_index = bitmap_implicant_to_index(num_bits, buf);
             BITMAP_SET_TRUE(primes, bitset_index);
         });
 
