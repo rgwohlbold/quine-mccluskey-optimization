@@ -436,7 +436,7 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
     const size_t input_index_b = input_index / 8;
     const size_t output_index_b = output_index / 8;
 
-#if LOG_BLOCK_SIZE >= 4
+#if LOG_BLOCK_SIZE >= 3
     for (; i + 3 < num_bits; i += 4) {
         int block_len_b = 1 << (i - 3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -698,7 +698,7 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 3
+#if LOG_BLOCK_SIZE >= 2
     for (; i + 2 < num_bits; i += 3) {
         int block_len_b = 1 << (i - 3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -818,7 +818,7 @@ static void merge_avx2_sp_block(bitmap implicants, bitmap primes, size_t input_i
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 2
+#if LOG_BLOCK_SIZE >= 1
     for (; i + 1 < num_bits; i += 2) {
         int block_len_b = 1 << (i - 3);
         int num_blocks = 1 << (num_bits - i - 1);

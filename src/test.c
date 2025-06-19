@@ -11,7 +11,6 @@
 #include "implementations/avx2.h"
 #include "implementations/avx2_sp.h"
 #include "implementations/avx2_sp_ilp.h"
-#include "implementations/avx2_sp_load_block16.h"
 #include "implementations/avx2_sp_load_block2.h"
 #include "implementations/avx2_sp_load_block4.h"
 #include "implementations/avx2_sp_load_block8.h"
@@ -48,7 +47,6 @@
 
 #ifdef __AVX512F__
 #include "implementations/avx512_sp.h"
-#include "implementations/avx512_sp_load_block16.h"
 #include "implementations/avx512_sp_load_block2.h"
 #include "implementations/avx512_sp_load_block4.h"
 #include "implementations/avx512_sp_load_block8.h"
@@ -82,7 +80,6 @@
 #define LOG_BLOCK_SIZE_BITS 2  // Include for merge measurement
 #include "implementations/bits_sp_block.h"
 #include "implementations/bits_sp_load.h"
-#include "implementations/bits_sp_load_block16.h"
 #include "implementations/bits_sp_load_block2.h"
 #include "implementations/bits_sp_load_block4.h"
 #include "implementations/bits_sp_load_block8.h"
@@ -106,7 +103,6 @@ const prime_implicant_implementation implementations[] = {
     {"bits_sp_load_block2", prime_implicants_bits_sp_load_block2, 30},
     {"bits_sp_load_block4", prime_implicants_bits_sp_load_block4, 30},
     {"bits_sp_load_block8", prime_implicants_bits_sp_load_block8, 30},
-    {"bits_sp_load_block16", prime_implicants_bits_sp_load_block16, 30},
 
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
@@ -133,7 +129,6 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
     {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block4, 30},
     {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
-    {"avx2_sp_load_block16", prime_implicants_avx2_sp_load_block16, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp", prime_implicants_avx512_sp, 22},
@@ -145,7 +140,6 @@ const prime_implicant_implementation implementations[] = {
     {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 22},
     {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 22},
     {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 22},
-    {"avx512_sp_load_block16", prime_implicants_avx512_sp_load_block16, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},

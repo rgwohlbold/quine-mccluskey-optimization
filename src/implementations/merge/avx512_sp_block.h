@@ -52,7 +52,7 @@ static inline void merge_avx512_sp_single_register_shuffle_1(__m512i impl1, __m5
     __m512i shuffle_mask = _mm512_set_epi8(
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // Upper 16 bytes (not used)
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // Upper-mid 16 bytes (not used)
-        62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32,     // Lower-mid 16 bytes 
+        62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32,     // Lower-mid 16 bytes
         30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0           // Lower 16 bytes
     );
     __mmask64 k = 0x00000000FFFFFFFF;  // Lower 32 bytes are 1's, upper 32 bytes are 0's
@@ -104,7 +104,7 @@ static inline void merge_avx512_sp_single_register_shuffle_2(__m512i impl1, __m5
 
     // Extract lower 256 bits for result
     *result = _mm512_castsi512_si256(aggregated_final);
-    
+
     // Shift initial_result left by block_len
     __m512i shifted_initial_result = _mm512_slli_epi64(initial_result, block_len);
     __m512i merged = _mm512_or_si512(shifted_initial_result, initial_result);
@@ -201,18 +201,18 @@ static inline void merge_avx512_sp_single_register_shuffle_16(__m512i impl1, __m
     );
     __m512i aggregated_final = _mm512_permutexvar_epi16(shuffle_mask, aggregated0);
 
-    
+
     // Extract lower 256 bits for result
     *result = _mm512_castsi512_si256(aggregated_final);
-    
+
     __m512i prime_shuffle_mask = _mm512_set_epi16(
-        30, 30, 28, 28, 
-        26, 26, 24, 24, 
-        22, 22, 20, 20, 
-        18, 18, 16, 16, 
-        14, 14, 12, 12, 
-        10, 10, 8, 8, 
-        6, 6, 4, 4, 
+        30, 30, 28, 28,
+        26, 26, 24, 24,
+        22, 22, 20, 20,
+        18, 18, 16, 16,
+        14, 14, 12, 12,
+        10, 10, 8, 8,
+        6, 6, 4, 4,
         2, 2, 0, 0
     );
     __m512i merged = _mm512_permutexvar_epi16(prime_shuffle_mask, aggregated0);
@@ -233,22 +233,22 @@ static inline void merge_avx512_sp_single_register_shuffle_32(__m512i impl1, __m
 
     // Put the result into lower 256 bytes
     __m512i shuffle_mask = _mm512_set_epi32(
-        -1, -1, -1, -1, -1, -1, -1, -1, 
+        -1, -1, -1, -1, -1, -1, -1, -1,
         14, 12, 10, 8, 6, 4, 2, 0
     );
     __m512i aggregated_final = _mm512_permutexvar_epi32(shuffle_mask, aggregated0);
 
 
-    __m512i prime_shuffle_mask = _mm512_set_epi32( 
-        14, -1, 12, -1, 10, -1, 8, -1, 
+    __m512i prime_shuffle_mask = _mm512_set_epi32(
+        14, -1, 12, -1, 10, -1, 8, -1,
         6, -1, 4, -1, 2, -1, 0, -1
     );
     __m512i shifted_initial_result = _mm512_permutexvar_epi32(prime_shuffle_mask, aggregated0);
 
-    
+
     // Extract lower 256 bits for result
     *result = _mm512_castsi512_si256(aggregated_final);
-    
+
     // // Shift initial_result left by block_len
     // __m512i shifted_initial_result = _mm512_slli_epi64(aggregated0, block_len);
     __m512i merged = _mm512_or_si512(shifted_initial_result, aggregated0);
@@ -267,15 +267,15 @@ static inline void merge_avx512_sp_single_register_shuffle_64(__m512i impl1, __m
 
    // Put the result into lower 256 bytes
     __m512i shuffle_mask = _mm512_set_epi64(
-        -1, -1, -1, -1, 
+        -1, -1, -1, -1,
         6, 4, 2, 0
     );
-    __m512i aggregated_final = _mm512_permutexvar_epi64(shuffle_mask, aggregated0);   
+    __m512i aggregated_final = _mm512_permutexvar_epi64(shuffle_mask, aggregated0);
 
-    
+
     // Extract lower 256 bits for result
     *result = _mm512_castsi512_si256(aggregated_final);
-    
+
     __m512i merge_mask = _mm512_set_epi64(
         6, 6, 4, 4, 2, 2, 0, 0
     );
@@ -289,21 +289,21 @@ static inline void merge_avx512_sp_single_register_shuffle_128(__m512i impl1, __
 
     __m512i indices_sr_128_lane = _mm512_set_epi64(7, 6, 7, 6, 3, 2, 3, 2);
     __m512i impl2_128 = _mm512_permutexvar_epi64(indices_sr_128_lane, impl1);
-    
+
     // AND operation between original and shuffled
     __m512i aggregated0 = _mm512_and_si512(impl1, impl2_128);
 
    // Put the result into lower 256 bytes
     __m512i shuffle_mask = _mm512_set_epi64(
-        -1, -1, -1, -1, 
+        -1, -1, -1, -1,
         5, 4, 1, 0
     );
     __m512i aggregated_final = _mm512_permutexvar_epi64(shuffle_mask, aggregated0);
 
-    
+
     // Extract lower 256 bits for result
     *result = _mm512_castsi512_si256(aggregated_final);
-    
+
     __m512i merge_mask = _mm512_set_epi64(
          5, 4, 5, 4, 1, 0, 1, 0
     );
@@ -314,18 +314,18 @@ static inline void merge_avx512_sp_single_register_shuffle_128(__m512i impl1, __
 }
 
 static inline void merge_avx512_sp_single_register_shuffle_256(__m512i impl1, __m512i primes1, __m256i *result, __m512i *primes_result) {
-    
+
     __m512i indices_sr_256_reg =  _mm512_set_epi64(7, 6, 5, 4, 7, 6, 5, 4);
     __m512i impl2_256 = _mm512_permutexvar_epi64(indices_sr_256_reg, impl1);
     __m512i aggregated = _mm512_and_si512(impl1, impl2_256);
 
     // Return the result
     *result = _mm512_castsi512_si256(aggregated);
-    
+
     // Broadcast result to both halves of a 512-bit register
     __m512i indices_lower_and_lower =  _mm512_set_epi64(3, 2, 1, 0, 3, 2, 1, 0);
     __m512i merged_256 = _mm512_permutexvar_epi64(indices_lower_and_lower, aggregated);
-    
+
     // Calculate primes result
     *primes_result = _mm512_andnot_si512(merged_256, primes1);
 
@@ -546,7 +546,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     const size_t output_index_b = output_index / 8;
 
 
-#if LOG_BLOCK_SIZE >= 4
+#if LOG_BLOCK_SIZE >= 3
     for (; i+3 < num_bits; i += 4) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -776,7 +776,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 3
+#if LOG_BLOCK_SIZE >= 2
     for (; i+2 < num_bits; i += 3) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -853,7 +853,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
                 _mm512_store_si512((__m512i *)(primes_index0 + 5*block_len_b), primes5___);
                 _mm512_store_si512((__m512i *)(primes_index0 + 6*block_len_b), primes6___);
                 _mm512_store_si512((__m512i *)(primes_index0 + 7*block_len_b), primes7___);
-                
+
                 if (i >= first_difference) {
                     o_idx = output_index_b + ((i - first_difference) << (num_bits - 4)) + block * block_len_b + k;
                     _mm512_store_si512((__m512i *)(implicants.bits + o_idx), res01);
@@ -891,7 +891,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 2
+#if LOG_BLOCK_SIZE >= 1
     for (; i+1 < num_bits; i += 2) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -931,7 +931,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
                 _mm512_store_si512((__m512i *)(primes_index0 + block_len_b), primes1__);
                 _mm512_store_si512((__m512i *)(primes_index0 + 2*block_len_b), primes2__);
                 _mm512_store_si512((__m512i *)(primes_index0 + 3*block_len_b), primes3__);
-                
+
                 if (i >= first_difference) {
                     o_idx = output_index_b + ((i - first_difference) << (num_bits - 4)) + block * block_len_b + k;
                     _mm512_store_si512((__m512i *)(implicants.bits + o_idx), res01);
@@ -967,20 +967,20 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
                 __m512i impl2 = _mm512_load_si512((__m512i *)(implicants.bits + idx2 / 8));
                 __m512i primes1 = _mm512_load_si512((__m512i *)(primes.bits + idx1 / 8));
                 __m512i primes2 = _mm512_load_si512((__m512i *)(primes.bits + idx2 / 8));
-                
+
                 // Using AVX512 intrinsics
                 __m512i res = _mm512_and_si512(impl1, impl2);
                 __m512i primes1_ = _mm512_andnot_si512(res, primes1);
                 __m512i primes2_ = _mm512_andnot_si512(res, primes2);
-                
+
                 _mm512_store_si512((__m512i *)(primes.bits + idx1 / 8), primes1_);
                 _mm512_store_si512((__m512i *)(primes.bits + idx2 / 8), primes2_);
-                
+
                 if (i >= first_difference) {
                     o_idx = output_index + ((i - first_difference) << (num_bits - 1)) + block * block_len + k;
                     _mm512_store_si512((__m512i *)(implicants.bits + o_idx / 8), res);
                 }
-                
+
                 idx1 += 512; // Increment by 512 bits
                 idx2 += 512; // Increment by 512 bits
             }
