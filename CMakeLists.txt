@@ -18,35 +18,38 @@ add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
 # set_property(SOURCE ${CPP_FILES} PROPERTY LANGUAGE CXX)
 # set_target_properties(prime_implicants PROPERTIES LINKER_LANGUAGE CXX)
 
-# Generate annotated assembly files for all sources
-set(ASM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/asm")
-file(MAKE_DIRECTORY ${ASM_OUTPUT_DIR})
+option(GENERATE_ASM "Generate annotated assembly files" OFF)
 
-foreach(src_file IN LISTS SRC_FILES CPP_FILES)
-    get_filename_component(src_name ${src_file} NAME_WE)
-    get_filename_component(src_ext ${src_file} EXT)
-    if(src_ext STREQUAL ".c")
-        add_custom_command(
-            OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
-            COMMAND ${CMAKE_C_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
-            DEPENDS ${src_file}
-            COMMENT "Generating annotated assembly for ${src_file}"
-            VERBATIM
-        )
-    elseif(src_ext STREQUAL ".cpp" OR src_ext STREQUAL ".cxx" OR src_ext STREQUAL ".cc")
-        add_custom_command(
-            OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
-            COMMAND ${CMAKE_CXX_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
-            DEPENDS ${src_file}
-            COMMENT "Generating annotated assembly for ${src_file}"
-            VERBATIM
-        )
-    endif()
-    list(APPEND ASM_OUTPUTS ${ASM_OUTPUT_DIR}/${src_name}.s)
-endforeach()
+if(GENERATE_ASM)
+    # Generate annotated assembly files for all sources
+    set(ASM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/asm")
+    file(MAKE_DIRECTORY ${ASM_OUTPUT_DIR})
 
-add_custom_target(assembly ALL DEPENDS ${ASM_OUTPUTS})
+    foreach(src_file IN LISTS SRC_FILES CPP_FILES)
+        get_filename_component(src_name ${src_file} NAME_WE)
+        get_filename_component(src_ext ${src_file} EXT)
+        if(src_ext STREQUAL ".c")
+            add_custom_command(
+                OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
+                COMMAND ${CMAKE_C_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
+                DEPENDS ${src_file}
+                COMMENT "Generating annotated assembly for ${src_file}"
+                VERBATIM
+            )
+        elseif(src_ext STREQUAL ".cpp" OR src_ext STREQUAL ".cxx" OR src_ext STREQUAL ".cc")
+            add_custom_command(
+                OUTPUT ${ASM_OUTPUT_DIR}/${src_name}.s
+                COMMAND ${CMAKE_CXX_COMPILER} ${COMPILER_FLAGS} -fverbose-asm -S -g -o ${ASM_OUTPUT_DIR}/${src_name}.s ${src_file}
+                DEPENDS ${src_file}
+                COMMENT "Generating annotated assembly for ${src_file}"
+                VERBATIM
+            )
+        endif()
+        list(APPEND ASM_OUTPUTS ${ASM_OUTPUT_DIR}/${src_name}.s)
+    endforeach()
 
+    add_custom_target(assembly ALL DEPENDS ${ASM_OUTPUTS})
+endif()
 
 option(SANITIZE "use sanitizers for debugging")
 message(STATUS "Using SANITIZE=${SANITIZE}")
@@ -60,9 +63,9 @@ if(SANITIZE STREQUAL ON)
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g)
     target_link_options(prime_implicants PUBLIC -fsanitize=address)
 elseif(CMAKE_C_COMPILER STREQUAL "/usr/bin/clang")
-    set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3)
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -O3 $<$<COMPILE_LANGUAGE:C>:-fno-vectorize>)
 else()
-    set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast)
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -Ofast $<$<COMPILE_LANGUAGE:C>:-fno-tree-vectorize>)
 endif()
 
 if(PROFILING STREQUAL ON)
@@ -129,7 +132,7 @@ configure_file(
 
 ### LOGGING OPTIONS BEGIN ###
 option(LOG_NOCOLOR "Disable colored logs" OFF)
-message(STATUS "Using LOG_LEVEL=${LOG_LEVEL}, NOCOLOR=${LOG_NOCOLOR}")
+message(STATUS "Using LOG_LEVEL=${LOG_LEVEL}, NOCOLOR=${LOG_NOCOLOR}, GENERATE_ASM=${GENERATE_ASM}")
 if(NOT DEFINED LOG_LEVEL)
     set(LOG_LEVEL 1)
 endif()
@@ -139,4 +142,5 @@ if(LOG_NOCOLOR)
     message(STATUS "LOG_NOCOLOR is enabled.")
     target_compile_definitions(prime_implicants PUBLIC LOG_NOCOLOR)
 endif()
+
 ### LOGGING OPTIONS END ###
