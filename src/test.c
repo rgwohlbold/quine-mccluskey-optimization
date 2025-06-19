@@ -86,7 +86,6 @@
 #include "implementations/bits_sp_load_block2.h"
 #include "implementations/bits_sp_load_block4.h"
 #include "implementations/bits_sp_load_block8.h"
-#include "implementations/bits_sp_unroll.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
 #include "implementations/merge/bits_sp_block.h"
