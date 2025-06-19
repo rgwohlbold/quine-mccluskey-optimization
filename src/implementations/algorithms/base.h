@@ -11,6 +11,7 @@
 #include "../../vct_arm.h"
 #endif
 #include "../../signpost.h"
+#include "../../perf.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #error "need to define IMPLEMENTATION_FUNCTION"
@@ -37,6 +38,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     bitmap merged = bitmap_allocate(num_implicants);
 
     init_tsc();
+    perf_start();
 
 
     uint64_t counter_start = start_tsc();
@@ -62,6 +64,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     REDUCE_FUNCTION(num_implicants, implicants, merged, primes);
     ITT_END_TASK();
     uint64_t cycles = stop_tsc(counter_start);
+    perf_result pres = perf_stop();
 
     bitmap_free(implicants);
     bitmap_free(merged);
@@ -69,6 +72,8 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
+        .l1d_cache_misses = pres.l1d_cache_misses,
+        .l1d_cache_accesses = pres.l1d_cache_accesses,
 
     };
     return result;

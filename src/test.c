@@ -1,3 +1,4 @@
+#define _GNU_SOURCE // needed for syscall() in perf.h
 #include "test.h"
 
 #include <stdbool.h>
@@ -88,6 +89,7 @@
 #include "implementations/native_dfs_sp.h"
 #include "system.h"
 #include "util.h"
+#include "perf.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
@@ -425,7 +427,6 @@ void print_merge_implementations() {
     }
 }
 
-// for now, call all implementations on empty input and see performance
 void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_implementation impl;
     bool implementation_found = false;
@@ -440,6 +441,7 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         LOG_INFO("could not find implementation %s", implementation_name);
         return;
     }
+    perf_init();
     // init_itt_handles(implementation_name);
     srand(time(NULL));
     size_t _;
@@ -453,9 +455,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     // ITT_START_FRAME();
     prime_implicant_result result = impl.implementation(num_bits, trues2);
     // ITT_END_FRAME();
-    uint64_t cycles = result.cycles;
     FILE *f = fopen("measurements.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, cycles);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%ld,%ld\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, result.cycles, result.l1d_cache_misses, result.l1d_cache_accesses);
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache

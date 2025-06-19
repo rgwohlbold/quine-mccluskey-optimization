@@ -9,15 +9,15 @@ compilers="/usr/bin/gcc"
 measurements_file="measurements.csv"
 
 [ -e "$measurements_file" ] && rm "$measurements_file"
-echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles" > "$measurements_file"
+echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,l1d_cache_misses,l1d_cache_accesses" > "$measurements_file"
 
 for compiler in $compilers; do
     # since we change the compiler, we have to set the other options in another cmake run
     cmake . -D CMAKE_C_COMPILER="$compiler"
     cmake . -D LOG_LEVEL=2
     make clean
-    make -j $(nproc)
-    implementations="$(./prime_implicants implementations)"
+    make -j $(nproc) prime_implicants
+    implementations="bits bits_load_sp"
     for k in $(seq 1 "$num_measurements"); do
         for i in $(seq $min_bits $max_bits); do
             for implementation in $implementations; do
