@@ -8,8 +8,8 @@
 #error "need AVX512F for avx512_single_pass"
 #endif
 
-#ifndef LOG_BLOCK_SIZE
-#error "need to define LOG_BLOCK_SIZE"
+#ifndef LOG_BLOCK_SIZE_AVX512
+#error "need to define LOG_BLOCK_SIZE_AVX512"
 #endif
 
 #include <assert.h>
@@ -546,7 +546,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     const size_t output_index_b = output_index / 8;
 
 
-#if LOG_BLOCK_SIZE >= 3
+#if LOG_BLOCK_SIZE_AVX512 >= 3
     for (; i+3 < num_bits; i += 4) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -776,7 +776,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 2
+#if LOG_BLOCK_SIZE_AVX512 >= 2
     for (; i+2 < num_bits; i += 3) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);
@@ -891,7 +891,7 @@ static void merge_avx512_sp_block(bitmap implicants, bitmap primes, size_t input
     }
 #endif
 
-#if LOG_BLOCK_SIZE >= 1
+#if LOG_BLOCK_SIZE_AVX512 >= 1
     for (; i+1 < num_bits; i += 2) {
         int block_len_b = 1 << (i-3);
         int num_blocks = 1 << (num_bits - i - 1);

@@ -14,9 +14,7 @@
 #include "implementations/avx2_sp_load_block2.h"
 #include "implementations/avx2_sp_load_block4.h"
 #include "implementations/avx2_sp_load_block8.h"
-#include "implementations/avx2_sp_load_shuffle.h"
 #include "implementations/avx2_sp_load_unroll.h"
-#include "implementations/avx2_sp_shuffle.h"
 #include "implementations/avx2_sp_ssa.h"
 #include "implementations/avx2_sp_unroll.h"
 #include "implementations/hellman.h"
@@ -35,8 +33,8 @@
 #include "implementations/pext_sp_unroll_ilp.h"
 #include "tsc_x86.h"
 #include "vtune.h"
-#define LOG_BLOCK_SIZE 4
 #include "implementations/merge/avx2.h"
+#define LOG_BLOCK_SIZE_AVX2 2
 #include "implementations/merge/avx2_sp_block.h"
 #include "implementations/merge/pext.h"
 #include "implementations/merge/pext_sp.h"
@@ -55,6 +53,7 @@
 #include "implementations/avx512_sp_unroll.h"
 #include "implementations/avx512_sp_unroll_compress.h"
 #include "implementations/merge/avx512_sp.h"
+#define LOG_BLOCK_SIZE_AVX512 4 // define for measure_merge
 #include "implementations/merge/avx512_sp_block.h"
 #include "implementations/merge/avx512_sp_block_old.h"
 #include "implementations/merge/avx512_sp_unroll.h"
@@ -124,8 +123,6 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_ilp", prime_implicants_avx2_sp_ilp, 30},
     {"avx2_sp_unroll", prime_implicants_avx2_sp_unroll, 30},
     {"avx2_sp_load_unroll", prime_implicants_avx2_sp_load_unroll, 30},
-    {"avx2_sp_shuffle", prime_implicants_avx2_sp_shuffle, 30},
-    {"avx2_sp_load_shuffle", prime_implicants_avx2_sp_load_shuffle, 30},
     {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
     {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block4, 30},
     {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
