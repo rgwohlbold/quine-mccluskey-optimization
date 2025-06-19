@@ -169,6 +169,10 @@ merge_implementation merge_implementations[] = {{"merge_bits", merge_bits},
                                                 {"merge_bits_sp_block2", merge_bits_sp_block},
 #ifdef __BMI2__
                                                 {"merge_pext", merge_pext},
+                                                {"merge_pext_sp", merge_pext_sp},
+                                                {"merge_pext_sp_unroll", merge_pext_sp_unroll},
+                                                {"merge_pext_sp_block", merge_pext_sp_block},
+                                                {"merge_pext_sp_unroll_ilp", merge_pext_sp_unroll_ilp},
 #endif
 #ifdef __AVX2__
                                                 {"merge_avx2", merge_avx2},
@@ -521,12 +525,9 @@ void measure_merge(const char *s, int num_bits) {
 
 void generate_testfile(int num_bits, int density) {
     // allocate full 2**n ints in case we are a bit above density
-    size_t max_implicants = 1 << num_bits;
-    bitmap trues = bitmap_allocate(max_implicants);
-
     srand(time(NULL));
     size_t num_trues;
-    trues = random_trues(num_bits, density, &num_trues);
+    bitmap trues = random_trues(num_bits, density, &num_trues);
 
     prime_implicant_result result = prime_implicants_bits(num_bits, trues);
     bitmap primes = result.primes;
@@ -560,4 +561,5 @@ void generate_testfile(int num_bits, int density) {
         }
     }
     fclose(f);
+    bitmap_free(trues);
 }

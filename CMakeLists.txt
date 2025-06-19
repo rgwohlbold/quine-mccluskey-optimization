@@ -7,7 +7,12 @@ set(CPP_FILES src/implementations/hellman.cpp)
 
 
 # Set compiler flags early so they're used everywhere
-set(COMPILER_FLAGS -march=native -mbmi2)
+set(COMPILER_FLAGS -march=native -Wall -Wextra)
+
+if(NOT APPLE)
+    # Add -mbmi2 to compile options for the target, but not on Apple systems
+    set(COMPILER_FLAGS ${COMPILER_FLAGS} -mbmi2)
+endif()
 
 add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
 # set_property(SOURCE ${CPP_FILES} PROPERTY LANGUAGE CXX)
@@ -80,8 +85,7 @@ if(PROFILING STREQUAL ON)
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${VTUNE_ITT_LIB}:${VTUNE_COLLECTOR_LIB}")
 endif()
 
-# Always add -mbmi2 to compile options for the target
-target_compile_options(prime_implicants PUBLIC -Wall -Wextra -mbmi2 ${COMPILER_FLAGS})
+target_compile_options(prime_implicants PUBLIC -Wall -Wextra ${COMPILER_FLAGS})
 
 # Apply std flags per language
 target_compile_options(prime_implicants PRIVATE
