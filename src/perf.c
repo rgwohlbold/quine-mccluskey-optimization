@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 
 //struct perf_event_attr hw_event;
@@ -17,8 +18,9 @@ bool active = false;
 int fd_read_misses;
 int fd_read_accesses;
 
-static int open_cache_perf(uint64_t config) {
+static int open_cache_perf(int config) {
     struct perf_event_attr pe;
+    memset(&pe, 0, sizeof(struct perf_event_attr));
 
     pe.type = PERF_TYPE_HW_CACHE;
     pe.size = sizeof(struct perf_event_attr);
