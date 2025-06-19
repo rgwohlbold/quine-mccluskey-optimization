@@ -22,12 +22,7 @@
 #include "implementations/avx2_sp_load_block4.h"
 #include "implementations/avx2_sp_load_block8.h"
 #include "implementations/avx2_sp_load_block16.h"
-#include "implementations/avx512_sp.h"
-#include "implementations/avx512_sp_unroll.h"
-#include "implementations/avx512_sp_unroll_compress.h"
-#include "implementations/avx512_sp_load_unroll_compress.h"
-#include "implementations/avx512_sp_block.h"
-#include "implementations/avx512_sp_load_block.h"
+
 #include "implementations/hellman.h"
 #include "implementations/pext.h"
 #include "implementations/pext_sp.h"
@@ -39,14 +34,25 @@
 #include "implementations/merge/avx2_sp_unroll.h"
 #define LOG_BLOCK_SIZE 4
 #include "implementations/merge/avx2_sp_block.h"
-#include "implementations/merge/avx512_sp.h"
-#include "implementations/merge/avx512_sp_unroll.h"
-#include "implementations/merge/avx512_sp_unroll_compress.h"
-#include "implementations/merge/avx512_sp_block.h"
 #include "implementations/merge/avx2.h"
 #include "implementations/merge/pext.h"
 
-
+#ifdef __AVX512F__
+#include "implementations/avx512_sp.h"
+#include "implementations/avx512_sp_unroll.h"
+#include "implementations/avx512_sp_unroll_compress.h"
+#include "implementations/avx512_sp_load_unroll_compress.h"
+#include "implementations/avx512_sp_load_block_old.h"
+#include "implementations/avx512_sp_load_block2.h"
+#include "implementations/avx512_sp_load_block4.h"
+#include "implementations/avx512_sp_load_block8.h"
+#include "implementations/avx512_sp_load_block16.h"
+#include "implementations/merge/avx512_sp.h"
+#include "implementations/merge/avx512_sp_unroll.h"
+#include "implementations/merge/avx512_sp_unroll_compress.h"
+#include "implementations/merge/avx512_sp_block_old.h"
+#include "implementations/merge/avx512_sp_block.h"
+#endif
 
 #endif
 #ifdef __aarch64__
@@ -64,14 +70,17 @@
 #include "implementations/baseline.h"
 #include "implementations/bits.h"
 #include "implementations/bits_sp.h"
+#define LOG_BLOCK_SIZE_BITS 2 // Include for merge measurement
 #include "implementations/bits_sp_block.h"
 #include "implementations/bits_sp_load.h"
-#include "implementations/bits_sp_load_block.h"
-
 #include "implementations/native_dfs_sp.h"
+#include "implementations/bits_sp_load_block16.h"
+#include "implementations/bits_sp_load_block2.h"
+#include "implementations/bits_sp_load_block4.h"
+#include "implementations/bits_sp_load_block8.h"
 #include "implementations/merge/bits.h"
 #include "implementations/merge/bits_sp.h"
-#include "implementations/merge/bits_sp_block.h"
+// #include "implementations/merge/bits_sp_block.h"
 #include "system.h"
 #include "util.h"
 
@@ -85,8 +94,10 @@ const prime_implicant_implementation implementations[] = {
     // {"native_dfs_sp", prime_implicants_native_dfs_sp, 30},
     {"bits_sp_block", prime_implicants_bits_sp_block, 30},
     {"bits_sp_load", prime_implicants_bits_sp_load, 30},
-    {"bits_sp_load_block", prime_implicants_bits_sp_load_block, 30},
-
+    // {"bits_sp_load_block2", prime_implicants_bits_sp_load_block2, 30},
+    // {"bits_sp_load_block4", prime_implicants_bits_sp_load_block4, 30},
+    // {"bits_sp_load_block8", prime_implicants_bits_sp_load_block8, 30},
+    // {"bits_sp_load_block16", prime_implicants_bits_sp_load_block16, 30},
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
     {"pext_sp", prime_implicants_pext_sp, 30},
@@ -113,8 +124,11 @@ const prime_implicant_implementation implementations[] = {
     //{"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
     {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
     {"avx512_sp_load_unroll_compress", prime_implicants_avx512_sp_load_unroll_compress, 22},
-    {"avx512_sp_block", prime_implicants_avx512_sp_block, 22},
-    {"avx512_sp_load_block", prime_implicants_avx512_sp_load_block, 22},
+    {"avx512_sp_load_block_old", prime_implicants_avx512_sp_load_block_old, 22},
+    {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 22},
+    {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 22},
+    {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 22},
+    {"avx512_sp_load_block16", prime_implicants_avx512_sp_load_block16, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
@@ -135,6 +149,7 @@ merge_implementation merge_implementations[] = {
     {"merge_bits", merge_bits},
     {"merge_bits_sp", merge_bits_sp},
     // {"merge_bits_sp_aleksa", merge_bits_sp_aleksa},
+    // {"merge_bits_sp_block2", merge_bits_sp_block},
 #ifdef __BMI2__
     {"merge_pext", merge_pext},
 #endif
@@ -150,6 +165,7 @@ merge_implementation merge_implementations[] = {
     {"merge_avx512_sp", merge_avx512_sp},
     {"merge_avx512_sp_unroll", merge_avx512_sp_unroll},
     {"merge_avx512_sp_unroll_compress", merge_avx512_sp_unroll_compress},
+    {"merge_avx512_sp_block_old", merge_avx512_sp_block_old},
     {"merge_avx512_sp_block", merge_avx512_sp_block},
 #endif
 #ifdef __aarch64__
@@ -246,6 +262,31 @@ void from_testfile(const char *filename, test_case *dest) {
     *dest = result;
 }
 
+bitmap random_trues(int num_bits, int density, size_t *trues_count) {
+    bitmap trues = bitmap_allocate(1 << num_bits);
+    *trues_count = 0;
+    for (size_t i = 0; i < trues.num_bits; i++) {
+        double ratio = ((double)rand()) / RAND_MAX * 100;
+        if (ratio < density) {
+            BITMAP_SET_TRUE(trues, i);
+            (*trues_count)++;
+        }
+    }
+    return trues;
+}
+
+bitmap sparse_trues_to_bitmap(int num_bits, int num_trues, int *trues) {
+    /**
+     * Convert a sparse list of trues to a bitmap.
+     * The trues are given as an array of integers, where each integer is a minterm.
+     */
+    bitmap result = bitmap_allocate(1 << num_bits);
+    for (int i = 0; i < num_trues; i++) {
+        BITMAP_SET_TRUE(result, trues[i]);
+    }
+    return result;
+}
+
 // test all implementations on one test file
 void test_implementations(char **testfiles, int num_testfiles) {
     test_case test_cases[num_testfiles];
@@ -254,15 +295,16 @@ void test_implementations(char **testfiles, int num_testfiles) {
     }
     for (unsigned long i = 0; i < (unsigned long)num_testfiles; i++) {
         test_case test = test_cases[i];
+        bitmap trues = sparse_trues_to_bitmap(test.num_bits, test.num_trues, test.trues);
         for (unsigned long k = 0; k < sizeof(implementations) / sizeof(implementations[0]); k++) {
             prime_implicant_implementation impl = implementations[k];
             if (test.num_bits > impl.max_bits) {
-                LOG_INFO("skipping '%s' -> '%s'", test.name, impl.name);
+                LOG_WARN("skipping '%s' -> '%s'", test.name, impl.name);
                 continue;
             }
             LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
-            prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+            prime_implicant_result result = impl.implementation(test.num_bits, trues);
             bool success = true;
             if (!bitmap_cmp(result.primes, test.prime_implicants)) {
                 for (size_t i = 0; i < result.primes.num_bits; i++) {
@@ -327,7 +369,8 @@ void test_implementation_single(const char *implementation_name, char **testfile
         }
         LOG_INFO("checking '%s' -> '%s'", test.name, impl.name);
 
-        prime_implicant_result result = impl.implementation(test.num_bits, test.num_trues, test.trues);
+        bitmap trues = sparse_trues_to_bitmap(test.num_bits, test.num_trues, test.trues);
+        prime_implicant_result result = impl.implementation(test.num_bits, trues);
         bool ok = true;
         if (!bitmap_cmp(result.primes, test.prime_implicants)) {
             for (size_t i = 0; i < result.primes.num_bits; i++) {
@@ -387,15 +430,17 @@ void measure_implementations(const char *implementation_name, int num_bits) {
         return;
     }
     //init_itt_handles(implementation_name);
-
-    int trues[] = {};
+    srand(time(NULL));
+    size_t _;
+    bitmap trues1 = random_trues(num_bits, 95, &_);
+    bitmap trues2 = random_trues(num_bits, 95, &_);
 
     // warmup iteration
-    prime_implicant_result result_warmup = impl.implementation(num_bits, 0, trues);
+    prime_implicant_result result_warmup = impl.implementation(num_bits, trues1);
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     // ITT_START_FRAME();
-    prime_implicant_result result = impl.implementation(num_bits, 0, trues);
+    prime_implicant_result result = impl.implementation(num_bits, trues2);
     // ITT_END_FRAME();
     uint64_t cycles = result.cycles;
     FILE *f = fopen("measurements.csv", "a");
@@ -457,23 +502,14 @@ void measure_merge(const char *s, int num_bits) {
 
 void generate_testfile(int num_bits, int density) {
     // allocate full 2**n ints in case we are a bit above density
-    int max_implicants = 1 << num_bits;
-    int *trues = calloc(max_implicants, sizeof(int));
-    if (trues == NULL) {
-        LOG_ERROR("could not allocate trues array");
-        exit(EXIT_FAILURE);
-    }
+    size_t max_implicants = 1 << num_bits;
+    bitmap trues = bitmap_allocate(max_implicants);
 
-    int num_trues = 0;
     srand(time(NULL));
-    for (int i = 0; i < max_implicants; i++) {
-        double ratio = ((double)rand()) / RAND_MAX * 100;
-        if (ratio < density) {
-            trues[num_trues++] = i;
-        }
-    }
+    size_t num_trues;
+    trues = random_trues(num_bits, density, &num_trues);
 
-    prime_implicant_result result = prime_implicants_bits(num_bits, num_trues, trues);
+    prime_implicant_result result = prime_implicants_bits(num_bits, trues);
     bitmap primes = result.primes;
 
     char filename[100];
@@ -490,9 +526,11 @@ void generate_testfile(int num_bits, int density) {
         }
     }
     fprintf(f, "rnd-%d-%dpct-dense\n", num_bits, density);
-    fprintf(f, "%d %d %lu\n", num_bits, num_trues, num_primes);
-    for (int i = 0; i < num_trues; i++) {
-        fprintf(f, "%d\n", trues[i]);
+    fprintf(f, "%d %lu %lu\n", num_bits, num_trues, num_primes);
+    for (size_t i = 0; i < trues.num_bits; i++) {
+        if (BITMAP_CHECK(trues, i)) {
+            fprintf(f, "%zu\n", i);
+        }
     }
     for (size_t i = 0; i < primes.num_bits; i++) {
         if (BITMAP_CHECK(primes, i)) {
