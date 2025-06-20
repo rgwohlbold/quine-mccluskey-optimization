@@ -399,7 +399,7 @@ void test_implementation_single(const char *implementation_name, char **testfile
                     s[test.num_bits] = '\0';
                     bitmap_index_to_implicant(test.num_bits, i, s);
                     LOG_WARN(
-                        "test case expected implicant %s (bitmap index %d) which was not returned by "
+                        "test case expected implicant %s (bitmap index %llu) which was not returned by "
                         "implementation",
                         s, i);
                     ok = false;
