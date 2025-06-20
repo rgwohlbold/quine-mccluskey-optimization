@@ -9,8 +9,8 @@ bool *allocate_boolean_array(int num_elements);
 void flush_cache(uint8_t *array, int num_elements);
 size_t calculate_num_implicants(int num_bits);
 
-extern const int binomial_coefficients[30][30];
+extern const uint64_t binomial_coefficients[30][30];
 
-static inline int binomial_coefficient(int n, int k) {
+static inline uint64_t binomial_coefficient(int n, int k) {
     return binomial_coefficients[n][k];
 }

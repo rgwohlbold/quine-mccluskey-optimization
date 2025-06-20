@@ -63,7 +63,7 @@ for n in range(30):
         print(math.comb(n, k), end=',')
     print("},")
 */
-const int binomial_coefficients[30][30] = {
+const uint64_t binomial_coefficients[30][30] = {
 {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
 {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
 {1,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},

@@ -85,7 +85,7 @@ uint64_t bitmap_implicant_to_index(int num_bits, const char *s) {
 void bitmap_index_to_implicant(int num_bits, size_t bitset_index, char *s) {
     size_t num_dashes = 0;
     size_t section_offset = 0;
-    for (size_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
+    for (int64_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
         size_t new_section_offset = section_offset + (1 << remaining_bits) * binomial_coefficient(num_bits, num_dashes);
         if (new_section_offset > bitset_index) {
             break;

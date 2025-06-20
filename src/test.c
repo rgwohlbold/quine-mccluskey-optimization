@@ -391,7 +391,7 @@ void test_implementation_single(const char *implementation_name, char **testfile
                     char s[test.num_bits + 1];
                     s[test.num_bits] = '\0';
                     bitmap_index_to_implicant(test.num_bits, i, s);
-                    LOG_WARN("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                    LOG_WARN("returned implicant %s (bitmap index %llu) which was not expected by test case", s, i);
                     ok = false;
                 }
                 if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
