@@ -9,17 +9,16 @@ fi
 
 implementations="$@"
 
-min_bits=1
-max_bits=22
-num_measurements=10
+min_bits=23
+max_bits=23
+num_measurements=5
 compilers="/usr/bin/clang /usr/bin/gcc"
 measurements_file="measurements.csv"
 
 
 for compiler in $compilers; do
     # since we change the compiler, we have to set the other options in another cmake run
-    cmake . -D CMAKE_C_COMPILER="$compiler"
-    cmake . -D LOG_LEVEL=2 -DGENERATE_ASM=OFF
+    cmake . -D CMAKE_C_COMPILER="$compiler" -D LOG_LEVEL=2 -D GENERATE_ASM=OFF -D AUTO_VECTORIZE=OFF
     make clean
     make -j $(nproc)
 
@@ -39,16 +38,18 @@ for compiler in $compilers; do
             done
             echo " === Measurement $k done ===\n"
         done
+    
 
-        if [ "$implementation" = "hellman" ]; then
-            # For hellman, remove the whole generator expression (anything like <$...>)
-            sed 's/\$<\$<COMPILE_LANGUAGE:C>:-fno-tree-vectorize>//g; s/\$<\$<COMPILE_LANGUAGE:C>:-fno-vectorize>//g' \
+
+        # if [ "$implementation" = "hellman" ]; then
+        #     # For hellman, remove the whole generator expression (anything like <$...>)
+        #     sed 's/\$<\$<COMPILE_LANGUAGE:C>:-fno-tree-vectorize>//g; s/\$<\$<COMPILE_LANGUAGE:C>:-fno-vectorize>//g' \
+        #         "$measurements_file" > "m_${implementation}_${compiler_suffix}.csv"
+        # else
+            
+            sed 's/\$<\$<COMPILE_LANGUAGE:C>:-fno-tree-vectorize>/-fno-tree-vectorize/g; s/\$<\$<COMPILE_LANGUAGE:C>:-fno-vectorize -fno-slp-vectorize>/-fno-vectorize -fno-slp-vectorize/g' \
                 "$measurements_file" > "m_${implementation}_${compiler_suffix}.csv"
-        else
-            # For others, replace with the clean flag
-            sed 's/\$<\$<COMPILE_LANGUAGE:C>:-fno-tree-vectorize>/-fno-tree-vectorize/g; s/\$<\$<COMPILE_LANGUAGE:C>:-fno-vectorize>/-fno-vectorize/g' \
-                "$measurements_file" > "m_${implementation}_${compiler_suffix}.csv"
-        fi
+        # fi
         # cp "measurements.csv" "m_${implementation}_${compiler_suffix}.csv"
     done
 done

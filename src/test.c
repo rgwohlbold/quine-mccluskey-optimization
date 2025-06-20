@@ -1,4 +1,4 @@
-#define _GNU_SOURCE // needed for syscall() in perf.h
+#define _GNU_SOURCE  // needed for syscall() in perf.h
 #include "test.h"
 
 #include <stdbool.h>
@@ -19,12 +19,17 @@
 #include "implementations/avx2_sp_ssa.h"
 #include "implementations/avx2_sp_unroll.h"
 #include "implementations/hellman.h"
+#include "implementations/merge/avx2.h"
 #include "implementations/merge/avx2_sp.h"
 #include "implementations/merge/avx2_sp_ilp.h"
 #include "implementations/merge/avx2_sp_ssa.h"
 #include "implementations/merge/avx2_sp_unroll.h"
 #include "implementations/pext.h"
 #include "implementations/pext_sp.h"
+#include "implementations/pext_sp_block.h"
+#include "implementations/pext_sp_block2.h"
+#include "implementations/pext_sp_block4.h"
+#include "implementations/pext_sp_block8.h"
 #include "implementations/pext_sp_load.h"
 #include "implementations/pext_sp_load_block.h"
 #include "implementations/pext_sp_load_block2.h"
@@ -34,7 +39,6 @@
 #include "implementations/pext_sp_unroll_ilp.h"
 #include "tsc_x86.h"
 #include "vtune.h"
-#include "implementations/merge/avx2.h"
 #define LOG_BLOCK_SIZE_AVX2 2
 #include "implementations/merge/avx2_sp_block.h"
 #include "implementations/merge/pext.h"
@@ -54,7 +58,7 @@
 #include "implementations/avx512_sp_unroll.h"
 #include "implementations/avx512_sp_unroll_compress.h"
 #include "implementations/merge/avx512_sp.h"
-#define LOG_BLOCK_SIZE_AVX512 4 // define for measure_merge
+#define LOG_BLOCK_SIZE_AVX512 4  // define for measure_merge
 #include "implementations/merge/avx512_sp_block.h"
 #include "implementations/merge/avx512_sp_block_old.h"
 #include "implementations/merge/avx512_sp_unroll.h"
@@ -87,9 +91,9 @@
 #include "implementations/merge/bits_sp.h"
 #include "implementations/merge/bits_sp_block.h"
 #include "implementations/native_dfs_sp.h"
+#include "perf.h"
 #include "system.h"
 #include "util.h"
-#include "perf.h"
 
 const prime_implicant_implementation implementations[] = {
     {"baseline", prime_implicants_baseline, 19},
@@ -108,13 +112,14 @@ const prime_implicant_implementation implementations[] = {
 #ifdef __BMI2__
     {"pext", prime_implicants_pext, 30},
     {"pext_sp", prime_implicants_pext_sp, 30},
-    {"pext_sp_unroll", prime_implicants_pext_sp_unroll, 30},
-    {"pext_sp_block", prime_implicants_pext_sp_load_block, 30},
-    {"pext_sp_block2", prime_implicants_pext_sp_load_block2, 30},
-    {"pext_sp_block4", prime_implicants_pext_sp_load_block4, 30},
-    {"pext_sp_block8", prime_implicants_pext_sp_load_block8, 30},
-    {"pext_sp_load", prime_implicants_pext_sp_load, 30},
-    {"pext_sp_unroll_ilp", prime_implicants_pext_sp_unroll_ilp, 30},
+    {"pext_sp_intra", prime_implicants_pext_sp_unroll, 30},
+    {"pext_sp_intra_ilp", prime_implicants_pext_sp_unroll_ilp, 30},
+    {"pext_sp_inter2", prime_implicants_pext_sp_block2, 30},
+    {"pext_sp_inter4", prime_implicants_pext_sp_block4, 30},
+    {"pext_sp_inter8", prime_implicants_pext_sp_block8, 30},
+    {"pext_sp_load_inter2", prime_implicants_pext_sp_load_block2, 30},
+    {"pext_sp_load_inter4", prime_implicants_pext_sp_load_block4, 30},
+    {"pext_sp_load_inter8", prime_implicants_pext_sp_load_block8, 30},
 #endif
 
 #ifdef __AVX2__
@@ -125,9 +130,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_ilp", prime_implicants_avx2_sp_ilp, 30},
     {"avx2_sp_unroll", prime_implicants_avx2_sp_unroll, 30},
     {"avx2_sp_load_unroll", prime_implicants_avx2_sp_load_unroll, 30},
-    {"avx2_sp_load_block2", prime_implicants_avx2_sp_load_block2, 30},
-    {"avx2_sp_load_block4", prime_implicants_avx2_sp_load_block4, 30},
-    {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
+    {"avx2_sp_load_inter2", prime_implicants_avx2_sp_load_block2, 30},
+    {"avx2_sp_load_inter4", prime_implicants_avx2_sp_load_block4, 30},
+    {"avx2_sp_load_inter8", prime_implicants_avx2_sp_load_block8, 30},
 #endif
 #ifdef __AVX512F__
     {"avx512_sp", prime_implicants_avx512_sp, 22},
@@ -136,9 +141,9 @@ const prime_implicant_implementation implementations[] = {
     {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
     {"avx512_sp_load_unroll_compress", prime_implicants_avx512_sp_load_unroll_compress, 22},
     {"avx512_sp_load_block_old", prime_implicants_avx512_sp_load_block_old, 22},
-    {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 22},
-    {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 22},
-    {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 22},
+    {"avx512_sp_load_inter2", prime_implicants_avx512_sp_load_block2, 22},
+    {"avx512_sp_load_inter4", prime_implicants_avx512_sp_load_block4, 22},
+    {"avx512_sp_load_inter8", prime_implicants_avx512_sp_load_block8, 22},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
@@ -456,7 +461,8 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     prime_implicant_result result = impl.implementation(num_bits, trues2);
     // ITT_END_FRAME();
     FILE *f = fopen("measurements.csv", "a");
-    fprintf(f, "%s,%s,%s,%s,%d,%lu,%ld,%ld\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits, result.cycles, result.l1d_cache_misses, result.l1d_cache_accesses);
+    fprintf(f, "%s,%s,%s,%s,%d,%lu,%ld,%ld\n", compiler_version, compiler_flags, cpu_model, impl.name, num_bits,
+            result.cycles, result.l1d_cache_misses, result.l1d_cache_accesses);
     fclose(f);
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
