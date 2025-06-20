@@ -10,6 +10,7 @@
 #ifdef __aarch64__
 #include "../../vct_arm.h"
 #endif
+#include "../../perf.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #error "need to define IMPLEMENTATION_FUNCTION"
@@ -32,6 +33,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     }
 
     init_tsc();
+    perf_start();
     uint64_t counter_start = start_tsc();
 
     size_t *input_chunk_index = calloc((num_bits + 1), sizeof(size_t));
@@ -110,12 +112,14 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
     uint64_t cycles = stop_tsc(counter_start);
+    perf_result pres = perf_stop();
     bitmap_free(implicants);
 
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-
+        .l1d_cache_misses = pres.l1d_cache_misses,
+        .l1d_cache_accesses = pres.l1d_cache_accesses,
     };
     return result;
 }

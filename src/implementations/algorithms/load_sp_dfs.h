@@ -11,6 +11,7 @@
 #  include "../../vct_arm.h"
 #endif
 #include "../../signpost.h"
+#include "../../perf.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #  error "need to define IMPLEMENTATION_FUNCTION"
@@ -95,6 +96,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues)
     MergeOp *ops = load_schedule(num_bits, &op_count);
 
     init_tsc();
+    perf_start();
     uint64_t counter_start = start_tsc();
 
     // one linear pass
@@ -116,12 +118,15 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues)
                BITMAP_CHECK(implicants, num_implicants - 1));
 
     uint64_t cycles = stop_tsc(counter_start);
+    perf_result pres = perf_stop();
     free(ops);
     bitmap_free(implicants);
 
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
+        .l1d_cache_misses = pres.l1d_cache_misses,
+        .l1d_cache_accesses = pres.l1d_cache_accesses,
     };
     return result;
 }

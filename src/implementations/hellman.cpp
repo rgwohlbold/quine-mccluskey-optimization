@@ -13,6 +13,9 @@
 #ifdef __aarch64__
 #include "../vct_arm.h"
 #endif
+extern "C" {
+    #include "../perf.h"
+}
 
 using namespace std;
 
@@ -270,11 +273,13 @@ extern "C" {
 
         // start the counter and perform the algorithm
         init_tsc();
+        perf_start();
         uint64_t counter_start = start_tsc();
 
         D.run();
 
         uint64_t cycles = stop_tsc(counter_start);
+        perf_result pres = perf_stop();
 
 
         // instead being written to a file,
@@ -310,6 +315,8 @@ extern "C" {
         prime_implicant_result result = {
             .primes = primes,
             .cycles = cycles,
+            .l1d_cache_misses = pres.l1d_cache_misses,
+            .l1d_cache_accesses = pres.l1d_cache_accesses,
         };
         return result;
     }
