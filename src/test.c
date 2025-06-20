@@ -130,15 +130,15 @@ const prime_implicant_implementation implementations[] = {
     {"avx2_sp_load_block8", prime_implicants_avx2_sp_load_block8, 30},
 #endif
 #ifdef __AVX512F__
-    {"avx512_sp", prime_implicants_avx512_sp, 22},
-    {"avx512_sp_unroll", prime_implicants_avx512_sp_unroll, 22},
-    //{"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
-    {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 22},
-    {"avx512_sp_load_unroll_compress", prime_implicants_avx512_sp_load_unroll_compress, 22},
-    {"avx512_sp_load_block_old", prime_implicants_avx512_sp_load_block_old, 22},
-    {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 22},
-    {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 22},
-    {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 22},
+    {"avx512_sp", prime_implicants_avx512_sp, 30},
+    {"avx512_sp_unroll", prime_implicants_avx512_sp_unroll, 30},
+    //{"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 30},
+    {"avx512_sp_unroll_compress", prime_implicants_avx512_sp_unroll_compress, 30},
+    {"avx512_sp_load_unroll_compress", prime_implicants_avx512_sp_load_unroll_compress, 30},
+    {"avx512_sp_load_block_old", prime_implicants_avx512_sp_load_block_old, 30},
+    {"avx512_sp_load_block2", prime_implicants_avx512_sp_load_block2, 30},
+    {"avx512_sp_load_block4", prime_implicants_avx512_sp_load_block4, 30},
+    {"avx512_sp_load_block8", prime_implicants_avx512_sp_load_block8, 30},
 #endif
 #ifdef __aarch64__
     // {"neon", prime_implicants_neon, 30},
