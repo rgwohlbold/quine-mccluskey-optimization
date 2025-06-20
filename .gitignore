@@ -46,3 +46,5 @@ src/system.c
 traversals/*
 tests/gen_tests/*
 asm/*
+
+src_old_backup/*
