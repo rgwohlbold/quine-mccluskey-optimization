@@ -5,12 +5,30 @@
 This project uses `cmake` as its build system.
 
 - To generate the build files, run `cmake .`.
-  Optionally, add `-D LOG_LEVEL={0,1,2}` to set the log level. Bigger number is more verbose.
-  Also, add `-D SANITIZE=ON` to enable address sanitizer and disable compiler optimizations to find memory-related errors
-- Use the `cmake -DGENERATE_ASM=ON` option to enable generating assembly files in asm/ directory
-
-- To build the executable run `make`.
+- To build the executable run `make -j8`. Substitute `8`with another number to adjust the number of parallel jobs.
 - To run the executable, run `./prime_implicants`.
+
+There are several options that can be passed to `cmake`:
+
+- Add `-D LOG_LEVEL={0,1,2,3}` to set the log level:
+  - `-D LOG_LEVEL=0` to log only errors
+  - `-D LOG_LEVEL=1` to log only errors and warnings
+  - `-D LOG_LEVEL=2` to log errors, warnings, and info messages
+  - `-D LOG_LEVEL=3` to log errors, warnings, info messages, and debug messages
+- Add `-D SANITIZE=ON` to enable address sanitizer and disable compiler optimizations to find memory-related errors. This will switch the compiler to `clang`, enable debug symbols and the `-fsanitize=address` flag.
+Make sure to disable this option with `-D SANITIZE=OFF` before doing performance measurements.
+- Use the `-D GENERATE_ASM=ON` option to enable generating assembly files in asm/ directory.
+
+## Usage
+
+- `./prime_implicants test <input_file1> [...]`: Test the program on the given test files. Also, run all tests relating to other functionality. Some small test files are given within the `test/` directory. For certain changes, it might be necessary to generate a test file with large `n` and `density` values via the `gentest` command.
+- `./prime_implicants test_single <implementation> <input_file1> [...]`: Test a single implementation the given test files. This is useful for debugging a single implementation.
+- `./prime_implicants measure <implementation> <n>`: Measure the performance of a single implementation on a random input of `n` variables. Its output will be appended to `measurements.csv`.
+- `./prime_implicants measure_merge <merge_implementation> <n>`: Measure the performance of a single merge function implementation on a random input of `n` variables. Its output will be appended to `measurements_merge.csv`. Its output is rather noisy, so we did not include it in the report.
+- `./prime_implicants help`: Print usage information.
+- `./prime_implicants implementations`: Print a list of all available implementations.
+- `./prime_implicants merge_implementations`: Print a list of all available merge function implementations.
+- `./prime_implicants gentest <n> <density>`: Generate a test file with `n` variables and `density` percent density.
 
 ## Development
 
@@ -28,10 +46,3 @@ If you want, you can install the pre-commit hook, that makes sure the source cod
    cp scripts/pre-commit .git/hooks/
    chmod +x .git/hooks/pre-commit
    ```
-
-## Known problems
-
-- Investigate why performance plot looks the way it looks
-  - since we call `free()` on implicants and measure again, further measurements may partly be warm-cache
-  - probably our computation is memory-bound?
-- investigate better duplicate detection for sparse implementation
