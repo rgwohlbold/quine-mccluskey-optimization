@@ -31,7 +31,7 @@ for compiler in $compilers; do
 
         [ -e "$measurements_file" ] && rm "$measurements_file"
         [ -e "m_${implementation}_${compiler_suffix}.csv" ] && rm "m_${implementation}_${compiler_suffix}.csv"
-        echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,ops" > "$measurements_file"
+        echo "compiler_version,compiler_flags,cpu_model,implementation,bits,cycles,l1d_cache_misses,l1d_cache_accesses" > "$measurements_file"
 
         for k in $(seq 1 "$num_measurements"); do
             for i in $(seq $min_bits $max_bits); do

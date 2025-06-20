@@ -171,11 +171,11 @@ def speedup_plot(df):
 
 def cache_plot(df):
     """
-    Generates a cache miss ratio plot for different implementations.
+    Generates a cache miss rate plot for different implementations.
     Creates a separate plot for each CPU model found in the DataFrame.
 
     Args:
-        df (pd.DataFrame): The input DataFrame containing 'bits', 'cache_miss_ratio',
+        df (pd.DataFrame): The input DataFrame containing 'bits', 'cache_miss_rate',
                            'function', and 'cpu_model' columns.
     """
     # Group by CPU model to create a separate plot for each
@@ -186,12 +186,12 @@ def cache_plot(df):
 
         # Create the plot
         plt.figure(figsize=(9, 6))
-        sns.lineplot(data=df_grouped, x='bits', y='cache_miss_ratio', hue='function', marker='o')
+        sns.lineplot(data=df_grouped, x='bits', y='cache_miss_rate', hue='function', marker='o')
 
         # --- Formatting ---
         plt.xlabel('n (Input Bits)')
-        plt.ylabel('Cache Miss Ratio')
-        plt.title(f"Cache Miss Ratio of all implementations for different number of bits n\nCPU: {cpu_model}", loc='left')
+        plt.ylabel('Cache Miss Rate')
+        plt.title(f"Cache Miss Rate of all implementations for different number of bits n\nCPU: {cpu_model}", loc='left')
         plt.grid(True, which="both", linestyle='--', linewidth=0.5)
         plt.xticks(df_grouped['bits'].unique())
 
@@ -208,7 +208,7 @@ df['memory'] = (3**df['bits']) / 4
 df['operational_intensity'] = df['ops'] / df['memory']
 df['performance'] = df['ops'] / df['cycles']
 df['function'] = df['implementation'] + ', ' + df['compiler_version'] + ', ' + df['compiler_flags']
-df['cache_miss_ratio'] = df['l1d_cache_misses'] / df['l1d_cache_accesses']
+df['cache_miss_rate'] = df['l1d_cache_misses'] / df['l1d_cache_accesses']
 print(df)
 performance_plot(df)
 roofline_plot(df)

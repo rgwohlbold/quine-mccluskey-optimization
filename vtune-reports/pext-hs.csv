@@ -1,6 +1,0 @@
-"Function / Call Stack","CPU Time","Module","Function (Full)","Source File","Start Address"
-"merge_implicants_pext","4.27281","prime_implicants","merge_implicants_pext","pext.c","0x5e80"
-"prime_implicants_pext","0.69","prime_implicants","prime_implicants_pext","pext.c","0x7080"
-"leading_stars","0.140024","prime_implicants","leading_stars","common.h","0x7248"
-"binomial_coefficient","0.0359191","prime_implicants","binomial_coefficient","util.h","0x7275"
-"[Outside any known module]","0.0310697","[Unknown]","[Outside any known module]","[Unknown]","0"

@@ -134,7 +134,7 @@ configure_file(
 option(LOG_NOCOLOR "Disable colored logs" OFF)
 message(STATUS "Using LOG_LEVEL=${LOG_LEVEL}, NOCOLOR=${LOG_NOCOLOR}, GENERATE_ASM=${GENERATE_ASM}")
 if(NOT DEFINED LOG_LEVEL)
-    set(LOG_LEVEL 1)
+    set(LOG_LEVEL 2)
 endif()
 
 target_compile_definitions(prime_implicants PUBLIC LOG_LEVEL=${LOG_LEVEL})

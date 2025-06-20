@@ -5,23 +5,24 @@
 #include "../../vtune.h"
 #include "../common.h"
 #ifdef __x86_64__
-#  include "../../tsc_x86.h"
+#include "../../tsc_x86.h"
 #endif
 #ifdef __aarch64__
-#  include "../../vct_arm.h"
+#include "../../vct_arm.h"
 #endif
+#include "../../perf.h"
 #include "../../signpost.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
-#  error "need to define IMPLEMENTATION_FUNCTION"
+#error "need to define IMPLEMENTATION_FUNCTION"
 #endif
 #ifndef MERGE_FUNCTION
-#  error "need to define MERGE_FUNCTION"
+#error "need to define MERGE_FUNCTION"
 #endif
 
 typedef struct {
-    uint8_t  rem_bits;   // remaining bits
-    uint8_t  first_diff; // first difference
+    uint8_t rem_bits;    // remaining bits
+    uint8_t first_diff;  // first difference
     uint64_t in_idx;     // input_index
     uint64_t out_idx;    // output_index
 } __attribute__((packed, aligned(1))) MergeOp;
@@ -34,8 +35,7 @@ typedef struct {
 static MergeOp *load_schedule(int num_bits, size_t *out_count) {
     // 1) compute total
 
-    size_t total = (1 << num_bits)-1;
-
+    size_t total = (1 << num_bits) - 1;
 
     MergeOp *ops = (MergeOp *)malloc(sizeof *ops * total);
     if (!ops) {
@@ -58,7 +58,7 @@ static MergeOp *load_schedule(int num_bits, size_t *out_count) {
         size_t r = fread(&ops[ops_read], 18, total - ops_read, f);
         if (r == 0) {
             if (feof(f)) {
-                break; // end of file reached
+                break;  // end of file reached
             } else {
                 perror("fread");
                 fclose(f);
@@ -71,21 +71,19 @@ static MergeOp *load_schedule(int num_bits, size_t *out_count) {
     fclose(f);
 
     if (ops_read != total) {
-        fprintf(stderr,
-           "warning: expected %zu ops, but read only %zu\n", total, ops_read);
+        fprintf(stderr, "warning: expected %zu ops, but read only %zu\n", total, ops_read);
     }
     *out_count = ops_read;
     return ops;
 }
 
-prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues)
-{
+prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
-    bitmap primes     = bitmap_allocate(num_implicants);
+    bitmap primes = bitmap_allocate(num_implicants);
     bitmap implicants = bitmap_allocate(num_implicants);
 
     // OR the trues into the implicants
-    size_t num_minterms = 1<<num_bits;
+    size_t num_minterms = 1 << num_bits;
     for (size_t i = 0; i < num_minterms; i++) {
         BITMAP_SET(implicants, i, BITMAP_CHECK(trues, i));
     }
@@ -95,33 +93,28 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues)
     MergeOp *ops = load_schedule(num_bits, &op_count);
 
     init_tsc();
+    perf_start();
     uint64_t counter_start = start_tsc();
 
     // one linear pass
     for (size_t i = 0; i < op_count; i++) {
         MergeOp *op = &ops[i];
-        MERGE_FUNCTION(
-            implicants,
-            primes,
-            op->in_idx,
-            op->out_idx,
-            op->rem_bits,
-            op->first_diff
-        );
+        MERGE_FUNCTION(implicants, primes, op->in_idx, op->out_idx, op->rem_bits, op->first_diff);
     }
 
     // last implicant prime if still set
-    BITMAP_SET(primes,
-               num_implicants - 1,
-               BITMAP_CHECK(implicants, num_implicants - 1));
+    BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
     uint64_t cycles = stop_tsc(counter_start);
+    perf_result pres = perf_stop();
     free(ops);
     bitmap_free(implicants);
 
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
+        .l1d_cache_misses = pres.l1d_cache_misses,
+        .l1d_cache_accesses = pres.l1d_cache_accesses,
     };
     return result;
 }

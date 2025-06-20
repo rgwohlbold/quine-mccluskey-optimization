@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-min_bits=1
-max_bits=22
+min_bits=10
+max_bits=20
 num_measurements=10
 compilers="/usr/bin/gcc"
 #compilers="/usr/bin/gcc /usr/bin/clang"
@@ -17,7 +17,7 @@ for compiler in $compilers; do
     cmake . -D LOG_LEVEL=2
     make clean
     make -j $(nproc) prime_implicants
-    implementations="bits bits_load_sp"
+    implementations="hellman bits bits_sp_load"
     for k in $(seq 1 "$num_measurements"); do
         for i in $(seq $min_bits $max_bits); do
             for implementation in $implementations; do

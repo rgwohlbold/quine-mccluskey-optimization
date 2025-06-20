@@ -46,5 +46,7 @@ src/system.c
 traversals/*
 tests/gen_tests/*
 asm/*
+vtune-reports/*
+
 
 src_old_backup/*

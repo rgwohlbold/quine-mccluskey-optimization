@@ -10,6 +10,7 @@
 #ifdef __aarch64__
 #include "../../vct_arm.h"
 #endif
+#include "../../perf.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #error "need to define IMPLEMENTATION_FUNCTION"
@@ -19,19 +20,19 @@
 #error "need to define MERGE_FUNCTION"
 #endif
 
-
 prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     size_t num_implicants = calculate_num_implicants(num_bits);
     bitmap primes = bitmap_allocate(num_implicants);
 
     bitmap implicants = bitmap_allocate(num_implicants);
     // OR the trues into the implicants
-    size_t num_minterms = 1<<num_bits;
+    size_t num_minterms = 1 << num_bits;
     for (size_t i = 0; i < num_minterms; i++) {
         BITMAP_SET(implicants, i, BITMAP_CHECK(trues, i));
     }
 
     init_tsc();
+    perf_start();
     uint64_t counter_start = start_tsc();
 
     size_t *input_chunk_index = calloc((num_bits + 1), sizeof(size_t));
@@ -83,13 +84,13 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
             int remaining_bits = num_bits - section_index;
             int leading_value = leading_stars(num_bits, section_index, layer_input_idx);
             int first_difference = remaining_bits - leading_value;
-            LOG_DEBUG("Section %2zu; [inp=%zu/out=%zu/rem=%d/first_diff=%d]",
-                      section_index, input_index, output_index, remaining_bits, first_difference);
+            LOG_DEBUG("Section %2zu; [inp=%zu/out=%zu/rem=%d/first_diff=%d]", section_index, input_index, output_index,
+                      remaining_bits, first_difference);
             MERGE_FUNCTION(implicants, primes, input_index, output_index, remaining_bits, first_difference);
 
             input_chunk_index[section_index]++;
             output_chunk_index[section_index + 1] += leading_value;
-            
+
             /*
              * if (input_chunk_index[section_index] == total_chunks[section_index]) {
              *     LOG_DEBUG("Section %2zu finished.", section_index);
@@ -110,12 +111,14 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     BITMAP_SET(primes, num_implicants - 1, BITMAP_CHECK(implicants, num_implicants - 1));
 
     uint64_t cycles = stop_tsc(counter_start);
+    perf_result pres = perf_stop();
     bitmap_free(implicants);
 
     prime_implicant_result result = {
         .primes = primes,
         .cycles = cycles,
-
+        .l1d_cache_misses = pres.l1d_cache_misses,
+        .l1d_cache_accesses = pres.l1d_cache_accesses,
     };
     return result;
 }
