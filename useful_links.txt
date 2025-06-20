@@ -1,2 +1,0 @@
-Bit twiddling hacks:
-https://graphics.stanford.edu/~seander/bithacks.html
