@@ -1,7 +1,0 @@
-"Function / Call Stack","CPU Time","Module","Function (Full)","Source File","Start Address"
-"merge_implicants_bits","6.15137","prime_implicants","merge_implicants_bits","bits.c","0x4380"
-"prime_implicants_bits","1.0225","prime_implicants","prime_implicants_bits","bits.c","0x59a0"
-"_mcount","0.07214","libc.so.6","_mcount","_mcount.S","0x114860"
-"binomial_coefficient","0.0719588","prime_implicants","binomial_coefficient","util.h","0x5bb5"
-"[Outside any known module]","0.0519001","[Unknown]","[Outside any known module]","[Unknown]","0"
-"leading_stars","0.04","prime_implicants","leading_stars","common.h","0x5b88"
