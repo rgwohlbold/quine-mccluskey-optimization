@@ -34,6 +34,16 @@ Make sure to disable this option with `-D SANITIZE=OFF` before doing performance
 
 Before pushing changes, format code with `clang-format`.
 
+## Known Issues
+
+When measuring, the application uses `perf_event_open()` to measure cache misses and accesses.
+If you encounter an error like `error in perf_event_open(): Permission denied`, you can try the following in order:
+
+1. Run `sudo sysctl kernel.perf_event_paranoid=1` to allow the user to use `perf_event_open()` without root privileges.
+1. Set the `CAP_PERFMON` capability for the user running the program. This can be done by running `sudo setcap cap_sys_admin+ep ./prime_implicants`.
+1. Set the `CAP_SYS_ADMIN` capability for the user running the program. This can be done by running `sudo setcap cap_sys_admin+ep ./prime_implicants`.
+1. Run the program as root.
+
 ### pre-commit hook
 
 If you want, you can install the pre-commit hook, that makes sure the source code is formatted before pushing.

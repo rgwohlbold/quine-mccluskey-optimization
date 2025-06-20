@@ -7,10 +7,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include "debug.h"
 
 //struct perf_event_attr hw_event;
 bool initialized = false;
@@ -36,7 +37,7 @@ static int open_cache_perf(int config) {
 
     int fd = syscall(__NR_perf_event_open, &pe, pid, cpu, group_fd, flags);
     if (fd == -1) {
-        fprintf(stderr, "Error opening leader %llx\n", pe.config);
+        LOG_ERROR("error in perf_event_open(): %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     return fd;
