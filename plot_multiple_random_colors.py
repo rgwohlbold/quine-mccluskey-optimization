@@ -1,10 +1,48 @@
 import pandas as pd
 import sys
 import os
+import random
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+
+
+def get_random_color(existing_colors):
+    # Use matplotlib's tab20 palette for distinct colors, fallback to random if exhausted
+    tab_colors = list(plt.get_cmap('tab20').colors)
+    while True:
+        if tab_colors:
+            color = tab_colors.pop(0)
+        else:
+            color = (random.random(), random.random(), random.random())
+        if color not in existing_colors:
+            return color
+
+
+def read_all_csvs_with_random_colors(directory):
+    """
+    Reads all CSV files in the given directory, assigns each a random color, and merges them.
+    Returns a DataFrame with an added 'color' column.
+    """
+    df_combined = pd.DataFrame()
+    existing_colors = set()
+    for fname in sorted(os.listdir(directory)):
+        if fname.endswith('.csv'):
+            file_path = os.path.join(directory, fname)
+            print(f"Processing file: {file_path}")
+            try:
+                print(f"Reading {file_path} ...")
+                df_temp = pd.read_csv(file_path)
+                color = get_random_color(existing_colors)
+                existing_colors.add(color)
+                df_temp['color'] = [color] * len(df_temp)
+                print(df_temp.head())  # Print first few rows for debugging
+                df_combined = pd.concat([df_combined, df_temp], ignore_index=True)
+                print(df_combined.head())  # Print first few rows for debugging
+            except Exception as e:
+                print(f"Error reading {file_path}: {e}")
+    return df_combined
 
 
 def parse_args_with_colors():
@@ -43,10 +81,12 @@ def read_files_with_colors(file_color_pairs):
         try:
             print(f"Reading {file_path} with color {color}...")
             df_temp = pd.read_csv(file_path)
+            print(df_temp.head())  # Print first few rows for debugging
             # Add source file and color columns
             # df_temp['source_file'] = os.path.basename(file_path)
-            df_temp['color'] = color
+            df_temp['color'] = [color] * len(df_temp)
             df_combined = pd.concat([df_combined, df_temp], ignore_index=True)
+            print(df_combined.head())  # Print first few rows for debugging
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
     
@@ -59,32 +99,30 @@ def performance_plot(df):
         cpu_model = df_reset['cpu_model'][0]
         compiler_version = df_reset['compiler_version'][0] + " " + df_reset['compiler_flags'][0]
         
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(14, 6))  # Wider figure for legend space
+        handles = []
+        labels = []
         
         # Group by function and color for custom coloring
         for (func, color), group in df_grouped.groupby(['function', 'color']):
-            # Sort by bits to ensure we get truly last point
             group = group.sort_values('bits')
-            
-            # Plot the line with the custom color but no label
-            plt.plot(group['bits'], group['performance'], 
-                     marker='o', linestyle='-', color=color)
-            
-            # Add function name at the end of the line (only implementation name)
+            compiler_info = group['compiler_version'].iloc[0] + " " + group['compiler_flags'].iloc[0]
+            label = f"{func} [{compiler_info}]"
+            handle, = plt.plot(group['bits'], group['performance'], 
+                               marker='o', linestyle='-', color=color, label=label)
+            handles.append(handle)
+            labels.append(label)
             last_point = group.iloc[-1]
             text_x = last_point['bits']
             text_y = last_point['performance']
-            
-            # Choose horizontal alignment based on position
             halign = 'left'
             offset_x = 0.2
             if text_x == df_grouped['bits'].max():
                 halign = 'right'
                 offset_x = 0.2
-            
-            plt.annotate(func,  # This is now just the implementation name
+            plt.annotate(func,
                         xy=(text_x, text_y),
-                        xytext=(text_x + offset_x, text_y * (1.03 + int(func == 'hellman') * 0.05)),  # Slightly above the point
+                        xytext=(text_x + offset_x, text_y * (1.03 + int(func == 'hellman') * 0.05)),
                         color=color,
                         fontsize=9,
                         fontweight='bold',
@@ -99,8 +137,9 @@ def performance_plot(df):
         plt.ylim(bottom=0)
         plt.xticks(df_grouped['bits'].unique())
         
-        # Remove the legend - we're labeling lines directly
-        # plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+        # Move the legend outside the plot
+        plt.legend(handles, labels, bbox_to_anchor=(1.01, 1), loc='upper left', title='Implementation [Compiler]', borderaxespad=0.)
+        plt.subplots_adjust(right=0.65)  # Leave space on the right for the legend
         
         plt.tight_layout()
         plt.savefig("performance.png", dpi=300, bbox_inches="tight")
@@ -109,8 +148,15 @@ def performance_plot(df):
 def roofline_plot(df):
     # TODO: use hw values here
     PI_PEAK = 3 * 512.0 # Zen 4: throughput of 3 for _mm512_and_si512 -> 3*512 logic operations per second
-    BETA_PEAK = 7.417
     
+    # Memory bandwidth peak in B/cycle
+    # Obtained by averaging 50 custom STREAM runs (array size increased to 2 mil elements) 
+    BETA_PEAK = 9.06 # 29899.75 MB/s / 3300 MHz = 9.06 B/cycle (for Zen 4)
+
+    # Add your custom rooflines
+    PI_PEAK_64 = 4 * 64 * 2 
+    PI_PEAK_256 = 4 * 256 * 2 
+    PI_PEAK_512 = 4 * 512 * 2
 
     cpu_model = df['cpu_model'][0]
     compiler_version = df['compiler_version'][0] + " " + df['compiler_flags'][0]
@@ -158,7 +204,7 @@ def roofline_plot(df):
     # Extend plot range slightly for visibility
     plot_min_intensity = max(min_intensity / 4, 0.1)  # Start a bit above 0
     plot_max_intensity = max_intensity * 3  # Extend more to make room for labels
-    plot_max_perf = max(max_perf, PI_PEAK) * 1.5
+    plot_max_perf = max(max_perf, PI_PEAK, PI_PEAK_64, PI_PEAK_256, PI_PEAK_512) * 1.5
 
     # Calculate roofline points
     # Create a range of operational intensity values for plotting the roof
@@ -186,6 +232,16 @@ def roofline_plot(df):
     plt.plot(intensity_range, compute_roof, color='grey', linestyle=':')
     plt.text(intensity_range[80], compute_roof[80], ' Compute Bound', 
              color='grey', fontsize=9, verticalalignment='bottom')
+
+    # --- Add horizontal lines for custom rooflines ---
+    plt.axhline(PI_PEAK_64, color='blue', linestyle='--', linewidth=1, label='π_64 = 4×64')
+    plt.text(plot_min_intensity * 1.1, PI_PEAK_64, 'π_64', color='blue', va='bottom', fontsize=9)
+
+    plt.axhline(PI_PEAK_256, color='green', linestyle='--', linewidth=1, label='π_256 = 4×256')
+    plt.text(plot_min_intensity * 1.1, PI_PEAK_256, 'π_256', color='green', va='bottom', fontsize=9)
+
+    plt.axhline(PI_PEAK_512, color='purple', linestyle='--', linewidth=1, label='π_512 = 4×512')
+    plt.text(plot_min_intensity * 1.1, PI_PEAK_512, 'π_512', color='purple', va='bottom', fontsize=9)
 
     # --- Formatting ---
     plt.xscale('log', base=2)
@@ -357,17 +413,21 @@ def speedup_plot(df):
 
 # Main execution
 if __name__ == "__main__":
-    # Parse command-line arguments to get file-color pairs
-    file_color_pairs = parse_args_with_colors()
-    
-    # Read files and assign colors
-    df_combined = read_files_with_colors(file_color_pairs)
+    if len(sys.argv) != 2:
+        print("Usage: python plot_multiple_random_colors.py <directory_with_csvs>")
+        sys.exit(1)
+    directory = sys.argv[1]
+    if not os.path.isdir(directory):
+        print(f"Error: {directory} is not a directory.")
+        sys.exit(1)
+
+    df_combined = read_all_csvs_with_random_colors(directory)
     
     if df_combined.empty:
         print("No valid data found in the provided files.")
         exit(1)
 
-    print(f"Combined {len(file_color_pairs)} files, total rows: {len(df_combined)}")
+    print(f"Combined {len(df_combined)} rows from CSV files in {directory}")
 
     df = df_combined
 
@@ -380,6 +440,6 @@ if __name__ == "__main__":
     print(df)
     
     performance_plot(df)
-    roofline_plot(df)
-    runtime_plot(df)
-    speedup_plot(df)
+    # roofline_plot(df)
+    # runtime_plot(df)
+    # speedup_plot(df)
