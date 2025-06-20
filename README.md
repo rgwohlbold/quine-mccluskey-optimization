@@ -13,7 +13,7 @@ There are several options that can be passed to `cmake`:
 - Add `-D LOG_LEVEL={0,1,2,3}` to set the log level:
   - `-D LOG_LEVEL=0` to log only errors
   - `-D LOG_LEVEL=1` to log only errors and warnings
-  - `-D LOG_LEVEL=2` to log errors, warnings, and info messages
+  - `-D LOG_LEVEL=2` to log errors, warnings, and info messages (this is the default log level)
   - `-D LOG_LEVEL=3` to log errors, warnings, info messages, and debug messages
 - Add `-D SANITIZE=ON` to enable address sanitizer and disable compiler optimizations to find memory-related errors. This will switch the compiler to `clang`, enable debug symbols and the `-fsanitize=address` flag.
 Make sure to disable this option with `-D SANITIZE=OFF` before doing performance measurements.
