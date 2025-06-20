@@ -446,10 +446,16 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     srand(time(NULL));
     size_t _;
     bitmap trues1 = random_trues(num_bits, 95, &_);
-    bitmap trues2 = random_trues(num_bits, 95, &_);
+    bitmap trues2 = trues1;
+    if (num_bits <= 20) {
+        trues2 = random_trues(num_bits, 95, &_);
+    }
 
     // warmup iteration
     prime_implicant_result result_warmup = impl.implementation(num_bits, trues1);
+    if (num_bits > 20) {
+        bitmap_free(result_warmup.primes);
+    }
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     // ITT_START_FRAME();
@@ -461,8 +467,10 @@ void measure_implementations(const char *implementation_name, int num_bits) {
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
     bitmap_free(trues1);
-    bitmap_free(trues2);
-    bitmap_free(result_warmup.primes);
+    if (num_bits <= 20) {
+        bitmap_free(trues2);
+        bitmap_free(result_warmup.primes);
+    }
     bitmap_free(result.primes);
 }
 
