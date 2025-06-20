@@ -1,18 +1,21 @@
 #if defined(__linux__)
 #define _GNU_SOURCE
 #include "perf.h"
-#include <linux/perf_event.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <assert.h>
 
-//struct perf_event_attr hw_event;
+#include <assert.h>
+#include <errno.h>
+#include <linux/perf_event.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "debug.h"
+
+// struct perf_event_attr hw_event;
 bool initialized = false;
 bool active = false;
 int fd_read_misses;
@@ -27,7 +30,7 @@ static int open_cache_perf(int config) {
     pe.config = config;
     pe.disabled = 1;
     pe.exclude_kernel = 1;
-    pe.exclude_hv = 1; // Don't count hypervisor events.
+    pe.exclude_hv = 1;  // Don't count hypervisor events.
 
     const pid_t pid = 0;
     const int cpu = -1;
@@ -36,7 +39,7 @@ static int open_cache_perf(int config) {
 
     int fd = syscall(__NR_perf_event_open, &pe, pid, cpu, group_fd, flags);
     if (fd == -1) {
-        fprintf(stderr, "Error opening leader %llx\n", pe.config);
+        LOG_ERROR("error in perf_event_open(): %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     return fd;
@@ -52,11 +55,9 @@ void perf_start() {
     if (!initialized) {
         return;
     }
-    fd_read_misses = open_cache_perf(PERF_COUNT_HW_CACHE_L1D |
-                                     PERF_COUNT_HW_CACHE_OP_READ << 8 |
+    fd_read_misses = open_cache_perf(PERF_COUNT_HW_CACHE_L1D | PERF_COUNT_HW_CACHE_OP_READ << 8 |
                                      PERF_COUNT_HW_CACHE_RESULT_MISS << 16);
-    fd_read_accesses = open_cache_perf(PERF_COUNT_HW_CACHE_L1D |
-                                       PERF_COUNT_HW_CACHE_OP_READ << 8 |
+    fd_read_accesses = open_cache_perf(PERF_COUNT_HW_CACHE_L1D | PERF_COUNT_HW_CACHE_OP_READ << 8 |
                                        PERF_COUNT_HW_CACHE_RESULT_ACCESS << 16);
     active = true;
     ioctl(fd_read_accesses, PERF_EVENT_IOC_RESET, 0);
@@ -83,9 +84,9 @@ perf_result perf_stop() {
     return result;
 }
 #else
-void perf_init() { }
+void perf_init() {}
 
-void perf_start() { }
+void perf_start() {}
 
 perf_result perf_stop() {
     perf_result result;

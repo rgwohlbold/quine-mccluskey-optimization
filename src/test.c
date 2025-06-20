@@ -396,7 +396,7 @@ void test_implementation_single(const char *implementation_name, char **testfile
                     char s[test.num_bits + 1];
                     s[test.num_bits] = '\0';
                     bitmap_index_to_implicant(test.num_bits, i, s);
-                    LOG_WARN("returned implicant %s (bitmap index %d) which was not expected by test case", s, i);
+                    LOG_WARN("returned implicant %s (bitmap index %llu) which was not expected by test case", s, i);
                     ok = false;
                 }
                 if (!BITMAP_CHECK(result.primes, i) && BITMAP_CHECK(test.prime_implicants, i)) {
@@ -404,7 +404,7 @@ void test_implementation_single(const char *implementation_name, char **testfile
                     s[test.num_bits] = '\0';
                     bitmap_index_to_implicant(test.num_bits, i, s);
                     LOG_WARN(
-                        "test case expected implicant %s (bitmap index %d) which was not returned by "
+                        "test case expected implicant %s (bitmap index %llu) which was not returned by "
                         "implementation",
                         s, i);
                     ok = false;
@@ -451,10 +451,16 @@ void measure_implementations(const char *implementation_name, int num_bits) {
     srand(time(NULL));
     size_t _;
     bitmap trues1 = random_trues(num_bits, 95, &_);
-    bitmap trues2 = random_trues(num_bits, 95, &_);
+    bitmap trues2 = trues1;
+    if (num_bits <= 20) {
+        trues2 = random_trues(num_bits, 95, &_);
+    }
 
     // warmup iteration
     prime_implicant_result result_warmup = impl.implementation(num_bits, trues1);
+    if (num_bits > 20) {
+        bitmap_free(result_warmup.primes);
+    }
 
     LOG_INFO("measuring '%s' bits=%d", impl.name, num_bits);
     // ITT_START_FRAME();
@@ -467,8 +473,10 @@ void measure_implementations(const char *implementation_name, int num_bits) {
 
     // free warmup result after measuring to prevent reuse of allocation leading to warm cache
     bitmap_free(trues1);
-    bitmap_free(trues2);
-    bitmap_free(result_warmup.primes);
+    if (num_bits <= 20) {
+        bitmap_free(trues2);
+        bitmap_free(result_warmup.primes);
+    }
     bitmap_free(result.primes);
 }
 

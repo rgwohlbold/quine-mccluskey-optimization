@@ -30,9 +30,31 @@ Make sure to disable this option with `-D SANITIZE=OFF` before doing performance
 - `./prime_implicants merge_implementations`: Print a list of all available merge function implementations.
 - `./prime_implicants gentest <n> <density>`: Generate a test file with `n` variables and `density` percent density.
 
+## Generating Traversals
+
+For all implementations called `*load*`, traversal files are required.
+The repository contains traversal files for the regular and DFS merge orders for up to `n=20`.
+If you want to test `*load*` implementations with `n>20`, you need to generate traversals.
+Run the following (you can adjust the number of bits if you like):
+
+```sh
+python generate_path.py --mode flat --out-dir traversals/flat/ 22
+python generate_path.py --mode dfs --out-dir traversals/dfs/ 22
+```
+
 ## Development
 
 Before pushing changes, format code with `clang-format`.
+
+## Known Issues
+
+When measuring, the application uses `perf_event_open()` to measure cache misses and accesses.
+If you encounter an error like `error in perf_event_open(): Permission denied`, you can try the following in order:
+
+1. Run `sudo sysctl kernel.perf_event_paranoid=1` to allow the user to use `perf_event_open()` without root privileges.
+1. Set the `CAP_PERFMON` capability for the user running the program. This can be done by running `sudo setcap cap_sys_admin+ep ./prime_implicants`.
+1. Set the `CAP_SYS_ADMIN` capability for the user running the program. This can be done by running `sudo setcap cap_sys_admin+ep ./prime_implicants`.
+1. Run the program as root.
 
 ### pre-commit hook
 

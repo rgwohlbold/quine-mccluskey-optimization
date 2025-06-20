@@ -186,12 +186,12 @@ def cache_plot(df):
 
         # Create the plot
         plt.figure(figsize=(9, 6))
-        sns.lineplot(data=df_grouped, x='bits', y='cache_miss_rate', hue='function', marker='o')
+        sns.lineplot(data=df_grouped, x='bits', y='cache_misses_per_line', hue='function', marker='o')
 
         # --- Formatting ---
         plt.xlabel('n (Input Bits)')
-        plt.ylabel('Cache Miss Rate')
-        plt.title(f"Cache Miss Rate of all implementations for different number of bits n\nCPU: {cpu_model}", loc='left')
+        plt.ylabel('Number of Cache Misses per Implicant')
+        plt.title(f"Number of Cache Misses per Implicant for Different Implementations and Number of Bits\nCPU: {cpu_model}", loc='left')
         plt.grid(True, which="both", linestyle='--', linewidth=0.5)
         plt.xticks(df_grouped['bits'].unique())
 
@@ -205,13 +205,14 @@ df = pd.read_csv("measurements.csv")
 df = df.groupby(['compiler_version', 'compiler_flags', 'cpu_model', 'implementation', 'bits']).median().reset_index()
 df['ops'] = df['bits'] * 3**df['bits']
 df['memory'] = (3**df['bits']) / 4
+df.loc[df['implementation'] == 'hellman', 'memory'] = 3**df['bits'] / 8
 df['operational_intensity'] = df['ops'] / df['memory']
 df['performance'] = df['ops'] / df['cycles']
 df['function'] = df['implementation'] + ', ' + df['compiler_version'] + ', ' + df['compiler_flags']
-df['cache_miss_rate'] = df['l1d_cache_misses'] / df['l1d_cache_accesses']
-print(df)
-performance_plot(df)
-roofline_plot(df)
-runtime_plot(df)
-speedup_plot(df)
+#df['cache_miss_rate'] = df['l1d_cache_misses'] / df['l1d_cache_accesses']
+df['cache_misses_per_line'] = 64 * df['l1d_cache_misses'] / 3**df['bits']
+#performance_plot(df)
+#roofline_plot(df)
+#runtime_plot(df)
+#speedup_plot(df)
 cache_plot(df)

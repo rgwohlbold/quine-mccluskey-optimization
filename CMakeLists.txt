@@ -14,7 +14,7 @@ if(NOT APPLE)
     set(COMPILER_FLAGS ${COMPILER_FLAGS} -mbmi2)
 endif()
 
-add_executable(prime_implicants ${SRC_FILES} ${CPP_FILES})
+add_executable(prime_implicants src/system.c ${SRC_FILES} ${CPP_FILES})
 # set_property(SOURCE ${CPP_FILES} PROPERTY LANGUAGE CXX)
 # set_target_properties(prime_implicants PROPERTIES LINKER_LANGUAGE CXX)
 

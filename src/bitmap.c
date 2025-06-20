@@ -1,12 +1,14 @@
+#include "bitmap.h"
+
 #include <assert.h>
 #include <string.h>
-#include "bitmap.h"
+
 #include "debug.h"
 #include "util.h"
 
 bitmap bitmap_allocate(size_t num_bits) {
-    size_t num_bytes = (num_bits + 7) / 8 + 64; // add 64 bytes to make sure we are aligned
-    uint8_t *bits = (uint8_t *) calloc(num_bytes, sizeof(uint8_t));
+    size_t num_bytes = (num_bits + 7) / 8 + 64;  // add 64 bytes to make sure we are aligned
+    uint8_t *bits = (uint8_t *)calloc(num_bytes, sizeof(uint8_t));
     if (bits == NULL) {
         perror("cannot allocate bitmap");
         exit(EXIT_FAILURE);
@@ -14,7 +16,7 @@ bitmap bitmap_allocate(size_t num_bits) {
     bitmap result = {
         .num_bits = num_bits,
         .malloc_ptr = bits,
-        .bits = bits + (64 - ((uintptr_t)bits & 0x3F)), // align to 64 bytes
+        .bits = bits + (64 - ((uintptr_t)bits & 0x3F)),  // align to 64 bytes
     };
     // access all pages of the bitmap once to make the OS back them with physical memory
     for (size_t i = 0; i < num_bits; i += 4096 * 8) {
@@ -23,16 +25,14 @@ bitmap bitmap_allocate(size_t num_bits) {
     return result;
 }
 
-void bitmap_free(bitmap map) {
-    free(map.malloc_ptr);
-}
+void bitmap_free(bitmap map) { free(map.malloc_ptr); }
 
 bool bitmap_cmp(bitmap map1, bitmap map2) {
     if (map1.num_bits != map2.num_bits) {
         return false;
     }
     for (size_t i = 0; i < map1.num_bits - map1.num_bits % 64; i += 64) {
-        if (((uint64_t *)(map1.bits))[i/64] != ((uint64_t *)(map2.bits))[i/64]) {
+        if (((uint64_t *)(map1.bits))[i / 64] != ((uint64_t *)(map2.bits))[i / 64]) {
             return false;
         }
     }
@@ -58,11 +58,11 @@ uint64_t bitmap_implicant_to_index(int num_bits, const char *s) {
     // look at dash pattern to get chunk offset
     uint64_t chunk_offset = 0;
     uint64_t dashes_remaining = num_dashes;
-    for (int i = num_bits-1; i >= 0; i--) {
+    for (int i = num_bits - 1; i >= 0; i--) {
         if (s[i] == '-') {
             dashes_remaining -= 1;
         } else if (dashes_remaining >= 1) {
-            chunk_offset += binomial_coefficient(i, dashes_remaining-1);
+            chunk_offset += binomial_coefficient(i, dashes_remaining - 1);
         }
     }
     chunk_offset *= 1 << (num_bits - num_dashes);
@@ -76,16 +76,16 @@ uint64_t bitmap_implicant_to_index(int num_bits, const char *s) {
             offset_within_chunk *= 2;
             offset_within_chunk += 1;
         }
-
     }
-    //LOG_DEBUG("implicant %s section_index=%d chunk_offset=%d offset_within_chunk=%d", s, section_offset, chunk_offset, offset_within_chunk);
+    // LOG_DEBUG("implicant %s section_index=%d chunk_offset=%d offset_within_chunk=%d", s, section_offset,
+    // chunk_offset, offset_within_chunk);
     return section_offset + chunk_offset + offset_within_chunk;
 }
 
 void bitmap_index_to_implicant(int num_bits, size_t bitset_index, char *s) {
     size_t num_dashes = 0;
     size_t section_offset = 0;
-    for (size_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
+    for (int64_t remaining_bits = num_bits; remaining_bits >= 0; remaining_bits--) {
         size_t new_section_offset = section_offset + (1 << remaining_bits) * binomial_coefficient(num_bits, num_dashes);
         if (new_section_offset > bitset_index) {
             break;
@@ -96,20 +96,21 @@ void bitmap_index_to_implicant(int num_bits, size_t bitset_index, char *s) {
     size_t remaining_bits = num_bits - num_dashes;
     size_t chunk_index = (bitset_index - section_offset) / (1 << remaining_bits);
     size_t offset_within_chunk = (bitset_index - section_offset) % (1 << remaining_bits);
-    //LOG_DEBUG("bitset_index %d section_offset=%d chunk_index=%d offset_within_chunk=%d", bitset_index, section_offset, chunk_index, offset_within_chunk);
+    // LOG_DEBUG("bitset_index %d section_offset=%d chunk_index=%d offset_within_chunk=%d", bitset_index,
+    // section_offset, chunk_index, offset_within_chunk);
 
     size_t dashes_set = 0;
     for (int i = 0; i < num_bits; i++) {
         size_t dashes_remaining = num_dashes - dashes_set;
         if (dashes_remaining == 0) {
-            s[num_bits-i-1] = '.';
+            s[num_bits - i - 1] = '.';
         } else {
-            size_t possibilities_if_dash_is_set = binomial_coefficient(num_bits-i-1, dashes_remaining-1);
+            size_t possibilities_if_dash_is_set = binomial_coefficient(num_bits - i - 1, dashes_remaining - 1);
             if (chunk_index < possibilities_if_dash_is_set) {
-                s[num_bits-i-1] = '-';
+                s[num_bits - i - 1] = '-';
                 dashes_set++;
             } else {
-                s[num_bits-i-1] = '.';
+                s[num_bits - i - 1] = '.';
                 chunk_index -= possibilities_if_dash_is_set;
             }
         }
@@ -177,20 +178,12 @@ static void test_implicant_bitmap_index() {
         const char *implicant;
         uint64_t index;
     } tests[] = {
-        {4, "0000", 0},
-        {4, "0001", 1},
-        {4, "1110", 14},
-        {4, "000-", 16},
-        {4, "101-", 21},
-        {4, "1-11", 39},
-        {4, "11--", 51},
-        {4, "-1-0", 66},
-        {4, "-1--", 75},
-        {4, "----", 80},
+        {4, "0000", 0},  {4, "0001", 1},  {4, "1110", 14}, {4, "000-", 16}, {4, "101-", 21},
+        {4, "1-11", 39}, {4, "11--", 51}, {4, "-1-0", 66}, {4, "-1--", 75}, {4, "----", 80},
     };
     LOG_INFO("testing implicant bitmap mapping")
-    char implicant[5]; // adjust size when adding test cases with more bits
-    implicant[sizeof(implicant)-1] = '\0';
+    char implicant[5];  // adjust size when adding test cases with more bits
+    implicant[sizeof(implicant) - 1] = '\0';
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         assert(bitmap_implicant_to_index(tests[i].num_bits, tests[i].implicant) == tests[i].index);
     }
@@ -202,7 +195,7 @@ static void test_implicant_bitmap_index() {
 
 static void test_implicant_bitmap_index_inversion(int num_bits) {
     LOG_INFO("testing implicant bitmap mapping inversion num_bits=%d", num_bits);
-    char implicant[num_bits+1];
+    char implicant[num_bits + 1];
     implicant[num_bits] = '\0';
     int num_implicants = calculate_num_implicants(num_bits);
     for (int i = 0; i < num_implicants; i++) {

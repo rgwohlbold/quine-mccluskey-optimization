@@ -10,8 +10,8 @@
 #ifdef __aarch64__
 #include "../../vct_arm.h"
 #endif
-#include "../../signpost.h"
 #include "../../perf.h"
+#include "../../signpost.h"
 
 #ifndef IMPLEMENTATION_FUNCTION
 #error "need to define IMPLEMENTATION_FUNCTION"
@@ -31,7 +31,7 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
 
     bitmap implicants = bitmap_allocate(num_implicants);
     // OR the trues into the implicants
-    size_t num_minterms = 1<<num_bits;
+    size_t num_minterms = 1 << num_bits;
     for (size_t i = 0; i < num_minterms; i++) {
         BITMAP_SET(implicants, i, BITMAP_CHECK(trues, i));
     }
@@ -40,19 +40,18 @@ prime_implicant_result IMPLEMENTATION_FUNCTION(int num_bits, bitmap trues) {
     init_tsc();
     perf_start();
 
-
     uint64_t counter_start = start_tsc();
 
-    size_t input_index = 0;
+    uint64_t input_index = 0;
     for (int num_dashes = 0; num_dashes <= num_bits; num_dashes++) {
         ITT_START_TASK_SECTION(num_dashes);
-        int remaining_bits = num_bits - num_dashes;
-        int iterations = binomial_coefficient(num_bits, num_dashes);
-        int input_elements = 1 << remaining_bits;
-        int output_elements = 1 << (remaining_bits - 1);
+        uint64_t remaining_bits = num_bits - num_dashes;
+        uint64_t iterations = binomial_coefficient(num_bits, num_dashes);
+        uint64_t input_elements = 1 << remaining_bits;
+        uint64_t output_elements = 1 << (remaining_bits - 1);
 
-        size_t output_index = input_index + iterations * input_elements;
-        for (int i = 0; i < iterations; i++) {
+        uint64_t output_index = input_index + iterations * input_elements;
+        for (uint64_t i = 0; i < iterations; i++) {
             int first_difference = remaining_bits - leading_stars(num_bits, num_dashes, i);
             MERGE_FUNCTION(implicants, merged, input_index, output_index, remaining_bits, first_difference);
             output_index += (remaining_bits - first_difference) * output_elements;
