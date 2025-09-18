@@ -3,3 +3,4 @@
 *.cpp filter=clangformat textconv=clangformat
 *.h filter=clangformat textconv=clangformat
 *.hpp filter=clangformat textconv=clangformat
+*.ipynb -linguist-detectable
