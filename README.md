@@ -2,7 +2,7 @@
 
 This repository contains the final submission of our project on optimizing the performance of the Quine-McCluskey algorithm for the course "Advanced Systems Lab" (2025) at ETH Zürich.
 
-To get an overview of what we did, read our report [here](report.pdf).
+To get an overview of what we did, read our report [here](58_report.pdf).
 To get an overview of the course, look [here](https://acl.inf.ethz.ch/teaching/fastcode/2025/).
 
 The team consisted of 
